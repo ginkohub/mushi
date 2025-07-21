@@ -89,7 +89,12 @@ export class Ctx {
      * */
     this.sendMessage = async (jid, content, options) => await handler?.sendMessage(jid, content, options);
 
-    /** @returns {Promise<string>} */
+    /** 
+     * @param {string} jid
+     * @param {import('baileys').proto.IMessage} content
+     * @param {import('baileys').MessageRelayOptions} options
+     * @returns {Promise<string>} 
+     */
     this.relayMessage = async (jid, content, options) => await handler?.relayMessage(jid, content, options);
 
     /** 
@@ -103,7 +108,7 @@ export class Ctx {
     };
 
     /**
-     * @param {import('baileys').AnyMessageContent} content
+     * @param {import('baileys').proto.IMessage} content
      * @param {import('baileys').MessageRelayOptions} options
      * @returns {Promise<string>} 
      */
