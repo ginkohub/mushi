@@ -31,6 +31,7 @@ const Actions = {
       document: Buffer.from(JSON.stringify(r, null, 2)),
       fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
       mimetype: 'application/json',
+      caption: `*From* : ${c.senderName} (${c.sender})\n*Chat* : ${c.chatName} (${c.chat})\n*Detected* : ${r.reason}`
     });
   },
 
