@@ -24,7 +24,6 @@ export default {
     eventNameIs(MESSAGES_UPSERT), fromMe,
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     const latest = c.handler()?.getTimer(c.chat);
     const text = `Setting timer for ${c.chat} from ${latest} to ${c.expiration}`;

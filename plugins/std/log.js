@@ -69,7 +69,6 @@ export default {
     success: !skipEvents.includes(c.eventName)
   }),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     const data = [];
     const chatName = cleanName(c.chatName);

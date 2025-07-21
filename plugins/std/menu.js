@@ -37,7 +37,6 @@ export default {
     fromMe, fromOwner
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
 
     const prefix = c.pattern[0];

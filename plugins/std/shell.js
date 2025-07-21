@@ -25,7 +25,6 @@ export default {
     eventNameIs(MESSAGES_UPSERT), fromMe,
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     pen.Warn(c.pattern, 'args :', c.args);
     const src = c.args?.trim();

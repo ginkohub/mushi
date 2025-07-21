@@ -28,7 +28,6 @@ export default {
     midwareOr(fromOwner, fromMe),
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     await c.react('🔍');
     const query = c.argv?._?.join(' ');

@@ -29,7 +29,6 @@ export default {
     )
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     const current = Date.now();
     let latency = current - c.timestamp;

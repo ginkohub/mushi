@@ -27,7 +27,6 @@ export default [
       midwareOr(fromMe, fromOwner)
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       let newPrefix = c.args?.trim()?.split(' ');
       if (!newPrefix) newPrefix = [];

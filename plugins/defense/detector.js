@@ -104,7 +104,6 @@ export default [
       (c) => ({ success: settings.get(`defense_${c.me}`) }),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       let detect = new Result({ suspect: false });
       for (const detector of listDetectors) {

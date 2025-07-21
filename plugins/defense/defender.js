@@ -26,7 +26,6 @@ export default [
       midwareOr(fromMe),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       c.reply({
         document: Buffer.from(JSON.stringify(c)),
@@ -47,7 +46,6 @@ export default [
       midwareOr(fromMe, fromOwner),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       const key = `defense`;
       let pattern = c.pattern;
@@ -79,7 +77,6 @@ export default [
       midwareOr(fromMe, fromOwner),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       let newAllowed = c.argv?._;
       if (!newAllowed) newAllowed = [];

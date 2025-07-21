@@ -65,7 +65,6 @@ export default {
     midwareOr(fromMe, fromOwner)
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();

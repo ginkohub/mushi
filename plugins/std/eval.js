@@ -23,7 +23,6 @@ export default {
     eventNameIs(MESSAGES_UPSERT), fromMe,
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     const src = c.args?.trim();
     if (!src) {
