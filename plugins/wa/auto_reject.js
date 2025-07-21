@@ -50,8 +50,8 @@ export default [
     ),
     exec: async (c) => {
       let pattern = c.pattern;
-      const ends = c.pattern.slice(-1);
-      switch (ends) {
+      const tail = c.pattern.slice(-1);
+      switch (tail) {
         case '+': {
           settings.set(AUTO_REJECT_KEY, true);
           pattern = c.pattern.slice(0, -1);
@@ -77,7 +77,7 @@ export default [
         `  *${pattern}-* _to deactivating_`,
         `  *${pattern}+* _to activating_`
       );
-      c.reply({ text: texts.join('\n') }, { qouted: c.message })
+      await c.reply({ text: texts.join('\n') }, { quoted: c.event });
     }
   }
 ]
