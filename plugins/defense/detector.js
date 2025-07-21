@@ -23,18 +23,7 @@ export const allowed = [
   'associatedChildMessage',
 ];
 
-/**
- * @typedef {Object} Result
- * @property {boolean} suspect
- * @property {string} reason
- * @property {any} data
- * @actions {import('./action.js').Action[] | import('./action.js').Action} actions
- */
 
-export let blockedUsers = [];
-
-let BLOCKLIST_UPDATED = false;
-/** @type {import('../../src/plugin.js').Plugin} */
 
 /** @typedef {(c: import('../../src/context.js').Ctx) => any} Action */
 /** @type {Record<any, Action>} */
@@ -48,20 +37,27 @@ const Actions = {
   },
 
   BLOCK: async (c) => {
-    if (!blockedUsers.includes(c.sender)) {
-      c.handler().client.sock.updateBlockStatus(c.sender, 'block');
-      blockedUsers.push(c.sender);
+    if (!c.handler().isBlocked(c.sender)) {
+      await c.handler().updateBlock(c.sender, 'block');
     }
   },
 
   DELETE_FOR_ALL: async (c) => {
-    return c.reply({ delete: c.key });
+    return await c.reply({ delete: c.key });
   },
 
   DELETE_FOR_ME: async (c) => {
-    return c.sock()?.chatModify({ deleteForMe: { key: c.key } })
+    return c?.chatModify({ deleteForMe: { key: c.key } });
   },
 };
+
+/**
+ * @typedef {Object} Result
+ * @property {boolean} suspect
+ * @property {string} reason
+ * @property {any} data
+ * @property {Action[] } actions
+ */
 
 class Result {
   /** @param {Result} */
@@ -70,7 +66,7 @@ class Result {
     this.reason = reason;
     this.data = data;
 
-    /** @type {Action[] | Action} */
+    /** @type {Action[]} */
     this.actions = actions;
   }
 
@@ -128,21 +124,7 @@ export default [
         pen.Error(e);
       }
     }
-  },
-  {
-    midware: eventNameIs(Events.CONNECTION_UPDATE, Events.MESSAGES_UPSERT),
-    exec: async (c) => {
-      if (BLOCKLIST_UPDATED) return
-      try {
-        pen.Warn('Updating blacklist.');
-        blockedUsers = await c.sock()?.fetchBlocklist();
-        BLOCKLIST_UPDATED = true
-      } catch (e) {
-        pen.Error(e.message);
-      }
-    }
-  }
-];
+  },];
 
 /** @typedef {(c: import('../../src/context.js').Ctx) => Result } Detector */
 /** @type {Detector[]} */
@@ -151,7 +133,7 @@ const listDetectors = [
     if (!c.isStatus || !c.type) return {
       suspect: false,
       reason: 'Not a status message',
-      actions: [Actions.LOG]
+      actions: [Actions.LOG, Actions.BLOCK]
     }
 
     let allow = settings.get('defense_allow_status');
@@ -163,14 +145,15 @@ const listDetectors = [
       suspect: c.isStatus && !allow?.includes(c.type) && c.type,
       reason: 'Status message with not allowed type',
       data: c,
-      actions: [Actions.LOG, Actions.DELETE_FOR_ALL, Actions.DELETE_FOR_ME]
+      actions: [Actions.LOG, Actions.BLOCK]
     };
   },
+
   (c) => {
     return {
       suspect: c.mentionedJid?.length > 1024,
       reason: 'Too many mentioned jids',
-      data: c.contextInfo,
+      data: c,
     };
   },
 
@@ -195,7 +178,7 @@ const listDetectors = [
       suspect: suspect,
       reason: 'Overloaded text',
       data: c,
-      actions: [Actions.LOG, Actions.DELETE_FOR_ALL, Actions.DELETE_FOR_ME],
+      actions: [Actions.LOG, Actions.BLOCK, Actions.DELETE_FOR_ALL, Actions.DELETE_FOR_ME],
     }
   },
 ];
