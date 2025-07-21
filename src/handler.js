@@ -112,8 +112,7 @@ export class Handler {
   /**
  * Block / unblock given jid
  * @param {string} jid
- * @returns {'block' | 'unblock'} action
- * @returns {boolean}
+ * @returns {Promise<boolean | undefined>}
  */
   async updateBlock(jid, action) {
     try {
