@@ -8,7 +8,6 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import axios from 'axios';
 import { execFile } from 'child_process';
 import fs from 'fs/promises';
 import path, { resolve } from 'path';
@@ -19,6 +18,7 @@ import pen from '../../src/pen.js';
 import { fromOwner, storeMsg } from '../settings.js';
 import { existsSync } from 'fs';
 import os from 'os';
+import { google } from 'googleapis';
 
 const execFileAsync = promisify(execFile);
 const ytdlps = [
@@ -26,6 +26,8 @@ const ytdlps = [
   resolve('~/bin/yt-dlp'),
   resolve('bin/yt-dlp')
 ];
+
+const youtube = google.youtube('v3');
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -50,101 +52,113 @@ export default {
     let audioFilePath = '';
 
     try {
-
-      /** Check the binary */
-      let ytdlpBin = 'yt-dlp';
-      for (const yp of ytdlps) {
-        if (existsSync(yp)) {
-          ytdlpBin = yp;
-          break;
-        }
+      /** Search the video */
+      const apiKey = process.env.GOOGLE_API_KEY ?? process.env.YOUTUBE_API_KEY ?? process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return c.react('🔑');
       }
 
-      pen.Debug(`Using yt-dlp binary: ${ytdlpBin}`)
+      const searchRes = await youtube.search.list({
+        auth: apiKey,
+        part: 'snippet',
+        q: query,
+        maxResults: 1,
+        type: 'video',
+      });
 
-      try {
-        await execFileAsync(ytdlpBin, ['--version']);
-      } catch (e) {
-        pen.Error('yt-dlp is not installed or not in PATH.', e);
-        return c.reply('`yt-dlp` is not installed. Please install it to use this command.');
-      }
+      if (!searchRes?.data?.items?.length === 0) return await c.react('❓');
+      const videoYT = searchRes?.data?.items[0];
 
-      const { stdout: searchStdout } = await execFileAsync(ytdlpBin, ['--dump-json', `ytsearch1:${query}`]);
-
-      if (!searchStdout) {
-        return await c.react('❓');
-      }
-
-      const video = JSON.parse(searchStdout);
-
-      /** @type {import('baileys').proto.IWebMessageInfo} */
-      let msg = storeMsg.get(video.id);
+      /* Check on database */
+      /** @type {import('baileys').proto.IWebMessageInfo }*/
+      let msg = storeMsg.get(videoYT?.id?.videoId);
       if (msg && !c.argv.force) {
         return c.replyRelay(msg.message);
-      }
+      } else {
 
-      const videoUrl = video.webpage_url;
-      const thumbUrl = video.thumbnail;
-
-      await fs.mkdir(tempDir, { recursive: true });
-      const outputTemplate = path.join(tempDir, `${video.id}.%(ext)s`);
-
-      await execFileAsync(ytdlpBin, [
-        '-f', 'bestaudio[ext=m4a]/bestaudio',
-        '-o', outputTemplate,
-        video.id
-      ]);
-
-      const files = await fs.readdir(tempDir);
-      const downloadedFile = files.find(f => f.startsWith(video.id));
-      if (!downloadedFile) {
-        pen.Error('Downloaded file not found for video ID:', video.id);
-        return c.react('🔥');
-      }
-      audioFilePath = path.join(tempDir, downloadedFile);
-      const fileExtension = path.extname(downloadedFile).slice(1);
-
-      const audioBuffer = await fs.readFile(audioFilePath);
-
-      let mimetype = 'audio/mp4'; // default for m4a
-      if (fileExtension === 'mp3') mimetype = 'audio/mpeg';
-      else if (fileExtension === 'ogg') mimetype = 'audio/ogg';
-      else if (fileExtension === 'webm') mimetype = 'audio/webm';
-
-      let thumbnailBuffer = null;
-      if (thumbUrl) {
-        try {
-          const thumbRes = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
-          thumbnailBuffer = Buffer.from(thumbRes.data);
-        } catch (thumbErr) {
-          pen.Error('Failed to download thumbnail:', thumbErr);
-        }
-      }
-
-      const caption = `*${video.title}*\n\n` +
-        `*Author:* ${video.uploader}\n` +
-        `*Duration:* ${video.duration_string}\n` +
-        `*Views:* ${video.view_count?.toLocaleString('en-US') ?? 'N/A'}\n\n` +
-        `_${video.description}_`;
-
-      const resp = await c.reply({
-        audio: audioBuffer,
-        mimetype: mimetype,
-        fileName: `${video.title}.${fileExtension}`,
-        caption: caption,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: video.uploader,
-            thumbnail: thumbnailBuffer,
-            mediaType: 1,
-            mediaUrl: videoUrl,
-            sourceUrl: videoUrl,
+        /** Check the binary */
+        let ytdlpBin = 'yt-dlp';
+        for (const yp of ytdlps) {
+          if (existsSync(yp)) {
+            ytdlpBin = yp;
+            break;
           }
         }
-      });
-      if (resp) storeMsg.set(video.id, resp);
 
+        pen.Debug(`Using yt-dlp binary: ${ytdlpBin}`)
+
+        try {
+          await execFileAsync(ytdlpBin, ['--version']);
+        } catch (e) {
+          pen.Error('yt-dlp is not installed or not in PATH.', e);
+          return c.reply('`yt-dlp` is not installed. Please install it to use this command.');
+        }
+
+        const { stdout: searchStdout } = await execFileAsync(ytdlpBin, ['--dump-json', 'https://www.youtube.com/watch?v=' + videoYT?.id?.videoId]);
+
+        if (!searchStdout) {
+          return await c.react('❓');
+        }
+
+        const video = JSON.parse(searchStdout);
+
+        /** @type {import('baileys').proto.IWebMessageInfo} */
+        let msg = storeMsg.get(video.id);
+        if (msg && !c.argv.force) {
+          return c.replyRelay(msg.message);
+        }
+
+        const videoUrl = video.webpage_url;
+        const thumbUrl = video.thumbnail;
+
+        const outputTemplate = path.join(tempDir, `${video.id}.%(ext)s`);
+
+        await execFileAsync(ytdlpBin, [
+          '-f', 'bestaudio[ext=m4a]/bestaudio',
+          '-o', outputTemplate,
+          video.id
+        ]);
+
+        const files = await fs.readdir(tempDir);
+        const downloadedFile = files.find(f => f.startsWith(video.id));
+        if (!downloadedFile) {
+          pen.Error('Downloaded file not found for video ID:', video.id);
+          return c.react('🔥');
+        }
+        audioFilePath = path.join(tempDir, downloadedFile);
+        const fileExtension = path.extname(downloadedFile).slice(1);
+
+        const audioBuffer = await fs.readFile(audioFilePath);
+
+        let mimetype = 'audio/mp4'; // default for m4a
+        if (fileExtension === 'mp3') mimetype = 'audio/mpeg';
+        else if (fileExtension === 'ogg') mimetype = 'audio/ogg';
+        else if (fileExtension === 'webm') mimetype = 'audio/webm';
+
+        const caption = `*${video.title}*\n\n` +
+          `*Author:* ${video.uploader}\n` +
+          `*Duration:* ${video.duration_string}\n` +
+          `*Views:* ${video.view_count?.toLocaleString('en-US') ?? 'N/A'}\n\n` +
+          `_${video.description}_`;
+
+        const resp = await c.reply({
+          audio: audioBuffer,
+          mimetype: mimetype,
+          fileName: `${video.title}.${fileExtension}`,
+          caption: caption,
+          contextInfo: {
+            externalAdReply: {
+              title: video.title,
+              body: video.uploader,
+              mediaType: 1,
+              mediaUrl: videoUrl,
+              sourceUrl: videoUrl,
+              thumbnailUrl: thumbUrl,
+            }
+          }
+        });
+        if (resp) storeMsg.set(video.id, resp);
+      }
     } catch (e) {
       pen.Error(e);
       await c.react('❌');
