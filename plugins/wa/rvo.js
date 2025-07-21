@@ -10,7 +10,6 @@
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
-import pen from '../../src/pen.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -23,34 +22,26 @@ export default {
     eventNameIs(MESSAGES_UPSERT), fromMe,
   ),
 
-  /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
+    /** @type {import('baileys').proto.IMessage} */
     let m = null;
 
     if (!c.quotedMessage) return;
     m = c.quotedMessage;
 
-    if (m.viewOnceMessage) {
-      m = m.viewOnceMessage?.message;
-    }
+    if (m.viewOnceMessage) m = m.viewOnceMessage?.message;
 
     for (const k of Object.keys(m)) {
       if (!m[k]) continue;
       if (typeof m[k] === 'object') {
-        if (m[k].viewOnce) m[k].viewOnce = false;
-        if (m[k].scansSidecar) m[k].scansSidecar = null;
+        if (m[k].viewOnce) delete m[k].viewOnce;
+        if (m[k].scansSidecar) delete m[k].scansSidecar;
       }
 
-      if (k === 'messageContextInfo') {
-        delete m[k];
-      }
+      if (k === 'messageContextInfo') delete m[k];
     }
 
-    if (m?.messageContextInfo) m.messageContextInfo = null;
-
-    if (m) {
-      c.relayMessage(c.chat, m);
-    }
+    if (m) await c.replyRelay(m);
   }
 };
 
