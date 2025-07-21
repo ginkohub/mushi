@@ -46,7 +46,7 @@ export default {
     }
 
     /** @type {string} - os temp dir */
-    const tempDir = os.tempdir();
+    const tempDir = os.tmpdir();
     let audioFilePath = '';
 
     try {
