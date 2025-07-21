@@ -9,14 +9,16 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
+import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import { delay, randomNumber } from '../../src/tools.js';
-import { settings } from '../settings.js';
+import { fromOwner, settings } from '../settings.js';
 import pen from '../../src/pen.js';
 
 const skipTypes = [
   'senderKeyDistributionMessage',
-]
+];
+
+const AUTO_READ_KEY = 'auto_read';
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
@@ -26,23 +28,15 @@ export default [
 
     midware: midwareAnd(
       eventNameIs(MESSAGES_UPSERT),
-      (c) => ({ success: !c.isStatus && !c.fromMe && !skipTypes.includes(c.type) && settings.get('auto_read_' + c.me) }),
-
+      (c) => ({ success: !c.isStatus && !c.fromMe && !skipTypes.includes(c.type) && settings.get(AUTO_READ_KEY) }),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
       await delay(randomNumber(1000, 2000));
-      c.sock().readMessages([
-        {
-          id: c.id,
-          fromMe: c.fromMe,
-          participant: c.sender,
-          remoteJid: c.chat,
-        }
-      ])
+      await c.sock().readMessages([c.key]);
     }
   },
+
   {
     cmd: ['aread', 'aread+', 'aread-'],
     cat: 'whatsapp',
@@ -51,30 +45,39 @@ export default [
 
     midware: midwareAnd(
       eventNameIs(MESSAGES_UPSERT),
-      fromMe,
+      midwareOr(fromMe, fromOwner),
     ),
 
-    /** @param {import('../../src/context.js').Ctx} c */
     exec: async (c) => {
-      const key = `auto_read_${c.me}`;
       let pattern = c.pattern;
-      if (c.pattern.endsWith('+')) {
-        settings.set(key, true)
-        pattern = c.pattern.slice(0, -1);
-        pen.Warn(`Activating auto read for ${c.me}`);
-      } else if (c.pattern.endsWith('-')) {
-        settings.set(key, false)
-        pattern = c.pattern.slice(0, -1);
-        pen.Warn(`Deactivating auto read for ${c.me}`);
+      const tail = c.pattern.slice(-1);
+      switch (tail) {
+        case '+': {
+          settings.set(AUTO_READ_KEY, true);
+          pattern = c.pattern.slice(0, -1);
+          pen.Warn(`Activating auto read for ${c.me}`);
+          break;
+        }
+
+        case '-': {
+          settings.set(AUTO_READ_KEY, false);
+          pattern = c.pattern.slice(0, -1);
+          pen.Warn(`Deactivating auto read for ${c.me}`);
+          break;
+        }
       }
-      const set = settings.get(key);
-      let text = '';
-      if (set) {
-        text = `Auto read status : *${set}*`;
-      } else {
-        text = `Auto read is not yet set.`;
-      }
-      c.reply({ text: text + `\n\nNB :\n  *${pattern}-* _to deactivating_\n  *${pattern}+* _to activating_` }, { qouted: c.message })
+
+      let set = settings.get(AUTO_READ_KEY);
+      if (!set) set = false;
+      let texts = [];
+      texts.push(`📵 *Auto read status* : *${set}*`);
+
+      texts.push(
+        '', 'NB :',
+        `  *${pattern}-* _to deactivating_`,
+        `  *${pattern}+* _to activating_`
+      );
+      await c.reply({ text: texts.join('\n') }, { quoted: c.event });
     }
   }
-]
+];
