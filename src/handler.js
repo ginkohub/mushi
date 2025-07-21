@@ -101,6 +101,40 @@ export class Handler {
   }
 
   /**
+   * Check whether given jid is blocked or not
+   * @param {string} jid
+   * @returns {boolean}
+   */
+  isBlocked(jid) {
+    return this.blockList.includes(jidNormalizedUser(jid));
+  }
+
+  /**
+ * Block / unblock given jid
+ * @param {string} jid
+ * @returns {'block' | 'unblock'} action
+ * @returns {boolean}
+ */
+  async updateBlock(jid, action) {
+    try {
+      await this.client?.sock?.updateBlockStatus(jid, action);
+      switch (action) {
+        case 'block': {
+          this.blockList.push(jidNormalizedUser(jid));
+          break;
+        }
+        case 'unblock': {
+          this.blockList = this.blockList.filter(x => x !== jidNormalizedUser(jid));
+          break;
+        }
+      }
+      return true
+    } catch (e) {
+      this.pen.Error(e);
+    }
+  }
+
+  /**
    * Set prefix for command plugins
    * @param {string[]} prefix
    */
