@@ -157,11 +157,12 @@ export class Handler {
       let precmds = [];
       if (Array.isArray(plugin.cmd)) {
         precmds = plugin.cmd;
-      } else {
+      } else if (typeof plugin.cmd === 'string') {
         precmds = [plugin.cmd];
       }
 
       for (const precmd of precmds) {
+        if (!precmd) continue;
         if (plugin.noPrefix) {
           this.cmds?.set(precmd.toLowerCase(), {
             id: id,
@@ -294,7 +295,11 @@ export class Handler {
     if (loc.endsWith('.js')) {
       try {
         const filename = loc.split('/').pop();
-        if (filename.startsWith('_') || filename.startsWith('.')) {
+        if (
+          filename.startsWith('_') ||
+          filename.startsWith('.') ||
+          filename.endsWith('.test.js')
+        ) {
           this.pen.Debug('Skip:', loc)
           return;
         }
