@@ -57,12 +57,10 @@ export default [
       let text = '';
       if (status.length > 0 && newPrefix?.length > 0) {
         text = `List prefix that has *${status}* :\n` +
-          newPrefix.map((v) => `${v}`).join(', ') +
-          `\n\nDefault :\n` + c.handler()?.prefix?.map((v) => `\`${v}\``).join(', ');
+          newPrefix.map((v) => `${v}`).join(', ');
       } else {
         text = `Currrent list prefix registered :\n` +
-          allow.map((v) => `\`${v}\``).join(', ') +
-          `\n\nDefault :\n` + c.handler()?.prefix?.map((v) => `\`${v}\``).join(', ');
+          allow.map((v) => `\`${v}\``).join(', ');
       }
 
       if (text.length === 0) return await c.react('🤔');
