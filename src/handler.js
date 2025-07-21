@@ -73,6 +73,9 @@ export class Handler {
     /** @type {Array} */
     this.watchID = [];
 
+    /** @type {Array} */
+    this.blockList = [];
+
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);
 
@@ -472,6 +475,33 @@ export class Handler {
           if (ctx?.fromMe && ctx?.eventType !== 'append' && ctx?.type !== 'senderKeyDistributionMessage') {
             this.updateTimer(ctx.chat, ctx.expiration, ctx.eventName);
           }
+          break;
+        }
+
+        case Events.BLOCKLIST_SET:
+        case Events.BLOCKLIST_UPDATE: {
+          /** @type {{blocklist: string[], type: 'add' | 'remove'}} */
+          const ev = ctx.event;
+          switch (ev?.type) {
+            case 'add': {
+              this.blockList.push(...ev?.blocklist);
+              break;
+            }
+            case 'remove': {
+              this.blockList = this.blockList.filter((jid) => !ev?.blocklist?.includes(jid));
+              break;
+            }
+            default: {
+              if (ctx.eventName === Events.BLOCKLIST_SET) this.blockList = ev.blocklist;
+            }
+          }
+
+          this.blockList = [...new Set(this.blockList)];
+          break;
+        }
+
+        case Events.CONNECTION_UPDATE: {
+          this.blockList = await this.client?.sock.fetchBlocklist();
           break;
         }
       }
