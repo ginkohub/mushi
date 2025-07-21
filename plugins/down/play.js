@@ -8,21 +8,31 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { google } from 'googleapis';
 import axios from 'axios';
+import { execFile } from 'child_process';
+import fs from 'fs/promises';
+import path, { resolve } from 'path';
+import { promisify } from 'util';
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
 import { fromOwner, storeMsg } from '../settings.js';
+import { existsSync } from 'fs';
+import os from 'os';
 
-const youtube = google.youtube('v3');
+const execFileAsync = promisify(execFile);
+const ytdlps = [
+  resolve('./node_modules/.bin/yt-dlp'),
+  resolve('~/bin/yt-dlp'),
+  resolve('bin/yt-dlp')
+];
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ['play'],
   cat: 'downloader',
-  tags: ['youtube', 'downloader', 'mp3'],
-  desc: 'Search for a video on YouTube, download the audio.',
+  tags: ['youtube', 'downloader', 'mp3', 'yt-dlp'],
+  desc: 'Search for a video on YouTube using yt-dlp, and download the audio.',
   midware: midwareAnd(
     eventNameIs(MESSAGES_UPSERT),
     midwareOr(fromOwner, fromMe),
@@ -35,92 +45,118 @@ export default {
       return c.react('❓');
     }
 
-    const apiKey = process.env.GOOGLE_API_KEY ?? process.env.YOUTUBE_API_KEY ?? process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return c.react('🔑');
-    }
+    /** @type {string} - os temp dir */
+    const tempDir = os.tempdir();
+    let audioFilePath = '';
 
     try {
-      const searchRes = await youtube.search.list({
-        auth: apiKey,
-        part: 'snippet',
-        q: query,
-        maxResults: 1,
-        type: 'video',
-      });
 
-      if (!searchRes.data.items || searchRes.data.items.length === 0) {
+      /** Check the binary */
+      let ytdlpBin = 'yt-dlp';
+      for (const yp of ytdlps) {
+        if (existsSync(yp)) {
+          ytdlpBin = yp;
+          break;
+        }
+      }
+
+      pen.Debug(`Using yt-dlp binary: ${ytdlpBin}`)
+
+      try {
+        await execFileAsync(ytdlpBin, ['--version']);
+      } catch (e) {
+        pen.Error('yt-dlp is not installed or not in PATH.', e);
+        return c.reply('`yt-dlp` is not installed. Please install it to use this command.');
+      }
+
+      const { stdout: searchStdout } = await execFileAsync(ytdlpBin, ['--dump-json', `ytsearch1:${query}`]);
+
+      if (!searchStdout) {
         return await c.react('❓');
       }
 
-      const video = searchRes.data.items[0];
+      const video = JSON.parse(searchStdout);
 
       /** @type {import('baileys').proto.IWebMessageInfo} */
-      let msg = storeMsg.get(video.id.videoId);
+      let msg = storeMsg.get(video.id);
       if (msg && !c.argv.force) {
-        c.replyRelay(msg.message);
-      } else {
-
-        const videoUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`;
-        let thumbUrl = video.snippet.thumbnails.medium.url;
-
-        const downloaderApiUrl = `https://fastrestapis.fasturl.cloud/downup/ytmp3?url=${encodeURIComponent(videoUrl)}&quality=128kbps&server=auto`;
-        const downloadRes = await axios.get(downloaderApiUrl);
-
-        if (downloadRes.data.status !== 200) {
-          return c.react('🔥');
-        }
-
-        const result = downloadRes.data.result;
-        const audioUrl = result.media;
-        const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer' });
-
-        const mimetype = audioResponse.headers['content-type'];
-        if (!audioResponse || !mimetype?.startsWith('audio/')) return c.react('⁉️');
-
-        const fileExtension = mimetype.split('/')[1] || 'mp3';
-
-        thumbUrl = thumbUrl ?? result.metadata.thumbnail;
-
-        let thumbnailBuffer = null;
-        if (thumbUrl) {
-          try {
-            const thumbRes = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
-            thumbnailBuffer = Buffer.from(thumbRes.data);
-          } catch (thumbErr) {
-            pen.Error('Failed to download thumbnail:', thumbErr);
-          }
-        }
-
-        const caption = `*${result.title}*\n\n` +
-          `*Author:* ${result.author.name}\n` +
-          `*Duration:* ${result.metadata.duration}\n` +
-          `*Views:* ${result.metadata.views}\n\n` +
-          `_${result.description}_`;
-
-        const resp = await c.reply({
-          audio: Buffer.from(audioResponse.data),
-          mimetype: mimetype,
-          fileName: `${result.title}.${fileExtension}`,
-          caption: caption,
-          contextInfo: {
-            externalAdReply: {
-              title: result.title,
-              body: result.author.name,
-              thumbnail: thumbnailBuffer,
-              mediaType: 1,
-              mediaUrl: videoUrl,
-              sourceUrl: videoUrl,
-            }
-          }
-        });
-        if (resp) storeMsg.set(video.id.videoId, resp);
+        return c.replyRelay(msg.message);
       }
+
+      const videoUrl = video.webpage_url;
+      const thumbUrl = video.thumbnail;
+
+      await fs.mkdir(tempDir, { recursive: true });
+      const outputTemplate = path.join(tempDir, `${video.id}.%(ext)s`);
+
+      await execFileAsync(ytdlpBin, [
+        '-f', 'bestaudio[ext=m4a]/bestaudio',
+        '-o', outputTemplate,
+        video.id
+      ]);
+
+      const files = await fs.readdir(tempDir);
+      const downloadedFile = files.find(f => f.startsWith(video.id));
+      if (!downloadedFile) {
+        pen.Error('Downloaded file not found for video ID:', video.id);
+        return c.react('🔥');
+      }
+      audioFilePath = path.join(tempDir, downloadedFile);
+      const fileExtension = path.extname(downloadedFile).slice(1);
+
+      const audioBuffer = await fs.readFile(audioFilePath);
+
+      let mimetype = 'audio/mp4'; // default for m4a
+      if (fileExtension === 'mp3') mimetype = 'audio/mpeg';
+      else if (fileExtension === 'ogg') mimetype = 'audio/ogg';
+      else if (fileExtension === 'webm') mimetype = 'audio/webm';
+
+      let thumbnailBuffer = null;
+      if (thumbUrl) {
+        try {
+          const thumbRes = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
+          thumbnailBuffer = Buffer.from(thumbRes.data);
+        } catch (thumbErr) {
+          pen.Error('Failed to download thumbnail:', thumbErr);
+        }
+      }
+
+      const caption = `*${video.title}*\n\n` +
+        `*Author:* ${video.uploader}\n` +
+        `*Duration:* ${video.duration_string}\n` +
+        `*Views:* ${video.view_count?.toLocaleString('en-US') ?? 'N/A'}\n\n` +
+        `_${video.description}_`;
+
+      const resp = await c.reply({
+        audio: audioBuffer,
+        mimetype: mimetype,
+        fileName: `${video.title}.${fileExtension}`,
+        caption: caption,
+        contextInfo: {
+          externalAdReply: {
+            title: video.title,
+            body: video.uploader,
+            thumbnail: thumbnailBuffer,
+            mediaType: 1,
+            mediaUrl: videoUrl,
+            sourceUrl: videoUrl,
+          }
+        }
+      });
+      if (resp) storeMsg.set(video.id, resp);
+
     } catch (e) {
       pen.Error(e);
-      c.react('❌');
+      await c.react('❌');
     } finally {
-      c.react('');
+      if (audioFilePath) {
+        try {
+          await fs.unlink(audioFilePath);
+        } catch (unlinkErr) {
+          pen.Error('Failed to delete temp audio file:', unlinkErr);
+        }
+      }
+      await c.react('');
     }
   }
 };
