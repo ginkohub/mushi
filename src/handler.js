@@ -606,6 +606,7 @@ export class Handler {
    * Update group metadata by given jid
    * @param {string} jid
    * @param {import('./context.js').Ctx} ctx
+   * @returns {Promise<import('baileys').GroupMetadata>}
    */
   async updateGroupMetadata(jid, ctx) {
     try {
@@ -683,6 +684,7 @@ export class Handler {
         data.size = data.participants.length;
         this.groupCache.set(jid, data);
         this.updateTimer(data.id, data.ephemeralDuration, ctx?.eventName);
+        return data;
       }
 
     } catch (e) {
@@ -697,7 +699,8 @@ export class Handler {
    */
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
-    if (!data) this.updateGroupMetadata(jid).catch((e) => this.pen.Error(e));
+    if (!data) this.updateGroupMetadata(jid)
+      .catch((e) => this.pen.Error('getGroupMetadata', e));
     return data;
   }
 
