@@ -33,7 +33,7 @@ export default {
     const src = 'git fetch ; git pull';
     try {
       let isLocked = false;
-      let stash = c.argv?.f || c.argv?.force || false;
+      let force = c.argv?.f || c.argv?.force || false;
 
       /* Remove lock files */
       const branch = execSync('git rev-parse --abbrev-ref HEAD')?.toString().trim();
@@ -49,7 +49,7 @@ export default {
         }
       }
 
-      if (isLocked && stash) {
+      if (isLocked || force) {
         /* Stash local changes */
         execSync('git stash');
       }
@@ -58,7 +58,7 @@ export default {
       let stdout = execSync(src);
       stdout = stdout?.toString();
 
-      if (isLocked && stash) {
+      if (isLocked || force) {
         /* Apply stashed changes */
         execSync('git stash pop');
       }
