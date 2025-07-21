@@ -132,7 +132,13 @@ export class Ctx {
      * @param {import('baileys').ChatModification} mods
      * @param {string} jid
      */
-    this.chatModify = async (mods, jid) => await this.sock()?.chatModify(mods, jid)
+    this.chatModify = async (mods, jid) => await this.sock()?.chatModify(mods, jid);
+
+    /**
+     * @param {import('baileys').proto.IMessageKey[]} keys
+     * @returns {Promise<void>}
+     */
+    this.readMessages = async (keys) => await this.sock()?.readMessages(keys);
 
     /**
      * @param {string} text - Text to parse
@@ -169,7 +175,7 @@ export class Ctx {
     /** @type {string} */
     this.eventName = eventName;
 
-    /** @type {any | import('baileys').WAMessage} */
+    /** @type {import('baileys').WAMessage | any} */
     this.event = event;
 
     /** @type {string} */
