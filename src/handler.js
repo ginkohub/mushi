@@ -129,7 +129,7 @@ export class Handler {
       }
       return true
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('update-block', e);
     }
   }
 
@@ -243,7 +243,7 @@ export class Handler {
         }
       }
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('remove-on', e);
     }
   }
 
@@ -256,7 +256,7 @@ export class Handler {
     try {
       files = readdirSync(dir);
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('scan-plugin', e);
     }
     for (const file of files) {
       let loc = `${dir}/${file}`.replace('//', '/');
@@ -264,7 +264,7 @@ export class Handler {
       try {
         if (statSync(loc)?.isDirectory()) await this.scanPlugin(loc);
       } catch (e) {
-        this.pen.Error(e.message);
+        this.pen.Error('scan-plugin-stat', e.message);
       }
 
       await this.loadFile(loc);
@@ -282,7 +282,7 @@ export class Handler {
       try {
         await callback(this);
       } catch (e) {
-        this.pen.Error(e);
+        this.pen.Error('pre-load', e);
       }
     }
   }
@@ -339,7 +339,7 @@ export class Handler {
 
         this.pen.Debug(...msgs);
       } catch (e) {
-        this.pen.Error(loc, e);
+        this.pen.Error('load-file', loc, e);
       }
     }
 
@@ -436,7 +436,7 @@ export class Handler {
           /* Exec */
           if (listen.exec) await listen.exec(ctx);
         } catch (e) {
-          this.pen.Error(e);
+          this.pen.Error('handle-listen', e);
           if (listen?.final) await listen.final(ctx, new Reason({
             success: false,
             code: 'handle-listen-error',
@@ -469,7 +469,7 @@ export class Handler {
           /* Exec */
           if (data?.plugin?.exec) await data?.plugin?.exec(ctx);
         } catch (e) {
-          this.pen.Error(e);
+          this.pen.Error('handle-command', e);
           if (data?.plugin?.final) await data?.plugin?.final(ctx, new Reason({
             success: false,
             code: 'handle-command-error',
@@ -481,7 +481,7 @@ export class Handler {
         }
       }
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('handle', e);
     }
   }
 
@@ -539,13 +539,17 @@ export class Handler {
         }
 
         case Events.CONNECTION_UPDATE: {
-          await delay(2000);
-          this.blockList = await this.client?.sock.fetchBlocklist();
+          await delay(3000);
+          try {
+            this.blockList = await this.client?.sock.fetchBlocklist();
+          } catch (e) {
+            this.pen.Error('update-data-fetch-blocklist', e);
+          }
           break;
         }
       }
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('update-data', e);
     }
   }
 
@@ -688,7 +692,7 @@ export class Handler {
       }
 
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('update-group-metadata', e);
     }
   }
 
@@ -700,7 +704,7 @@ export class Handler {
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
     if (!data) this.updateGroupMetadata(jid)
-      .catch((e) => this.pen.Error('getGroupMetadata', e));
+      .catch((e) => this.pen.Error('get-group-metadata', e));
     return data;
   }
 
@@ -713,7 +717,7 @@ export class Handler {
     try {
       if (data) this.contactCache.set(jid, data);
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('update-contact', e);
     }
   }
 
@@ -802,7 +806,7 @@ export class Handler {
 
       return await this.client.sock.sendMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('send-message', e);
     }
   }
 
@@ -843,7 +847,7 @@ export class Handler {
       }
       return await this.client.sock.relayMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error(e);
+      this.pen.Error('relay-message', e);
     }
   }
 
