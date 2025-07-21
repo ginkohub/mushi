@@ -20,7 +20,7 @@ export default {
   timeout: 15,
   cat: 'system',
   tags: ['system'],
-  desc: 'Execute git fetch and pull command shell command',
+  desc: 'Execute git fetch and pull command shell command, also removing git lock files before execution.',
 
   midware: midwareAnd(
     eventNameIs(MESSAGES_UPSERT),
@@ -30,20 +30,38 @@ export default {
   exec: async (c) => {
     /* waiting */
     await c.react('⌛');
-    const src = 'git fetch ; git pull ';
+    const src = 'git fetch ; git pull';
     try {
-      if (c.argv?.l || c.argv?.lock) {
-        await c.react('🔒');
-        const lockFiles = ['.git/HEAD.lock', '.git/refs/heads/main.lock'];
-        for (const lf of lockFiles) {
-          /* Remove lock files */
-          if (existsSync(lf)) unlinkSync(lf);
+      let isLocked = false;
+      let stash = c.argv?.f || c.argv?.force || false;
+
+      /* Remove lock files */
+      const branch = execSync('git rev-parse --abbrev-ref HEAD')?.toString().trim();
+      const lockFiles = [
+        '.git/index.lock',
+        '.git/HEAD.lock',
+        `.git/refs/heads/${branch}.lock`
+      ];
+      for (const lf of lockFiles) {
+        if (existsSync(lf)) {
+          isLocked = isLocked || true;
+          unlinkSync(lf);
         }
+      }
+
+      if (isLocked && stash) {
+        /* Stash local changes */
+        execSync('git stash');
       }
 
       /* Execute shell command */
       let stdout = execSync(src);
       stdout = stdout?.toString();
+
+      if (isLocked && stash) {
+        /* Apply stashed changes */
+        execSync('git stash pop');
+      }
 
       if (stdout && stdout?.length > 0) {
         c.reply({ text: `${stdout.toString()}`.trim() });
@@ -52,7 +70,7 @@ export default {
       c.react('❌')
       c.reply({ text: `${e}` });
     } finally {
-      c.react('', c.key);
+      c.react('');
     }
   }
 };
