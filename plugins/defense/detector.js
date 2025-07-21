@@ -23,31 +23,38 @@ export const allowed = [
   'associatedChildMessage',
 ];
 
-
-
-/** @typedef {(c: import('../../src/context.js').Ctx) => any} Action */
+/** @typedef {(c: import('../../src/context.js').Ctx, r: Result) => any} Action */
 /** @type {Record<any, Action>} */
 const Actions = {
-  LOG: async (c) => {
+  LOG: async (c, r) => {
     return await c.sendMessage(c.me, {
-      document: Buffer.from(JSON.stringify(detect, null, 2)),
+      document: Buffer.from(JSON.stringify(r, null, 2)),
       fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
       mimetype: 'application/json',
     });
   },
 
-  BLOCK: async (c) => {
+  BLOCK: async (c, r) => {
     if (!c.handler().isBlocked(c.sender)) {
-      await c.handler().updateBlock(c.sender, 'block');
+      pen.Warn(`Block : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `);
+      return await c.handler().updateBlock(c.sender, 'block');
     }
   },
 
-  DELETE_FOR_ALL: async (c) => {
+  DELETE_FOR_ALL: async (c, r) => {
+    pen.Warn(`Delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
     return await c.reply({ delete: c.key });
   },
 
-  DELETE_FOR_ME: async (c) => {
-    return c?.chatModify({ deleteForMe: { key: c.key } });
+  DELETE_FOR_ME: async (c, r) => {
+    pen.Warn(`Delete for me : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
+    return await c?.chatModify({
+      deleteForMe: {
+        deleteMedia: true,
+        timestamp: Date.now(),
+        key: c.key
+      },
+    }, c.chat);
   },
 };
 
@@ -79,18 +86,18 @@ class Result {
 
     for (const act of acts) {
       if (typeof act === 'function') {
-        await act(c);
+        await act(c, this);
       }
     }
 
     if (Array.isArray(this.actions)) {
       for (const act of this.actions) {
         if (typeof act === 'function') {
-          await act(c);
+          await act(c, this);
         }
       }
     } else if (typeof this.actions === 'function') {
-      await this.actions(c);
+      await this.actions(c, this);
     }
   }
 }
@@ -101,7 +108,7 @@ export default [
     desc: 'Defense system',
     midware: midwareAnd(
       eventNameIs(Events.MESSAGES_UPSERT),
-      (c) => ({ success: settings.get(`defense_${c.me}`) }),
+      (c) => ({ success: settings.get(`defense`) }),
     ),
 
     exec: async (c) => {
@@ -116,7 +123,7 @@ export default [
       if (!detect.suspect) {
         return;
       }
-      pen.Warn('Defense :', c.eventName, detect.suspect, detect.reason, detect.data);
+      pen.Warn('Defense :', c.eventName, detect.suspect, detect.reason);
       try {
         await detect.process(c);
       } catch (e) {
@@ -132,7 +139,6 @@ const listDetectors = [
     if (!c.isStatus || !c.type) return {
       suspect: false,
       reason: 'Not a status message',
-      actions: [Actions.LOG, Actions.BLOCK]
     }
 
     let allow = settings.get('defense_allow_status');
@@ -144,7 +150,10 @@ const listDetectors = [
       suspect: c.isStatus && !allow?.includes(c.type) && c.type,
       reason: 'Status message with not allowed type',
       data: c,
-      actions: [Actions.LOG, Actions.BLOCK]
+      actions: [
+        Actions.LOG,
+        Actions.BLOCK
+      ],
     };
   },
 
@@ -153,7 +162,13 @@ const listDetectors = [
       suspect: c.mentionedJid?.length > 1024,
       reason: 'Too many mentioned jids',
       data: c,
-    };
+      actions: [
+        Actions.LOG,
+        Actions.BLOCK,
+        Actions.DELETE_FOR_ALL,
+        Actions.DELETE_FOR_ME
+      ]
+    }
   },
 
   (c) => {
@@ -177,7 +192,12 @@ const listDetectors = [
       suspect: suspect,
       reason: 'Overloaded text',
       data: c,
-      actions: [Actions.LOG, Actions.BLOCK, Actions.DELETE_FOR_ALL, Actions.DELETE_FOR_ME],
+      actions: [
+        Actions.LOG,
+        Actions.BLOCK,
+        Actions.DELETE_FOR_ALL,
+        Actions.DELETE_FOR_ME
+      ],
     }
   },
 ];
