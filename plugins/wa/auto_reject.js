@@ -74,8 +74,8 @@ export default [
 
       texts.push(
         '', 'NB :',
-        `  *${pattern}-* _to deactivating_`,
-        `  *${pattern}+* _to activating_`
+        ` \`${pattern}-\` _to deactivating_`,
+        ` \`${pattern}+\` _to activating_`
       );
       await c.reply({ text: texts.join('\n') }, { quoted: c.event });
     }

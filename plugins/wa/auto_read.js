@@ -70,12 +70,12 @@ export default [
       let set = settings.get(AUTO_READ_KEY);
       if (!set) set = false;
       let texts = [];
-      texts.push(`📵 *Auto read status* : *${set}*`);
+      texts.push(`📖 *Auto read status* : *${set}*`);
 
       texts.push(
         '', 'NB :',
-        `  *${pattern}-* _to deactivating_`,
-        `  *${pattern}+* _to activating_`
+        ` \`${pattern}-\` _to deactivating_`,
+        ` \`${pattern} +\` _to activating_`
       );
       await c.reply({ text: texts.join('\n') }, { quoted: c.event });
     }
