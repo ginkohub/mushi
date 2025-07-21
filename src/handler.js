@@ -16,7 +16,7 @@ import { Plugin } from './plugin.js';
 import { Pen } from './pen.js';
 import { Events } from './const.js';
 import { jidNormalizedUser } from 'baileys';
-import { genHEX, hashCRC32, shouldUsePolling } from './tools.js';
+import { delay, genHEX, hashCRC32, shouldUsePolling } from './tools.js';
 import * as chokidar from 'chokidar';
 import { Reason } from './reason.js';
 
@@ -501,6 +501,7 @@ export class Handler {
         }
 
         case Events.CONNECTION_UPDATE: {
+          await delay(2000);
           this.blockList = await this.client?.sock.fetchBlocklist();
           break;
         }
