@@ -35,6 +35,7 @@ const Actions = {
   },
 
   BLOCK: async (c, r) => {
+    pen.Warn(`Try to block : ${c.senderName} (${c.sender})`);
     if (!c.handler().isBlocked(c.sender)) {
       pen.Warn(`Block : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `);
       return await c.handler().updateBlock(c.sender, 'block');
@@ -42,8 +43,21 @@ const Actions = {
   },
 
   DELETE_FOR_ALL: async (c, r) => {
-    pen.Warn(`Delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
-    return await c.reply({ delete: c.key });
+    pen.Warn(`Try to delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
+    try {
+      const possible = false;
+      if (c.isGroup) {
+        const meta = c.handler()?.getGroupMetadata(c.chat);
+        /* check if bot are admin */
+        meta?.participants?.map((p) => {
+          if ((p.lid == c.meLID || p.id == c.me) && (p.isAdmin || p.isSuperAdmin)) possible = true;
+        });
+      }
+      if (!possible) return await c.reply({ delete: c.key });
+      pen.Warn(`Not possible to delete : ${possible} ${c.id} `);
+    } catch (e) {
+      pen.Error(e);
+    }
   },
 
   DELETE_FOR_ME: async (c, r) => {
