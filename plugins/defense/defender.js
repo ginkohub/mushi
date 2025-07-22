@@ -49,20 +49,35 @@ export default [
     exec: async (c) => {
       const key = `defense`;
       let pattern = c.pattern;
-      if (c.pattern.endsWith('+')) {
-        settings.set(key, true)
-        pattern = c.pattern.slice(0, -1);
-        pen.Warn(`Activating defense for ${c.me}`);
-      } else if (c.pattern.endsWith('-')) {
-        settings.set(key, false)
-        pattern = c.pattern.slice(0, -1);
-        pen.Warn(`Deactivating defense for ${c.me}`);
+      const tail = pattern.slice(-1);
+      switch (tail) {
+        case '+': {
+          settings.set(key, true)
+          pattern = c.pattern.slice(0, -1);
+          pen.Warn(`Activating defense for ${c.me}`);
+          break;
+        }
+
+        case '-': {
+          settings.set(key, false)
+          pattern = c.pattern.slice(0, -1);
+          pen.Warn(`Deactivating defense for ${c.me}`);
+          break;
+        }
       }
       const set = settings.get(key);
 
-      const text = `Defense status : *${(set === true) ? 'Active' : 'Inactive'}*`;
+      const texts = [
+        `🛡️ *Defense status* : *${(set === true) ? 'Active ✅' : 'Inactive ⚠️'}*`,
+        '', '', 'NB :',
+        `  *${pattern}-* _to deactivating_`,
+        `  *${pattern}+* _to activating_`
+      ];
 
-      c.reply({ text: text + `\n\nNB :\n  *${pattern}-* _to deactivating_\n  *${pattern}+* _to activating_` }, { qouted: c.message })
+      c.reply(
+        { text: texts.join('\n') },
+        { quoted: c.event },
+      )
     }
   },
 
