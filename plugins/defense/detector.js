@@ -21,6 +21,7 @@ export const allowed = [
   'protocolMessage',
   'senderKeyDistributionMessage',
   'associatedChildMessage',
+  'reactionMessage',
 ];
 
 /** @typedef {(c: import('../../src/context.js').Ctx, r: Result) => any} Action */
