@@ -123,7 +123,7 @@ export default [
     desc: 'Defense system',
     midware: midwareAnd(
       eventNameIs(Events.MESSAGES_UPSERT),
-      (c) => ({ success: settings.get(`defense`) }),
+      (c) => ({ success: settings.get(`defense`) && !c.fromMe }),
     ),
 
     exec: async (c) => {
