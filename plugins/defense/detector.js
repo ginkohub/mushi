@@ -24,54 +24,103 @@ export const allowed = [
   'reactionMessage',
 ];
 
+/** @enum {string} */
+export const Actions = {
+  LOG: 'log',
+  BLOCK: 'block',
+  SEND_SAMPLE: 'send_sample',
+  DELETE_FOR_ALL: 'delete_for_all',
+  DELETE_FOR_ME: 'delete_for_me',
+  KICK_FROM_GROUP: 'kick_from_group'
+}
+
+let DO_ALL = true;
+
 /** @typedef {(c: import('../../src/context.js').Ctx, r: Result) => any} Action */
-/** @type {Record<any, Action>} */
-const Actions = {
-  LOG: async (c, r) => {
-    return await c.sendMessage(c.me, {
-      document: Buffer.from(JSON.stringify(r, null, 2)),
-      fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
-      mimetype: 'application/json',
-      caption: `*From* : ${c.senderName} (${c.sender})\n*Chat* : ${c.chatName} (${c.chat})\n*Detected* : ${r.reason}`
-    });
-  },
+/** @type {Record<Actions, Action>} */
+export const ActionMap = {
+  'log': async (c, r) => {
 
-  BLOCK: async (c, r) => {
-    pen.Warn(`Try to block : ${c.senderName} (${c.sender})`);
-    if (!c.handler().isBlocked(c.sender)) {
-      pen.Warn(`Block : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `);
-      return await c.handler().updateBlock(c.sender, 'block');
+    const doActionLog = DO_ALL ?? settings.get(Actions.LOG);
+    if (typeof doActionLog === 'undefined' || doActionLog) pen.Warn(`Log : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `);
+
+    const doAction = DO_ALL ?? settings.get(Actions.SEND_SAMPLE);
+    if (doAction) {
+      return await c.sendMessage(c.me, {
+        document: Buffer.from(JSON.stringify(r, null, 2)),
+        fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
+        mimetype: 'application/json',
+        caption: `*From* : ${c.senderName} (${c.sender})\n*Chat* : ${c.chatName} (${c.chat})\n*Detected* : ${r.reason}`
+      });
     }
   },
 
-  DELETE_FOR_ALL: async (c, r) => {
-    pen.Warn(`Try to delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
-    try {
-      const possible = false;
-      if (c.isGroup) {
-        const meta = c.handler()?.getGroupMetadata(c.chat);
-        /* check if bot are admin */
-        meta?.participants?.map((p) => {
-          if ((p.lid == c.meLID || p.id == c.me) && (p.isAdmin || p.isSuperAdmin)) possible = true;
-        });
+  'block': async (c, r) => {
+    const doAction = DO_ALL ?? settings.get(Actions.BLOCK);
+    if (doAction) {
+      pen.Warn(`Try to block : ${c.senderName} (${c.sender})`);
+      if (!c.handler().isBlocked(c.sender)) {
+        pen.Warn(`Block : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `);
+        return await c.handler().updateBlock(c.sender, 'block');
       }
-      if (!possible) return await c.reply({ delete: c.key });
-      pen.Warn(`Not possible to delete : ${possible} ${c.id} `);
-    } catch (e) {
-      pen.Error(e);
     }
   },
 
-  DELETE_FOR_ME: async (c, r) => {
-    pen.Warn(`Delete for me : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
-    return await c?.chatModify({
-      deleteForMe: {
-        deleteMedia: true,
-        timestamp: Date.now(),
-        key: c.key
-      },
-    }, c.chat);
+  'delete_for_all': async (c, r) => {
+    const doAction = DO_ALL ?? settings.get(Actions.DELETE_FOR_ALL);
+    if (doAction) {
+      try {
+        pen.Warn(`Try to delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
+        const possible = false;
+        if (c.isGroup) {
+          const meta = c.handler()?.getGroupMetadata(c.chat);
+          /* check if bot are admin */
+          meta?.participants?.map((p) => {
+            if ((p.lid == c.meLID || p.id == c.me) && (p.isAdmin || p.isSuperAdmin)) possible = true;
+          });
+        }
+        if (possible) return await c.reply({ delete: c.key });
+        pen.Warn(`Not possible to delete : ${possible} ${c.id} `);
+      } catch (e) {
+        pen.Error(e);
+      }
+    }
   },
+
+  'delete_for_me': async (c, r) => {
+    const doAction = DO_ALL ?? settings.get(Actions.DELETE_FOR_ME);
+    if (doAction) {
+      pen.Warn(`Delete for me : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
+      return await c?.chatModify({
+        deleteForMe: {
+          deleteMedia: true,
+          timestamp: Date.now(),
+          key: c.key
+        },
+      }, c.chat);
+    }
+  },
+
+  'kick_from_group': async (c, r) => {
+    const doAction = DO_ALL ?? settings.get(Actions.KICK_FROM_GROUP);
+    if (doAction) {
+      pen.Warn(`Try to kick : ${c.senderName} (${c.sender}) from ${c.chatName}, Reason : ${r.reason} `);
+      try {
+        const possible = false;
+        if (c.isGroup) {
+          const meta = c.handler()?.getGroupMetadata(c.chat);
+          /* check if bot are admin */
+          meta?.participants?.map((p) => {
+            if ((p.lid == c.meLID || p.id == c.me) && (p.isAdmin || p.isSuperAdmin)) possible = true;
+          });
+        }
+        if (possible) return await c.sock().groupParticipantsUpdate(c.chat, [c.sender], 'remove');
+        pen.Warn(`Not possible to kick : ${possible} ${c.senderName} (${c.sender}) `);
+      } catch (e) {
+        pen.Error(e);
+      }
+    }
+  }
 };
 
 /**
@@ -89,31 +138,31 @@ class Result {
     this.reason = reason;
     this.data = data;
 
-    /** @type {Action[]} */
     this.actions = actions;
   }
 
   /** 
    * @param {import('../../src/context.js').Ctx} c 
-   * @param {...Action[]} acts
+   * @param {...Actions[]} acts
    */
   async process(c, ...acts) {
     if (!this.suspect) return;
 
     for (const act of acts) {
-      if (typeof act === 'function') {
-        await act(c, this);
-      }
+      const action = ActionMap[act];
+      await action(c, this);
     }
 
     if (Array.isArray(this.actions)) {
       for (const act of this.actions) {
-        if (typeof act === 'function') {
-          await act(c, this);
+        const action = ActionMap[act];
+        if (typeof action === 'function') {
+          await action(c, this);
         }
       }
-    } else if (typeof this.actions === 'function') {
-      await this.actions(c, this);
+    } else if (typeof this.actions === 'string') {
+      const action = ActionMap[this.actions];
+      if (typeof action === 'function') await action(c, this);
     }
   }
 }
@@ -182,7 +231,8 @@ const listDetectors = [
         Actions.LOG,
         Actions.BLOCK,
         Actions.DELETE_FOR_ALL,
-        Actions.DELETE_FOR_ME
+        Actions.DELETE_FOR_ME,
+        Actions.KICK_FROM_GROUP,
       ]
     }
   },
@@ -212,7 +262,8 @@ const listDetectors = [
         Actions.LOG,
         Actions.BLOCK,
         Actions.DELETE_FOR_ALL,
-        Actions.DELETE_FOR_ME
+        Actions.DELETE_FOR_ME,
+        Actions.KICK_FROM_GROUP,
       ],
     }
   },
