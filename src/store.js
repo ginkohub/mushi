@@ -15,7 +15,7 @@ import chokidar from 'chokidar';
 import { shouldUsePolling } from './tools.js';
 
 /**
- * Store data in JSON file
+ * Store ${this.tableName} in JSON file
  */
 export class StoreJson {
   /**
@@ -52,7 +52,7 @@ export class StoreJson {
   }
 
   async load(saveName) {
-    /* Read json data from local storage */
+    /* Read json ${this.tableName} from local storage */
     try {
       this.data = JSON.parse(fs.readFileSync(saveName ?? this.saveName, 'utf8'));
     } catch (e) {
@@ -106,38 +106,44 @@ export class StoreJson {
   }
 }
 
+/** @type {object} List of SQLite connections */
+export const connectionList = {};
+
 /**
  * Store data in SQLite database
  */
 export class StoreSQLite {
   /**
-   * @param {{saveName: string, autoSave: boolean, expiration: number}}
+   * @param {{saveName: string, autoSave: boolean, expiration: number, tableName: string}}
    * @returns {StoreSQLite}
    */
-  constructor({ saveName, autoSave, expiration }) {
+  constructor({ saveName, autoSave, expiration, tableName }) {
     if (!saveName) throw Error('saveName required');
 
-    this.db = new Database(saveName);
-    this.db.pragma('journal_mode=WAL');
-    this.db.pragma('foreign_keys=ON');
+    if (!connectionList[saveName]) connectionList[saveName] = new Database(saveName);
+
+    this.db = () => connectionList[saveName];
+    this.db().pragma('journal_mode=WAL');
+    this.db().pragma('foreign_keys=ON');
 
     this.autoSave = autoSave ?? false;
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
+    this.tableName = tableName ?? 'data';
 
     this.load();
   }
 
   run_(sql, ...params) {
-    return this.db.prepare(sql).run(...params);
+    return this.db().prepare(sql).run(...params);
   }
 
   get_(sql, ...params) {
-    return this.db.prepare(sql).get(...params);
+    return this.db().prepare(sql).get(...params);
   }
 
   async load() {
-    return this.run_(`CREATE TABLE IF NOT EXISTS data (key TEXT PRIMARY KEY, value BLOB)`);
+    return this.run_(`CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`);
   }
 
   save() { }
@@ -145,12 +151,12 @@ export class StoreSQLite {
   set(key, value) {
     if (!key) return;
 
-    return this.run_(`INSERT OR REPLACE INTO data (key, value) VALUES (?,?)`, key, JSON.stringify(value));
+    return this.run_(`INSERT OR REPLACE INTO ${this.tableName} (key, value) VALUES (?,?)`, key, JSON.stringify(value));
   }
 
   get(key) {
     if (!key) return;
-    const row = this.get_(`SELECT value FROM data WHERE key = ?`, key);
+    const row = this.get_(`SELECT value FROM ${this.tableName} WHERE key = ?`, key);
     if (!row) return;
 
     return JSON.parse(row.value);
@@ -158,7 +164,7 @@ export class StoreSQLite {
 
   delete(key) {
     if (!key) return;
-    return this.run_(`DELETE FROM data WHERE key = ?`, key);
+    return this.run_(`DELETE FROM ${this.tableName} WHERE key = ?`, key);
   }
 
   clear() {
@@ -170,6 +176,10 @@ export class StoreSQLite {
   }
 
   has(key) {
-    return this.get_(`SELECT 1 FROM data WHERE key = ?`, key) !== undefined;
+    return this.get_(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !== undefined;
+  }
+
+  use(tableName) {
+    return new StoreSQLite({ saveName: this.saveName, autoSave: this.autoSave, expiration: this.expiration, tableName: tableName });
   }
 }
