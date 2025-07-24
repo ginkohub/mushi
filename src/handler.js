@@ -167,6 +167,9 @@ export class Handler {
    * @param {string[]} prefix
    */
   setPrefix(prefix) {
+    if (!Array.isArray(prefix) || prefix?.length === 0) {
+      return this.pen.Warn('Prefix must be an array larger than 0');
+    }
     this.prefix = prefix;
     this.cmds.clear()
     for (const [id, plugin] of this.plugins) {
