@@ -76,6 +76,9 @@ export class Handler {
     /** @type {Array} */
     this.blockList = [];
 
+    /** @type {Object} */
+    this.taskList = {}
+
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);
 
@@ -98,6 +101,32 @@ export class Handler {
         const hash = hashCRC32(loc);
         this.removeOn(hash);
       });
+  }
+
+  /**
+   * @param {string} id 
+   * @param {() => Promise<any>} fn
+   * @returns {Promise<any>}
+   */
+  async runTask(id, fn) {
+    if (this.taskList[id]) {
+      this.pen.Debug(`Task ${id} is already running`);
+      return this.taskList[id];
+    }
+
+    this.pen.Debug(`Task ${id} started`);
+    const task = (async () => {
+      try {
+        return await fn();
+      } catch (e) {
+        this.pen.Error('run-task', `Task ${id} failed`, e);
+      } finally {
+        delete this.taskList[id];
+      }
+    })();
+
+    this.taskList[id] = task;
+    return task;
   }
 
   /**
@@ -539,11 +568,15 @@ export class Handler {
         }
 
         case Events.CONNECTION_UPDATE: {
-          await delay(3000);
-          try {
-            this.blockList = await this.client?.sock.fetchBlocklist();
-          } catch (e) {
-            this.pen.Error('update-data-fetch-blocklist', e);
+          if (ctx?.event?.isOnline) {
+            await delay(3000);
+            try {
+              this.runTask('update-data-fetch-blocklist', async () => {
+                this.blockList = await this.client?.sock.fetchBlocklist();
+              })
+            } catch (e) {
+              this.pen.Error('update-data-fetch-blocklist', e);
+            }
           }
           break;
         }
@@ -703,8 +736,10 @@ export class Handler {
    */
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
-    if (!data) this.updateGroupMetadata(jid)
-      .catch((e) => this.pen.Error('get-group-metadata', e));
+    if (!data) this.runTask('get-group-metadata', async () => {
+      this.updateGroupMetadata(jid)
+        .catch((e) => this.pen.Error('get-group-metadata', e));
+    });
     return data;
   }
 
