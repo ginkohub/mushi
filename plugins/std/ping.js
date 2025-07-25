@@ -36,12 +36,12 @@ export default {
     let text = `*⏱️ Late:* ${formatElapse(latency)}`;
 
     const beforeSend = Date.now();
-    const resp = await c.reply({ text });
+    const resp = await c.reply({ text }, { quoted: c.event });
     const afterSend = Date.now();
 
     latency = afterSend - beforeSend;
     text += `\n*⏱️ Resp:* ${formatElapse(latency)}`;
-    c.reply({
+    return await c.reply({
       text: text,
       edit: resp.key
     })

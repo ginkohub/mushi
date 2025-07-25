@@ -50,6 +50,8 @@ export default {
       }
 
       if (isLocked || force) {
+        await c.react('🔒');
+
         /* Stash local changes */
         execSync('git stash');
       }
@@ -64,13 +66,13 @@ export default {
       }
 
       if (stdout && stdout?.length > 0) {
-        c.reply({ text: `${stdout.toString()}`.trim() });
+        return await c.reply({ text: `${stdout.toString()}`.trim() }, { quoted: c.event });
       }
     } catch (e) {
-      c.react('❌')
-      c.reply({ text: `${e}` });
+      await c.react('❌');
+      await c.reply({ text: `${e}` }, { quoted: c.event });
     } finally {
-      c.react('');
+      await c.react('');
     }
   }
 };

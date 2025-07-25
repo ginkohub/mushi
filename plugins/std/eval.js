@@ -9,7 +9,8 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
+import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
+import { fromOwner } from '../settings.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -20,21 +21,20 @@ export default {
   desc: 'Evaluate JavaScript code',
 
   midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT), fromMe,
+    eventNameIs(MESSAGES_UPSERT),
+    midwareOr(fromMe, fromOwner),
   ),
 
   exec: async (c) => {
     const src = c.args?.trim();
     if (!src) {
-      c.react('⁉️', c.key);
-      return;
+      return await c.react('⁉️');
     }
 
     try {
       let res = await eval(`(async () => { ${src} })()`);
       if (!res) {
-        c.react('❔', c.key);
-        return;
+        return await c.react('❔');
       }
 
       if (typeof res === 'object' && !(
@@ -42,10 +42,10 @@ export default {
 
       )) res = JSON.stringify(res, null, 2);
 
-      c.reply({ text: `${res}` });
+      await c.reply({ text: `${res}` }, { quoted: c.event });
     } catch (e) {
-      c.react('‼️', c.key);
-      c.reply({ text: `${e}` });
+      await c.react('‼️');
+      await c.reply({ text: `${e}` }, { quoted: c.event });
     }
   }
 };

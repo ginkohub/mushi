@@ -125,7 +125,7 @@ export default {
     }
 
     if (texts.length > 1) {
-      c.reply({
+      await c.reply({
         text: texts.join('\n'),
         contextInfo: {
           externalAdReply: {
@@ -138,7 +138,7 @@ export default {
             mediaUrl: 'https://github.com/ginkohub/mushi'
           }
         }
-      }, {});
+      }, { quoted: c.event });
     }
   }
 };

@@ -96,6 +96,6 @@ export default {
 *External*: ${formatBytes(memoryUsage.external)}
     `;
 
-    await c.reply({ text: infoText.trim() });
+    return await c.reply({ text: infoText.trim() }, { quoted: c.event });
   }
 };

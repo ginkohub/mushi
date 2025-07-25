@@ -29,7 +29,7 @@ export default {
     const text = `Setting timer for ${c.chat} from ${latest} to ${c.expiration}`;
     pen.Debug(text);
     c.handler()?.updateTimer(c.chat, c.expiration);
-    c.reply({ text: text });
+    return await c.reply({ text: text }, { quoted: c.event });
   }
 };
 

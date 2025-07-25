@@ -77,7 +77,7 @@ export default [
 /** @param {import('../../src/handler.js').Handler} hand */
 export const pre = (hand) => {
   const prefix = settings.get('prefix');
-  if (prefix) {
+  if (prefix && prefix?.length > 0) {
     pen.Debug('Setting prefix to', prefix, 'from', hand.prefix);
     hand?.setPrefix(prefix);
   }

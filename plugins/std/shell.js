@@ -9,9 +9,10 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
+import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
 import { execSync } from 'child_process';
+import { fromOwner } from '../settings.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -22,22 +23,24 @@ export default {
   desc: 'Execute command shell command',
 
   midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT), fromMe,
+    eventNameIs(MESSAGES_UPSERT),
+    midwareOr(fromMe, fromOwner),
   ),
 
   exec: async (c) => {
     pen.Warn(c.pattern, 'args :', c.args);
     const src = c.args?.trim();
-    if (!src) return;
+    if (!src) return await c.react('❌');
 
     try {
       /* Execute shell command */
       const stdout = execSync(src);
       if (stdout && stdout?.length > 0) {
-        c.reply({ text: `${stdout.toString()}`.trim() });
+        return await c.reply({ text: `${stdout.toString()}`.trim() }, { quoted: c.event });
       }
     } catch (e) {
-      c.reply({ text: `${e}` });
+      await c.react('❌');
+      await c.reply({ text: `${e}` }, { quoted: c.event });
     }
   }
 };
