@@ -1,6 +1,7 @@
 {
   "watch": [
-    "src/"
+    "src/",
+    "example.js"
   ],
   "ext": ".js",
   "ignore": [

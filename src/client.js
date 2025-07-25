@@ -126,9 +126,6 @@ export class Wangsaf {
     this.dateStarted = null;
   }
 
-  /**
-   * @param {Config} config 
-   */
   async connect() {
     if (!this.session) throw new Error('session is required');
     this.dateStarted = new Date();
@@ -228,5 +225,12 @@ export class Wangsaf {
     });
 
     this.sock.ev.on(Events.CREDS_UPDATE, saveCreds);
+  }
+
+  /** */
+  async disconnect() {
+    if (this.sock) {
+      await this.sock.ws.close();
+    }
   }
 }

@@ -8,22 +8,19 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { readdirSync, statSync } from 'fs';
 import { Ctx } from './context.js';
-import { platform } from 'os';
-import { pathToFileURL } from 'url';
-import { Plugin } from './plugin.js';
 import { Pen } from './pen.js';
 import { Events } from './const.js';
 import { jidNormalizedUser } from 'baileys';
-import { delay, genHEX, hashCRC32, shouldUsePolling } from './tools.js';
-import * as chokidar from 'chokidar';
+import { delay, genHEX } from './tools.js';
 import { Reason } from './reason.js';
+import { StoreSQLite } from './store.js';
+import { getFile } from './data.js';
 
 /**
  * @typedef {Object} HandlerOptions
- * @property {string} pluginDir
- * @property {Function} filter
+ * @property {import('./manager.js').PluginManager} pluginManager
+ * @property {import('./manager.js').pluginFilter} filter
  * @property {string[]} prefix
  * @property {import('./pen.js').Pen} pen
  * @property {Map<string, import('baileys').GroupMetadata>} groupCache
@@ -34,41 +31,47 @@ import { Reason } from './reason.js';
  * Handler class for handling plugins
  */
 export class Handler {
+  /** @type {import('./pen.js').Pen} */
+  #pen
+
+  /** @returns {import('./pen.js').Pen} */
+  get pen() { return this.#pen; }
   /**
    * @param {HandlerOptions} 
    */
-  constructor({ pluginDir, filter, prefix, pen, groupCache, contactCache, timerCache }) {
-    this.pluginDir = pluginDir ?? '../plugins';
+  constructor({ pluginManager, filter, prefix, pen, groupCache, contactCache, timerCache }) {
 
-    /** @type {Function} */
+    /** @type {string} */
+    this.unique = genHEX(16);
+
+    /** @type {number} */
+    this.updatedAt = Date.now();
+
+    /** @type {import('./manager.js').PluginManager} */
+    this.pluginManager = pluginManager;
+
+    /** @type {import('./manager.js').pluginFilter} */
     this.filter = filter;
 
     /** @type {import('./client.js').Wangsaf} */
     this.client = null;
 
     /** @type {import('./pen.js').Pen)} */
-    this.pen = pen ?? new Pen({ prefix: 'hand' });
+    this.#pen = pen ?? new Pen({ prefix: 'hand' });
 
     /** @type {string[]} */
     this.prefix = prefix ?? ['.', '/'];
 
-    /** @type {Map<number, import('./plugin.js').Plugin>} */
-    this.plugins = new Map();
-
-    /** @type {Map<string, {id: number, prefix: string, cmd: string}>} */
-    this.cmds = new Map();
-
-    /** @type {Map<number, number>} */
-    this.listens = new Map();
+    const store = new StoreSQLite({ saveName: getFile('cache.db') });
 
     /** @type {Map<string, import('baileys').GroupMetadata>} */
-    this.groupCache = groupCache ?? new Map();
+    this.groupCache = groupCache ?? store.use('group_cache');
 
     /** @type {Map<string, import('baileys').Contact>} */
-    this.contactCache = contactCache ?? new Map();
+    this.contactCache = contactCache ?? store.use('contact_cache');
 
     /** @type {Map<string, number>} */
-    this.timerCache = timerCache ?? new Map();
+    this.timerCache = timerCache ?? store.use('timer_cache');
 
     /** @type {Array} */
     this.watchID = [];
@@ -77,30 +80,43 @@ export class Handler {
     this.blockList = [];
 
     /** @type {Object} */
-    this.taskList = {}
+    this.taskList = {};
 
-    /* Scan plugins on start */
-    this.scanPlugin(this.pluginDir);
+    /** @type {{string:import('./manager.js').PluginResultItem}} */
+    this.command = {};
 
-    /* Watch changes in pluginDir */
-    this.watcher = chokidar.watch(this.pluginDir, {
-      ignoreInitial: true,
-      usePolling: shouldUsePolling(),
-      interval: 1000,
-    })
-      .on('change', (loc) => {
-        this.pen.Debug(`Plugin changed:`, loc);
-        this.loadFile(loc);
-      })
-      .on('add', (loc) => {
-        this.pen.Debug(`Plugin added:`, loc);
-        this.loadFile(loc);
-      })
-      .on('unlink', (loc) => {
-        this.pen.Debug(`Plugin removed:`, loc);
-        const hash = hashCRC32(loc);
-        this.removeOn(hash);
+    /** @type {{string:import('./manager.js').PluginResultItem}} */
+    this.listener = {};
+
+  }
+
+  /**
+   * Set client for handler
+   */
+  generatePlugin() {
+    try {
+      this.#pen.Debug('Generating plugins', `${this.updatedAt} to ${this.pluginManager?.updatedAt}`);
+
+
+      /** @type {import('./manager.js').PluginResult} */
+      const pr = this.pluginManager?.genPlugins(this.prefix, this.filter, {
+        unique: this.unique,
+        callback: async (filePath, theManager) => {
+          try {
+            if (this.updatedAt !== theManager.updatedAt) this.generatePlugin();
+          } catch (e) {
+            this.#pen.Error('generate-plugin-callback', e);
+          }
+        }
       });
+
+      this.updatedAt = pr.updatedAt;
+      this.command = pr.command;
+      this.listener = pr.listener;
+
+    } catch (e) {
+      this.#pen.Error('generate-plugin', e);
+    }
   }
 
   /**
@@ -110,16 +126,16 @@ export class Handler {
    */
   async runTask(id, fn) {
     if (this.taskList[id]) {
-      this.pen.Debug(`Task ${id} is already running`);
+      this.#pen.Debug(`Task ${id} is already running`);
       return this.taskList[id];
     }
 
-    this.pen.Debug(`Task ${id} started`);
+    this.#pen.Debug(`Task ${id} started`);
     const task = (async () => {
       try {
         return await fn();
       } catch (e) {
-        this.pen.Error('run-task', `Task ${id} failed`, e);
+        this.#pen.Error('run-task', `Task ${id} failed`, e);
       } finally {
         delete this.taskList[id];
       }
@@ -158,7 +174,7 @@ export class Handler {
       }
       return true
     } catch (e) {
-      this.pen.Error('update-block', e);
+      this.#pen.Error('update-block', e);
     }
   }
 
@@ -168,232 +184,19 @@ export class Handler {
    */
   setPrefix(prefix) {
     if (!Array.isArray(prefix) || prefix?.length === 0) {
-      return this.pen.Warn('Prefix must be an array larger than 0');
+      return this.#pen.Warn('Prefix must be an array larger than 0');
     }
     this.prefix = prefix;
-    this.cmds.clear()
-    for (const [id, plugin] of this.plugins) {
-      if (!plugin.cmd) continue;
-      this.genCMD(id, plugin);
-    }
-  }
-
-  /**
-   * Generate & registering command for given plugin
-   * @param {string} id
-   * @param {import('./plugin.js').Plugin} plugin
-   */
-  genCMD(id, plugin) {
-    if (plugin?.cmd) {
-      /** @type {string[]} */
-      let precmds = [];
-      if (Array.isArray(plugin.cmd)) {
-        precmds = plugin.cmd;
-      } else if (typeof plugin.cmd === 'string') {
-        precmds = [plugin.cmd];
-      }
-
-      for (const precmd of precmds) {
-        if (!precmd) continue;
-        if (plugin.noPrefix) {
-          this.cmds?.set(precmd.toLowerCase(), {
-            id: id,
-            cmd: precmd.toLowerCase(),
-          });
-        } else {
-          if (this.prefix) {
-            for (const pre of this.prefix) {
-              this.cmds?.set(`${pre}${precmd.toLowerCase()}`, {
-                id: id,
-                prefix: pre,
-                cmd: precmd.toLowerCase(),
-              });
-            }
-          } else {
-            this.cmds?.set(precmd.toLowerCase(), {
-              id: id,
-              cmd: precmd.toLowerCase(),
-            });
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Add plugin to handler
-   * @param {string} location
-   * @param {import('./plugin.js').Plugin} opts 
-   */
-  async on(location, ...opts) {
-    let i = 0;
-    for (const opt of opts) {
-      /* Check if plugin hasn't exec */
-      if (!opt.exec) continue;
-
-      const hash = hashCRC32(location);
-      const plugin = new Plugin(opt);
-      plugin.location = location;
-
-      if (this.filter) {
-        if (!this.filter(this, plugin)) continue;
-      }
-
-      const newid = `${hash}-${i}`;
-      this.plugins.set(newid, plugin);
-
-      /* Check if plugin has cmd, so it is a command plugin */
-      if (plugin.cmd) {
-        this.genCMD(newid, plugin);
-      } else {
-        this.listens.set(newid, newid);
-      }
-
-      i++;
-    }
-  }
-
-  /**
-   * Remove plugin by hash
-   * @param {string} hash
-   */
-  async removeOn(hash) {
-    try {
-      for (const id of this.plugins.keys()) {
-        if (id.startsWith(hash)) {
-          this.plugins.delete(id);
-          for (const [id_ls, val] of this.listens) {
-            if (val === id) {
-              this.listens.delete(id_ls);
-            }
-          }
-          for (const [id_cmd, val] of this.cmds) {
-            if (val?.id?.startsWith(hash)) {
-              this.cmds.delete(id_cmd);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      this.pen.Error('remove-on', e);
-    }
-  }
-
-  /**
-   * Plugin scanner for given directory
-   * @param {string} dir
-   */
-  async scanPlugin(dir) {
-    let files = [];
-    try {
-      files = readdirSync(dir);
-    } catch (e) {
-      this.pen.Error('scan-plugin', e);
-    }
-    for (const file of files) {
-      let loc = `${dir}/${file}`.replace('//', '/');
-
-      try {
-        if (statSync(loc)?.isDirectory()) await this.scanPlugin(loc);
-      } catch (e) {
-        this.pen.Error('scan-plugin-stat', e.message);
-      }
-
-      await this.loadFile(loc);
-    }
-  }
-
-  /**
-   * Preload plugins before start
-   * @param {...Function} callbacks
-   */
-  async preLoad(...callbacks) {
-    if (!callbacks) return;
-
-    for (const callback of callbacks) {
-      try {
-        await callback(this);
-      } catch (e) {
-        this.pen.Error('pre-load', e);
-      }
-    }
-  }
-
-  /**
-   * Load plugin file from given location
-   * @param {string} loc
-   */
-  async loadFile(loc) {
-    if (loc.endsWith('.js')) {
-      try {
-        const filename = loc.split('/').pop();
-        if (
-          filename.startsWith('_') ||
-          filename.startsWith('.') ||
-          filename.endsWith('.test.js')
-        ) {
-          this.pen.Debug('Skip:', loc)
-          return;
-        }
-
-        if (platform === 'win32') {
-          loc = pathToFileURL(loc).href;
-        }
-
-        const loaded = await import(`${loc}?t=${Date.now()}`);
-        let pre = 0;
-        let def = 0;
-
-        if (loaded.pre) {
-          if (Array.isArray(loaded.pre)) {
-            this.preLoad(...loaded.pre);
-            pre = loaded.pre.length;
-          } else {
-            this.preLoad(loaded.pre);
-            pre = 1;
-          }
-        }
-
-        if (loaded.default) {
-          if (Array.isArray(loaded.default)) {
-            this.on(loc, ...loaded.default);
-            def = loaded.default.length;
-          } else {
-            this.on(loc, loaded.default);
-            def = 1;
-          }
-        }
-
-        const msgs = ['Loaded'];
-        if (pre > 0) msgs.push(`${pre} pre`);
-        if (def > 0) msgs.push(`${def} default`);
-        msgs.push(loc);
-
-        this.pen.Debug(...msgs);
-      } catch (e) {
-        this.pen.Error('load-file', loc, e);
-      }
-    }
-
+    this.generatePlugin();
   }
 
   /** 
    * Get command by pattern
    * @param {string} p
-   * @returns {{id: number, prefix: string, cmd: string, plugin:import('./plugin.js').Plugin}|undefined}
+   * @returns {import('./manager.js').PluginResultItem | undefined}
    */
   getCMD(p) {
-    if (!p) return;
-    const data = this.cmds.get(p.toLowerCase());
-    if (!data) return;
-    const plugin = this.plugins.get(data.id);
-    if (!plugin) return;
-    return {
-      id: data.id,
-      prefix: data.prefix,
-      cmd: data.cmd,
-      plugin: plugin,
-    };
+    return this.command?.[p];
   }
 
   /** 
@@ -403,7 +206,7 @@ export class Handler {
    */
   isCMD(p) {
     if (!p) return false;
-    return this.cmds.has(p.toLowerCase());
+    return this.command?.[p.toLowerCase()];
   }
 
   /**
@@ -450,9 +253,9 @@ export class Handler {
 
       await this.updateData(ctx);
 
-      for (const lsid of this.listens.values()) {
+      for (const key of Object.keys(this.listener)) {
         /** @type {import('./plugin.js').Plugin} */
-        const listen = this.plugins.get(lsid);
+        const listen = this.listener[key].getPlugin();
         try {
           if (!listen) continue;
 
@@ -468,7 +271,7 @@ export class Handler {
           /* Exec */
           if (listen.exec) await listen.exec(ctx);
         } catch (e) {
-          this.pen.Error('handle-listen', e);
+          this.#pen.Error('handle-listen', e);
           if (listen?.final) await listen.final(ctx, new Reason({
             success: false,
             code: 'handle-listen-error',
@@ -486,23 +289,24 @@ export class Handler {
         if (!data) return;
 
         /** @type {import('./plugin.js').Plugin} */
+        const plugin = data.getPlugin();
         try {
-          ctx.plugin = () => data.plugin;
+          ctx.plugin = () => plugin;
           ctx.prefix = data.prefix;
           ctx.cmd = data.cmd
 
           /* Check rules and midware before exec */
-          const reason = await data?.plugin?.check(ctx);
+          const reason = await plugin?.check(ctx);
           if (!reason?.success) {
-            if (data?.plugin?.final) await data?.plugin.final(ctx, reason);
+            if (plugin?.final) await plugin.final(ctx, reason);
             return;
           }
 
           /* Exec */
-          if (data?.plugin?.exec) await data?.plugin?.exec(ctx);
+          if (plugin?.exec) await plugin?.exec(ctx);
         } catch (e) {
-          this.pen.Error('handle-command', e);
-          if (data?.plugin?.final) await data?.plugin?.final(ctx, new Reason({
+          this.#pen.Error('handle-command', e);
+          if (plugin?.final) await plugin?.final(ctx, new Reason({
             success: false,
             code: 'handle-command-error',
             author: import.meta.url,
@@ -513,7 +317,7 @@ export class Handler {
         }
       }
     } catch (e) {
-      this.pen.Error('handle', e);
+      this.#pen.Error('handle', e);
     }
   }
 
@@ -523,6 +327,7 @@ export class Handler {
    */
   async updateData(ctx) {
     try {
+      if (this.updatedAt !== this.pluginManager?.updatedAt) this.generatePlugin();
 
       switch (ctx.eventName) {
         case Events.GROUPS_UPSERT:
@@ -572,20 +377,21 @@ export class Handler {
 
         case Events.CONNECTION_UPDATE: {
           if (ctx?.event?.isOnline) {
+            this.generatePlugin();
             await delay(3000);
             try {
               this.runTask('update-data-fetch-blocklist', async () => {
                 this.blockList = await this.client?.sock.fetchBlocklist();
               })
             } catch (e) {
-              this.pen.Error('update-data-fetch-blocklist', e);
+              this.#pen.Error('update-data-fetch-blocklist', e);
             }
           }
           break;
         }
       }
     } catch (e) {
-      this.pen.Error('update-data', e);
+      this.#pen.Error('update-data', e);
     }
   }
 
@@ -594,7 +400,7 @@ export class Handler {
   * @param {import('./client.js').Wangsaf} client 
   */
   async attach(client) {
-    this.pen.Debug('Attaching client');
+    this.#pen.Debug('Attaching client');
 
     this.client = client;
 
@@ -650,7 +456,7 @@ export class Handler {
    */
   async updateGroupMetadata(jid, ctx) {
     try {
-      this.pen.Debug('Updating group metadata', jid, ctx ? `via ${ctx.eventName} with action : ${ctx.action}` : '');
+      this.#pen.Debug('Updating group metadata', jid, ctx ? `via ${ctx.eventName} with action : ${ctx.action}` : '');
       let data = this.groupCache.get(jid);
       let updated = false;
 
@@ -728,7 +534,7 @@ export class Handler {
       }
 
     } catch (e) {
-      this.pen.Error('update-group-metadata', e);
+      this.#pen.Error('update-group-metadata', e);
     }
   }
 
@@ -739,9 +545,9 @@ export class Handler {
    */
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
-    if (!data) this.runTask('get-group-metadata', async () => {
+    if (!data) this.runTask('get-group-metadata_' + jid, async () => {
       this.updateGroupMetadata(jid)
-        .catch((e) => this.pen.Error('get-group-metadata', e));
+        .catch((e) => this.#pen.Error('get-group-metadata', e));
     });
     return data;
   }
@@ -755,7 +561,7 @@ export class Handler {
     try {
       if (data) this.contactCache.set(jid, data);
     } catch (e) {
-      this.pen.Error('update-contact', e);
+      this.#pen.Error('update-contact', e);
     }
   }
 
@@ -775,7 +581,7 @@ export class Handler {
    * @param {string} via
    */
   updateTimer(jid, ephemeral, via) {
-    this.pen.Debug('Updating ephemeral for', jid, 'to', ephemeral, via ? `via ${via}` : '');
+    this.#pen.Debug('Updating ephemeral for', jid, 'to', ephemeral, via ? `via ${via}` : '');
     if (jid) {
       const data = this.timerCache.get(jid);
       if (data !== ephemeral) {
@@ -844,7 +650,7 @@ export class Handler {
 
       return await this.client.sock.sendMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error('send-message', e);
+      this.#pen.Error('send-message', e);
     }
   }
 
@@ -885,7 +691,7 @@ export class Handler {
       }
       return await this.client.sock.relayMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error('relay-message', e);
+      this.#pen.Error('relay-message', e);
     }
   }
 

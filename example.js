@@ -8,15 +8,14 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { loadEnvFile } from "process";
-import pen from "./src/pen.js";
-import { Wangsaf } from "./src/client.js";
-import { Handler } from "./src/handler.js";
-import { StoreJson } from "./src/store.js";
-import { getFile } from "./src/data.js";
-import { Browsers } from "baileys";
-import pino from "pino";
-import path from "path";
+import { loadEnvFile } from 'process';
+import pen from './src/pen.js';
+import { Wangsaf } from './src/client.js';
+import { Handler } from './src/handler.js';
+import { Browsers } from 'baileys';
+import pino from 'pino';
+import path from 'path';
+import { PluginManager } from './src/manager.js';
 
 /* Load environment variables from .env file */
 try {
@@ -25,6 +24,10 @@ try {
   pen.Debug('loadEnvFile', e.message);
 }
 
+export const pm = new PluginManager({
+  pluginDir: path.join(import.meta.dirname, 'plugins/'),
+});
+
 const wea = new Wangsaf({
   dataDir: 'data',
   phone: process.env.PHONE ?? '',
@@ -32,10 +35,8 @@ const wea = new Wangsaf({
   session: process.env.SESSION ?? 'sesi',
   browser: Browsers.macOS(process.env.BROWSER ?? 'Safari'),
   handler: new Handler({
-    pluginDir: process.env.PLUGIN_DIR ?? path.resolve(process.cwd() + '/plugins'),
-    groupCache: new StoreJson({ saveName: getFile('group_metadata.json'), autoSave: true }),
-    contactCache: new StoreJson({ saveName: getFile('contacts.json'), autoSave: true }),
-    timerCache: new StoreJson({ saveName: getFile('timer.json'), autoSave: true }),
+    pluginManager: pm,
+    filter: null,
   }),
   socketOptions: {
     logger: pino({ level: 'silent' })
@@ -45,6 +46,7 @@ const wea = new Wangsaf({
 
 try {
   wea.connect();
+  wea.disconnect();
 } catch (e) {
   pen.Error(e)
   wea.connect();

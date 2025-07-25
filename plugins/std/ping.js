@@ -18,7 +18,7 @@ export default {
   cmd: ['ping', 'p'],
   timeout: 120,
   cat: 'system',
-  tags: ['system'],
+  tags: ['system', 'ping'],
   desc: 'Ping the bot and get the response time.',
 
   midware: midwareAnd(

@@ -63,6 +63,7 @@ const skipEvents = [
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  tags: ['log'],
   desc: 'Logs the message to the console',
 
   midware: (c) => ({
@@ -119,7 +120,7 @@ export default {
           data.push('⚡');
 
           const dataCMD = c.handler()?.getCMD(c.pattern);
-          if (!dataCMD?.plugin?.check(c)) data.push('❌');
+          if (!dataCMD?.getPlugin()?.check(c)) data.push('❌');
         }
 
         if (c.id && c.type !== 'senderKeyDistributionMessage') {

@@ -31,6 +31,7 @@ export default {
   cmd: 'menu',
   timeout: 15,
   cat: 'info',
+  tags: ['menu'],
   desc: 'Show the menu of commands',
 
   midware: midwareOr(
@@ -50,7 +51,7 @@ export default {
 
       if (userKeys) {
 
-        c.handler()?.plugins?.forEach((p, k) => {
+        c.handler()?.command?.forEach((p, k) => {
           if (!p?.cmd) return;
 
           if (Array.isArray(p?.cmd)) {
@@ -90,17 +91,18 @@ export default {
 
       const categories = new Map();
       let cmdCount = 0;
-      for (const dataCMD of c.handler()?.cmds?.values()) {
-        const p = c.handler()?.plugins?.get(dataCMD?.id);
+      for (const key of Object.keys(c.handler()?.command)) {
+        const dataCMD = c.handler()?.getCMD(key);
+        const p = dataCMD.getPlugin();
         if (!p || p?.hidden) continue;
         if (!categories.has(p.cat)) categories.set(p.cat, new Map());
 
         const cat = categories.get(p.cat);
-        if (cat.has(dataCMD?.id)) continue;
+        if (cat.has(dataCMD?.pluginKey)) continue;
 
         const patt = Array.isArray(p.cmd) ? p.cmd[0] : p.cmd;
 
-        cat.set(dataCMD?.id, {
+        cat.set(dataCMD?.pluginKey, {
           pre: `${p.noPrefix ? patt : prefix + patt}`,
           plugin: p
         });
