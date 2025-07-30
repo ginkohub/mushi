@@ -501,7 +501,7 @@ export class Handler {
           /* Exec */
           if (data?.plugin?.exec) await data?.plugin?.exec(ctx);
         } catch (e) {
-          this.pen.Error('handle-command', e);
+          this.pen.Error('handle-command', ctx.pattern, e);
           if (data?.plugin?.final) await data?.plugin?.final(ctx, new Reason({
             success: false,
             code: 'handle-command-error',
@@ -728,7 +728,7 @@ export class Handler {
       }
 
     } catch (e) {
-      this.pen.Error('update-group-metadata', e);
+      this.pen.Error('update-group-metadata', jid, e);
     }
   }
 
@@ -739,9 +739,9 @@ export class Handler {
    */
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
-    if (!data) this.runTask('get-group-metadata', async () => {
+    if (!data) this.runTask('get-group-metadata_' + jid, async () => {
       this.updateGroupMetadata(jid)
-        .catch((e) => this.pen.Error('get-group-metadata', e));
+        .catch((e) => this.pen.Error('get-group-metadata', jid, e));
     });
     return data;
   }
