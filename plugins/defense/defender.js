@@ -14,6 +14,16 @@ import pen from '../../src/pen.js';
 import { fromOwner, settings } from '../settings.js';
 import { allowed } from './detector.js';
 
+const KEY_DEFENSE_ALLOW_STATUS = 'defense_allow_status';
+
+/* Check duplicate allow types and remove */
+let allowTypes = settings.get(KEY_DEFENSE_ALLOW_STATUS);
+if (allowTypes) {
+  allowTypes = [...new Set(allowTypes)];
+  settings.set(KEY_DEFENSE_ALLOW_STATUS, allowTypes);
+}
+
+
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
@@ -97,8 +107,7 @@ export default [
       if (!newAllowed) newAllowed = [];
       newAllowed = newAllowed.filter((v, i, a) => a.indexOf(v) === i);
 
-      const key = `defense_allow_status`;
-      let allow = settings.get(key);
+      let allow = settings.get(KEY_DEFENSE_ALLOW_STATUS);
       if (!allow) allow = [];
 
       let pattern = c.pattern;
@@ -115,7 +124,7 @@ export default [
 
       if (status.length > 0) {
         allow = [...new Set(allow)];
-        settings.set(key, allow);
+        settings.set(KEY_DEFENSE_ALLOW_STATUS, allow);
       }
 
       let text = '';
