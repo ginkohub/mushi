@@ -347,7 +347,7 @@ export class Ctx {
         this.isAdmin = ['admin', 'superadmin'].includes(part?.admin);
 
         /** @type {string} */
-        this.senderPN = (this.sender?.endsWith('@lid') && part) ? part.jid : this.sender;
+        this.senderAlt = (this.sender?.endsWith('@lid') && part) ? part.jid : this.sender;
       }
     }
 
