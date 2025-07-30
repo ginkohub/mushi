@@ -113,7 +113,10 @@ export default [
         status = 'removed';
       }
 
-      if (status.length > 0) settings.set(key, allow);
+      if (status.length > 0) {
+        allow = [...new Set(allow)];
+        settings.set(key, allow);
+      }
 
       let text = '';
       if (status.length > 0 && newAllowed?.length > 0) {
