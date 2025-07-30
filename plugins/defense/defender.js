@@ -16,14 +16,6 @@ import { allowed } from './detector.js';
 
 const KEY_DEFENSE_ALLOW_STATUS = 'defense_allow_status';
 
-/* Check duplicate allow types and remove */
-let allowTypes = settings.get(KEY_DEFENSE_ALLOW_STATUS);
-if (allowTypes) {
-  allowTypes = [...new Set(allowTypes)];
-  settings.set(KEY_DEFENSE_ALLOW_STATUS, allowTypes);
-}
-
-
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
@@ -104,46 +96,55 @@ export default [
 
     exec: async (c) => {
       let newAllowed = c.argv?._;
-      if (!newAllowed) newAllowed = [];
+      if (!newAllowed || !Array.isArray(newAllowed)) newAllowed = [];
       newAllowed = newAllowed.filter((v, i, a) => a.indexOf(v) === i);
 
-      let allow = settings.get(KEY_DEFENSE_ALLOW_STATUS);
-      if (!allow) allow = [];
+      let setAllows = settings.get(KEY_DEFENSE_ALLOW_STATUS);
+      if (!setAllows || !Array.isArray(setAllows)) setAllows = [];
 
-      let pattern = c.pattern;
+      const tail = c.pattern.slice(-1);
+      let pattern = ['-', '+'].includes(tail) ? c.pattern.slice(0, -1) : c.pattern;
       let status = '';
-      if (c.pattern.endsWith('+')) {
-        pattern = c.pattern.slice(0, -1);
-        allow.push(...newAllowed.filter((v) => !allow.includes(v)));
-        status = 'added';
-      } else if (c.pattern.endsWith('-')) {
-        pattern = c.pattern.slice(0, -1);
-        allow = allow.filter((v) => !newAllowed.includes(v))
-        status = 'removed';
+
+      const texts = [];
+
+      switch (tail) {
+        case '+': {
+          setAllows.push(...newAllowed.filter((v) => !setAllows?.includes(v) && !allowed?.includes(v)));
+          status = 'add';
+          break;
+        }
+
+        case '-': {
+          setAllows = setAllows.filter((v) => !newAllowed.includes(v));
+          status = 'remove';
+          break;
+        }
       }
 
-      if (status.length > 0) {
-        allow = [...new Set(allow)];
-        settings.set(KEY_DEFENSE_ALLOW_STATUS, allow);
+      if (status?.length > 0) {
+        settings.set(KEY_DEFENSE_ALLOW_STATUS, setAllows);
+        texts.push(`Success ${status} ${status === 'add' ? 'to' : 'from'} setting`, '');
       }
 
-      let text = '';
-      if (status.length > 0 && newAllowed?.length > 0) {
-        text = `List type that has *${status}* :\n` +
-          newAllowed.map((v) => `  - *${v}*`).join('\n') +
-          `\n\nDefault :\n` + allowed.map((v) => `  - \`${v}\``).join('\n');
-      } else {
-        text = `Currrent list type registered :\n` +
-          allow.map((v) => `  - \`${v}\``).join('\n') +
-          `\n\nDefault :\n` + allowed.map((v) => `  - \`${v}\``).join('\n');
-      }
-      if (text.length === 0) return await c.react('🤔');
-      c.reply({
-        text: text +
-          `\n\nNB :\n  *${pattern}-* _to remove_\n  *${pattern}+* _to add_` +
-          `\n\n_Split multiple type with space_` +
-          `\n\n_example :_\n\`${pattern}+ audioMessage imageMessage\``,
-      }, { quoted: c.event })
+      texts.push(
+        `*# Skip from setting* :`,
+        ...setAllows?.map((v) => `- \`${v}\``)
+      );
+
+      texts.push(
+        '', `*# Default skip types* :`,
+        ...allowed?.map((v) => `- \`${v}\``)
+      );
+
+
+      texts.push(
+        '', 'NB :',
+        `  *${pattern}-* _to remove_`,
+        `  *${pattern}+* _to add_`, '',
+        'Example :', '',
+        `  *${pattern}+ audioMessage imageMessage*`);
+      c.reply({ text: texts.join('\n')?.trim() }, { quoted: c.event })
     }
   }
 ];
