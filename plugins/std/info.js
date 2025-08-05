@@ -89,7 +89,7 @@ export default {
 
 *Node.js Information*
 *Node.js*: ${process.version}
-*Runtime*: ${formatElapse(process.uptime() * 1000, ' ')}s
+*Runtime*: ${formatElapse(process.uptime() * 1000, ' ')}
 *RSS*: ${formatBytes(memoryUsage.rss)}
 *Heap Total*: ${formatBytes(memoryUsage.heapTotal)}
 *Heap Used*: ${formatBytes(memoryUsage.heapUsed)}
