@@ -73,6 +73,12 @@ export default {
       /** @type {import('baileys').proto.IWebMessageInfo }*/
       let msg = storeMsg.get(videoYT?.id?.videoId);
       if (msg && !c.argv.force) {
+        try {
+          const ephemeral = c.handler().getTimer(c.chat);
+          msg.message.audioMessage.contextInfo.expiration = ephemeral;
+        } catch (e) {
+          pen.Error('set-expiration', e);
+        }
         return c.replyRelay(msg.message);
       } else {
 
