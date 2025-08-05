@@ -86,7 +86,7 @@ export class Ctx {
      * @param {import('baileys').AnyMessageContent} content
      * @param {import('baileys').MessageGenerationOptions} options 
      * @returns {Promise<import('baileys').proto.WebMessageInfo>} 
-     * */
+     */
     this.sendMessage = async (jid, content, options) => await handler?.sendMessage(jid, content, options);
 
     /** 
@@ -99,7 +99,7 @@ export class Ctx {
 
     /** 
      * @param {import('baileys').AnyMessageContent} content
-     * @param {import('baileys').MessageGenerationOptions} options 
+     * @param {import('baileys').MessageGenerationOptions} options
      * @returns {Promise<import('baileys').proto.IWebMessageInfo>}
      */
     this.reply = async (content, options) => {
@@ -261,7 +261,7 @@ export class Ctx {
       /** @type {import('baileys').WAContextInfo} */
       this.contextInfo = ext.contextInfo;
 
-      /** @type {import('baileys').WAMessage} */
+      /** @type {import('baileys').proto.IMessage} */
       this.quotedMessage = ext?.contextInfo?.quotedMessage;
       const qext = extractTextContext(this.quotedMessage);
 
