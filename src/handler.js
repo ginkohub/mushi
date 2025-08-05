@@ -412,7 +412,7 @@ export class Handler {
    * @returns {boolean|undefined}
    */
   idExist(ctx) {
-    if (this.watchID.includes(ctx?.id)) {
+    if (this.watchID.includes(ctx?.id) || !ctx.type) {
       return true;
     } else {
       if (this.watchID.length >= 100) this.watchID.shift();
@@ -430,7 +430,7 @@ export class Handler {
     const isAppend = ctx?.eventType === 'append';
     const isPrekey = ctx?.type === 'senderKeyDistributionMessage';
     const isUndefined = ctx?.type === 'undefined' || typeof ctx?.type === 'undefined';
-    const idExist = isPrekey || isUndefined ? false : this.idExist(ctx);
+    const idExist = isPrekey || isUndefined ? true : this.idExist(ctx);
 
     return !(isAppend || isPrekey || isUndefined || idExist);
   }
