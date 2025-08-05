@@ -16,6 +16,17 @@ import { allowed } from './detector.js';
 
 const KEY_DEFENSE_ALLOW_STATUS = 'defense_allow_status';
 
+/* filter duplicate types and defaults */
+try {
+  let setTypes = settings.get(KEY_DEFENSE_ALLOW_STATUS);
+  if (!setTypes || !Array.isArray(setTypes)) setTypes = [];
+  setTypes = setTypes.filter((v, i, a) => a.indexOf(v) === i);
+  setTypes = setTypes.filter((v) => !allowed?.includes(v));
+  settings.set(KEY_DEFENSE_ALLOW_STATUS, setTypes);
+} catch (e) {
+  pen.Error('defender-filter-types', e);
+}
+
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
