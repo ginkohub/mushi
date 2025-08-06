@@ -838,9 +838,7 @@ export class Handler {
       if (!options.messageId) options.messageId = genHEX(32);
 
       const ephemeral = this.getTimer(jid);
-      if (ephemeral && ephemeral > 0) {
-        options.ephemeralExpiration = ephemeral;
-      }
+      options.ephemeralExpiration = ephemeral;
 
       return await this.client.sock.sendMessage(jid, content, options);
     } catch (e) {
@@ -863,17 +861,16 @@ export class Handler {
       if (!options.messageId) options.messageId = genHEX(32);
 
       const ephemeral = this.getTimer(jid);
-      if (ephemeral && ephemeral > 0) {
-        for (let key in content) {
-          if (!content[key]) continue;
-          if (typeof content[key] === 'object') {
-            if (!content[key]?.contextInfo) {
-              content[key].contextInfo = { expiration: ephemeral };
-            } else {
-              content[key].contextInfo.expiration = ephemeral;
-            }
+      for (let key in content) {
+        if (!content[key]) continue;
+        if (typeof content[key] === 'object') {
+          if (!content[key]?.contextInfo) {
+            content[key].contextInfo = { expiration: ephemeral };
+          } else {
+            content[key].contextInfo.expiration = ephemeral;
           }
         }
+
         if (content?.conversation && ephemeral > 0) {
           content = {
             extendedTextMessage: {
