@@ -189,17 +189,17 @@ export class Wangsaf {
 
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== DisconnectReason.forbidden;
         if (shouldReconnect) {
           if (this.retry) {
-            this.pen.Debug(Events.CONNECTION_UPDATE, `Reconnecting...`);
+            this.pen.Debug(Events.CONNECTION_UPDATE, 'statusCode :', statusCode, `Reconnecting...`);
             await delay(3000);
             this.connect();
           } else {
-            this.pen.Error(Events.CONNECTION_UPDATE, 'Not retrying.');
+            this.pen.Error(Events.CONNECTION_UPDATE, 'statusCode :', statusCode, 'Not retrying.');
           }
-        } else if (statusCode === DisconnectReason.loggedOut) {
-          this.pen.Debug(Events.CONNECTION_UPDATE, 'Logged out, closing connection');
+        } else if (statusCode === DisconnectReason.loggedOut || statusCode === DisconnectReason.forbidden) {
+          this.pen.Debug(Events.CONNECTION_UPDATE, 'statusCode :', statusCode, 'Logged out, closing connection');
           try {
             switch (type) {
               case "folder": {
