@@ -542,7 +542,7 @@ export class Handler {
         }
 
         case Events.MESSAGES_UPSERT: {
-          if (ctx?.fromMe && ctx?.eventType !== 'append' && ctx?.type !== 'senderKeyDistributionMessage') {
+          if (ctx?.fromMe && !ctx?.edited && ctx?.eventType !== 'append' && ctx?.type !== 'senderKeyDistributionMessage') {
             this.updateTimer(ctx.chat, ctx.expiration, ctx.eventName);
           }
           break;

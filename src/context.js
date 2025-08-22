@@ -8,10 +8,16 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { downloadMediaMessage, jidNormalizedUser } from 'baileys';
+import { downloadMediaMessage, jidNormalizedUser, S_WHATSAPP_NET } from 'baileys';
 import { Events } from './const.js';
 import minimist from 'minimist';
 import parseArgsStringToArgv from 'string-argv';
+
+const JIDBy = {
+  Participant: 0,
+  Mentions: 1,
+  Text: 2
+}
 
 const skipMessageTypes = [
   'messageContextInfo',
@@ -21,13 +27,14 @@ const skipMessageTypes = [
  * Extracts text content and context info from a message
  * 
  * @param {Partial<import('baileys').WAMessage>} m - Message object
- * @returns {{text: string, contextInfo: import('baileys').WAContextInfo | null, type: string}} Extracted text and context
+ * @returns {{text: string, contextInfo: import('baileys').WAContextInfo | null, type: string, edited: boolean}} Extracted text and context
  */
 export function extractTextContext(m) {
   let resp = {
     text: "",
     contextInfo: null,
-    type: null
+    type: null,
+    edited: false
   }
 
   if (typeof m !== 'object' || m === null) return resp;
@@ -36,6 +43,7 @@ export function extractTextContext(m) {
     if (key === 'protocolMessage') {
       if (m[key]?.editedMessage) {
         resp = extractTextContext(m[key].editedMessage);
+        resp.edited = true;
         break;
       }
     }
@@ -249,6 +257,9 @@ export class Ctx {
       this.message = event.message;
       const ext = extractTextContext(event.message);
 
+      /** @type {boolean} */
+      this.edited = ext.edited;
+
       /** @type {string} */
       this.type = ext.type;
 
@@ -339,12 +350,21 @@ export class Ctx {
     if (this.isGroup) {
       const data = handler?.getGroupMetadata(this.chat);
       if (data && Array.isArray(data?.participants)) {
+        /** @type {'lid' | 'pn'} */
+        this.addressingMode = data.addressingMode;
+
+        const botPart = data?.participants?.find(
+          part => (part.id == this.sender || part.jid == this.sender || part.lid == this.sender)
+        );
+        this.isBotAdmin = botPart?.isAdmin ?? botPart?.isSuperAdmin ?? false;
+
+
         const part = data?.participants?.find(
           part => (part.id == this.sender || part.jid == this.sender || part.lid == this.sender)
         );
 
         /** @type {boolean} */
-        this.isAdmin = ['admin', 'superadmin'].includes(part?.admin);
+        this.isAdmin = part?.isAdmin ?? part?.isSuperAdmin ?? false;
 
         /** @type {string} */
         this.senderAlt = (this.sender?.endsWith('@lid') && part) ? part.jid : this.sender;
@@ -385,5 +405,36 @@ export class Ctx {
       if (!this.quotedMessage) return;
       return this.downloadIt({ message: this.quotedMessage }, output, options)
     }
+
+    /**
+     * @param {...JIDBy} by
+     * @returns {string[]}
+     */
+    this.parseJIDs = (...by) => {
+      if (!by || by.length === 0) by = [JIDBy.Participant, JIDBy.Mentions, JIDBy.Text];
+
+      const jids = [];
+
+      if (by?.includes(JIDBy.Participant)) { if (this.participant) jids.push(this.participant); }
+      if (by?.includes(JIDBy.Mentions)) {
+        if (this.mentionedJid) jids.push(...this.mentionedJid);
+      }
+
+      if (by?.includes(JIDBy.Text)) {
+        const uncat = this.argv?._?.join(' ') ?? '';
+
+        /* check if uncat contains /\+?\d+\s?[\d-]+/gi */
+        const parsed = [...uncat.matchAll(/\+?\d+\s?[\d-]+/gi)].map(
+          (match) => match[0]?.replaceAll(/[^\d]/g, '') + (this.addressingMode === 'lid') ? '@lid' : S_WHATSAPP_NET
+        );
+        if (parsed?.length > 0) jids.push(...parsed);
+      }
+
+      /* remove duplicate in jids */
+      jids = jids.filter((value, index, self) => self.indexOf(value) === index);
+
+      return jids;
+    }
+
   }
 }
