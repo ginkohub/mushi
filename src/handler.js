@@ -336,7 +336,7 @@ export class Handler {
           return;
         }
 
-        if (platform === 'win32') {
+        if (platform() === 'win32') {
           loc = pathToFileURL(loc).href;
         }
 
@@ -886,4 +886,22 @@ export class Handler {
     }
   }
 
+  /**
+   * Send file to given jid
+   * @param {string} jid
+   * @param {string} filePath
+   * @param {{caption?: string, filename?: string}} opts
+   */
+  async sendFile(jid, filePath, opts) {
+    if (!opts) opts = {};
+    if (!opts.filename) opts.filename = filePath.split(/\\|\//gi).pop();
+
+    return this.sendMessage(jid, {
+      document: {
+        file: filePath
+      },
+      fileName: opts.filename,
+      caption: opts.caption
+    })
+  }
 }
