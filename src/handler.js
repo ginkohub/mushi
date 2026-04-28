@@ -302,7 +302,7 @@ export class Handler {
       let loc = `${dir}/${file}`.replace('//', '/');
 
       try {
-        if (statSync(loc)?.isDirectory()) await this.scanPlugin(loc);
+        if (statSync(loc)?.isDirectory() && !file?.startsWith('.')) await this.scanPlugin(loc);
       } catch (e) {
         this.pen.Error('scan-plugin-stat', e.message);
       }
