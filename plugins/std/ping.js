@@ -9,7 +9,7 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
+import { fromMe, midwareOr } from '../../src/midware.js';
 import { formatElapse } from '../../src/tools.js';
 import { fromOwner } from '../settings.js';
 
@@ -20,14 +20,8 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Ping the bot and get the response time.',
-
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT),
-    midwareOr(
-      fromMe,
-      fromOwner,
-    )
-  ),
+  eventNames: [MESSAGES_UPSERT],
+  midware: midwareOr(fromMe, fromOwner),
 
   exec: async (c) => {
     const current = Date.now();

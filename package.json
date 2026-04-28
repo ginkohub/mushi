@@ -4,7 +4,7 @@
   "description": "Wangsaf bot",
   "type": "module",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "node --watch example.js",
     "start": "node example.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/ginkohub/mushi#readme",
   "dependencies": {
+    "@ginkohub/speedtest-js": "^0.0.2",
     "@google/genai": "^1.9.0",
     "axios": "^1.10.0",
     "baileys": "github:ginkohub/baileys#ginko",
@@ -32,7 +33,6 @@
     "googleapis": "^153.0.0",
     "minimist": "^1.2.8",
     "mongodb": "^6.17.0",
-    "nodemon": "^3.1.10",
     "pg": "^8.16.3",
     "pino": "^9.7.0",
     "qrcode": "^1.5.4",
