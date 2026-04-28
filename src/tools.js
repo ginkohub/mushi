@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { dir } from "console";
 import fs from "fs";
 import { pathToFileURL } from "url";
+import pen from "./pen.js";
 
 /**
  * Generates a random hexadecimal string of a given length.
@@ -192,4 +192,34 @@ export async function importy(path, meta) {
   dirs.push(path);
   const loc = pathToFileURL(dirs.join('/')).href;
   return import(loc + '?t=' + Date.now());
+}
+
+/** @type {Object} */
+const taskList = {}
+
+/**
+ * @param {string} id 
+ * @param {() => Promise<any>} fn
+ * @returns {Promise<any>}
+ */
+export async function runTask(id, fn, onError, onFinal) {
+  if (taskList[id]) {
+    pen.Debug(`Task ${id} is already running`);
+    return taskList[id];
+  }
+
+  pen.Debug(`Task ${id} started`);
+  const task = (async () => {
+    try {
+      return await fn();
+    } catch (e) {
+      if (onError && typeof onError == 'function') onError(e);
+    } finally {
+      delete taskList[id];
+      if (onFinal && typeof onFinal == 'function') onFinal(id);
+    }
+  })();
+
+  taskList[id] = task;
+  return task;
 }

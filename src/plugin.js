@@ -33,6 +33,7 @@ export const Role = {
  * @property {string} cat
  * @property {boolean} disabled
  * @property {boolean} hidden
+ * @property {string[]} accepts - Event type
  * @property {Role | any} role
  * @property {number} timeout
  * @property {boolean} noPrefix
@@ -47,7 +48,7 @@ export const Role = {
  */
 export class Plugin {
   /** @param {Plugin} */
-  constructor({ cmd, prefix, desc, cat, tags, disabled, hidden, role, timeout, noPrefix, midware, exec, final, location }) {
+  constructor({ cmd, prefix, desc, cat, tags, disabled, hidden, eventNames, role, timeout, noPrefix, midware, exec, final, location }) {
     /** @type {import('./handler.js').Handler} */
     this.handler = null;
 
@@ -77,6 +78,9 @@ export class Plugin {
 
     /** @type {boolean} */
     this.hidden = hidden;
+
+    /** @type {string[]} */
+    this.eventNames = eventNames;
 
     /** @type {Role | any} */
     this.role = role;
@@ -124,6 +128,12 @@ export class Plugin {
       if (diff > (this.timeout * 1000)) return res.setSuccess(false)
         .setCode('plugin-timeout')
         .setMessage(`This plugin is timed out`);
+    }
+
+    if (this.accepts && !this.accepts?.includes(ctx.eventType)) {
+      return res.setSuccess(false)
+        .setCode('event-type')
+        .setMessage('Event type not match');
     }
 
     if (this.midware) {

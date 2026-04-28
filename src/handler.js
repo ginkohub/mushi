@@ -55,6 +55,9 @@ export class Handler {
     /** @type {Map<number, import('./plugin.js').Plugin>} */
     this.plugins = new Map();
 
+    /** @type {bool} */
+    this.isReady = false;
+
     /** @type {Map<string, {id: number, prefix: string, cmd: string}>} */
     this.cmds = new Map();
 
@@ -101,6 +104,15 @@ export class Handler {
         const hash = hashCRC32(loc);
         this.removeOn(hash);
       });
+  }
+
+  /**
+   * Wait until ready
+   */
+  async waitReady() {
+    while (!this.isReady) {
+      await delay(1000);
+    }
   }
 
   /**
@@ -301,6 +313,7 @@ export class Handler {
 
       await this.loadFile(loc);
     }
+    this.isReady = true;
   }
 
   /**
