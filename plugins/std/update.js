@@ -30,7 +30,7 @@ export default {
   exec: async (c) => {
     /* waiting */
     await c.react('⌛');
-    const src = 'git fetch ; git pull';
+    const src = 'git fetch ; git pull origin main:main';
     try {
       let isLocked = false;
       let force = c.argv?.f || c.argv?.force || false;
