@@ -6,7 +6,12 @@
 
 Mushi is a simple and lightweight WhatsApp bot written in javascript using [Baileys](https://github.com/WhiskeySockets/Baileys) library.
 
-> NOTE: This project is still in development and may not work as expected.
+> [!WARNING]
+> This project is still in development and may not work as expected.
+
+> [!IMPORTANT]
+> Use Deno 2+, Bun 1.3+, NodeJS 23+
+
 
 ## Example `.env` configuration
 
