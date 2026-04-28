@@ -50,6 +50,23 @@ export class Reason {
   }
 
   /**
+   * Sets the success status of the reason to false.
+   * @returns {Reason} The current instance for chaining.
+   */
+  setBad() {
+    this.success = false;
+    return this;
+  }
+  /**
+   * Sets the success status of the reason to true.
+   * @returns {Reason} The current instance for chaining.
+   */
+  setOK() {
+    this.success = true;
+    return this;
+  }
+
+  /**
    * Sets the code of the reason.
    * @param {number | string | any} code - The code.
    * @returns {Reason} The current instance for chaining.
