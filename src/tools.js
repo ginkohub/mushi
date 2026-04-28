@@ -8,9 +8,16 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "fs";
-import { pathToFileURL } from "url";
+import fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
+
+/** @type {boolean} True if the current runtime are Deno */
+export const isDeno = typeof Deno !== "undefined";
+
+/** @type {boolean} True if the current runtime are Bun */
+export const isBun = typeof Bun !== "undefined";
+
 
 /**
  * Generates a random hexadecimal string of a given length.
@@ -222,4 +229,34 @@ export async function runTask(id, fn, onError, onFinal) {
 
   taskList[id] = task;
   return task;
+}
+
+/**
+ * Watch flle changes
+ * @param {string} filePath
+ * @param {Function} onChange
+ * @returns {any}
+ */
+export async function watchFile(filePath, onChange) {
+  if (isDeno) {
+    const watcher = Deno.watchFs(filePath);
+    (async () => {
+      for await (const event of watcher) {
+        if (event.kind === 'modify') {
+          for (const path of event.paths) {
+            onChange(path);
+          }
+        }
+      }
+    })();
+
+    return watcher;
+  } else {
+    const { default: chokidar } = await import('chokidar');
+    return chokidar.watch(filePath, {
+      ignoreInitial: true,
+      usePolling: shouldUsePolling(),
+      interval: 1000,
+    }).on('change', onChange);
+  }
 }

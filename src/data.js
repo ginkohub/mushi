@@ -9,9 +9,9 @@
  */
 
 
-import fs from 'fs';
+import fs from 'node:fs';
 import pen from './pen.js';
-import path from 'path';
+import path from 'node:path';
 
 const dataDir = 'data';
 

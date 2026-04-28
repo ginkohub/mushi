@@ -11,7 +11,7 @@
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { fromOwner } from '../settings.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */

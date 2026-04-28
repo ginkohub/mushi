@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import os from 'os';
-import fs from 'fs';
-import { execSync } from 'child_process';
+import os from 'node:os';
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import { formatBytes, formatElapse } from '../../src/tools.js';
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';

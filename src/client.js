@@ -50,7 +50,7 @@ export async function useStore(sessionStr) {
     const { state, saveCreds } = await usePostgres(sessionStr);
     return { state, saveCreds, type: 'postgres' };
   } else if (sessionStr.includes('.sqlite') || sessionStr.includes('.db')) {
-    const { state, saveCreds } = await useSQLite(sessionStr);
+    const { state, saveCreds } = useSQLite(sessionStr);
     return { state, saveCreds, type: 'sqlite' };
   } else {
     const { state, saveCreds } = await useMultiFileAuthState(sessionStr);
@@ -133,7 +133,7 @@ export class Wangsaf {
     await this.handler?.waitReady();
 
     if (!this.session) throw new Error('session is required');
-    this.dateStarted = new Date();
+    this.dateStarted = Date.now();
 
     /** @type {{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' } } */
     const { state, saveCreds, type } = await useStore(this.session)

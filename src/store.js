@@ -8,11 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import Database from 'better-sqlite3';
-import pen from "./pen.js";
-import fs from 'fs';
-import chokidar from 'chokidar';
-import { shouldUsePolling } from './tools.js';
+import pen from './pen.js';
+import fs from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
+import { isDeno, watchFile } from './tools.js';
 
 /**
  * Store ${this.tableName} in JSON file
@@ -34,11 +33,7 @@ export class StoreJson {
 
     /* Watch changes on disk */
     if (autoLoad) {
-      this.watcher = chokidar.watch(this.saveName, {
-        ignoreInitial: true,
-        usePolling: shouldUsePolling(),
-        interval: 1000,
-      }).on('change', (loc) => {
+      this.watcher = watchFile(this.saveName, (loc) => {
         if (!this.saveState) {
           pen.Debug('Reload', loc)
           this.load();
@@ -120,27 +115,24 @@ export class StoreSQLite {
   constructor({ saveName, autoSave, expiration, tableName }) {
     if (!saveName) throw Error('saveName required');
 
-    if (!connectionList[saveName]) connectionList[saveName] = new Database(saveName);
-
-    this.db = () => connectionList[saveName];
-    this.db().pragma('journal_mode=WAL');
-    this.db().pragma('foreign_keys=ON');
-
     this.autoSave = autoSave ?? false;
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
     this.tableName = tableName ?? 'data';
+    this._init();
+  }
 
+  _init() {
+    if (!connectionList[this.saveName]) connectionList[this.saveName] = new DatabaseSync(this.saveName);
+
+    this.db = connectionList[this.saveName];
+    this.db.exec('PRAGMA journal_mode=WAL');
+    this.db.exec('PRAGMA foreign_keys=ON');
     this.load();
   }
 
-  run_(sql, ...params) {
-    return this.db().prepare(sql).run(...params);
-  }
-
-  get_(sql, ...params) {
-    return this.db().prepare(sql).get(...params);
-  }
+  run_(sql, ...params) { return this.db.prepare(sql).run(...params); }
+  get_(sql, ...params) { return this.db.prepare(sql).get(...params); }
 
   async load() {
     return this.run_(`CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`);
@@ -176,6 +168,7 @@ export class StoreSQLite {
   }
 
   has(key) {
+    if (!key || typeof key !== 'string') return false;
     return this.get_(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !== undefined;
   }
 

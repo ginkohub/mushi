@@ -15,6 +15,7 @@ import { StoreJson } from '../../../src/store.js';
 import { getFile } from '../../../src/data.js';
 import { extractTextContext } from '../../../src/context.js';
 import { formatMD } from '../../../src/tools.js';
+import { fromOwner } from '../../settings.js';
 
 /** @type {import('./gemini.js').Gemini} */
 const gemini = await import(`./gemini.js?t=${new Date()}`).then(m => m.gemini);
@@ -134,9 +135,8 @@ export default [
     timeout: 15,
     desc: 'Gemini chat plugin',
     cat: 'ai',
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT), fromMe,
-    ),
+    eventNames: [MESSAGES_UPSERT],
+    midware: midwareAnd(fromMe, fromOwner),
     exec: processChat
   },
   {

@@ -8,43 +8,40 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import Database from 'better-sqlite3';
 import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
+import { DatabaseSync } from 'node:sqlite';
 
 /**
  *
  * @param {string} dbPath
  * @returns {import('baileys').AuthenticationCreds, Promise<void>}
  */
-export async function useSQLite(dbPath) {
-  const db = new Database(dbPath)
+export function useSQLite(dbPath) {
+  const db = new DatabaseSync(dbPath);
 
-  const run = async (query, ...params) => db.prepare(query).run(...params);
-  const get = async (query, ...params) => db.prepare(query).get(...params);
+  db.exec("PRAGMA journal_mode=WAL");
+  db.exec("PRAGMA foreign_keys=ON");
 
-  await db.pragma("journal_mode=WAL")
+  const run = (query, ...params) => db.prepare(query).run(...params);
+  const get = (query, ...params) => db.prepare(query).get(...params);
 
   /**
    * Sanitize table name
-   *
    * @param {string} name - table name
    * @returns {string} - sanitized table name
    */
-  const sanitizeTableName = (name) => {
-    return name.replace(/[^a-zA-Z0-9_]/g, "_")
-  }
+  const sanitizeTableName = (name) => { return name.replace(/[^a-zA-Z0-9_]/g, "_") };
 
   /**
    * Create table if not exists
    *
    * @param {string} collection - collection name
    */
-  const ensureTable = async (collection) => {
-    const tableName = sanitizeTableName(collection)
-    await run(`CREATE TABLE IF NOT EXISTS ${tableName} (
+  const ensureTable = (collection) => {
+    const tableName = sanitizeTableName(collection);
+    run(`CREATE TABLE IF NOT EXISTS ${tableName} (
      key TEXT PRIMARY KEY,
-     data TEXT
-   )`)
+     data TEXT )`);
   }
 
   /**
@@ -52,11 +49,11 @@ export async function useSQLite(dbPath) {
    * @param {string} col - collection name
    * @param {string} key - key to identify the data
    */
-  const writeData = async (data, col, key) => {
+  const writeData = (data, col, key) => {
     const tableName = sanitizeTableName(col)
-    await ensureTable(col)
-    const value = JSON.stringify(data, BufferJSON.replacer)
-    await run(`INSERT OR REPLACE INTO ${tableName} (key, data) VALUES (?, ?)`, [key, value])
+    ensureTable(col);
+    const value = JSON.stringify(data, BufferJSON.replacer);
+    run(`INSERT OR REPLACE INTO ${tableName} (key, data) VALUES (?, ?)`, key, value);
   }
 
   /**
@@ -64,11 +61,11 @@ export async function useSQLite(dbPath) {
    * @param {string} key - key to identify the data
    * @returns {any} - data
    */
-  const readData = async (col, key) => {
-    const tableName = sanitizeTableName(col)
-    await ensureTable(col)
-    const result = await get(`SELECT data FROM ${tableName} WHERE key = ?`, [key])
-    return result ? JSON.parse(result.data, BufferJSON.reviver) : null
+  const readData = (col, key) => {
+    const tableName = sanitizeTableName(col);
+    ensureTable(col);
+    const result = get(`SELECT data FROM ${tableName} WHERE key = ?`, key);
+    return result ? JSON.parse(result.data, BufferJSON.reviver) : null;
   }
 
   /**
@@ -77,14 +74,14 @@ export async function useSQLite(dbPath) {
    * @param {string} col - collection name
    * @param {string} key - key to identify the data
    */
-  const removeData = async (col, key) => {
-    const tableName = sanitizeTableName(col)
-    await ensureTable(col)
-    await run(`DELETE FROM ${tableName} WHERE key = ?`, [key])
+  const removeData = (col, key) => {
+    const tableName = sanitizeTableName(col);
+    ensureTable(col);
+    run(`DELETE FROM ${tableName} WHERE key = ?`, key);
   }
 
   /** @type {import('baileys').AuthenticationCreds} */
-  const creds = (await readData("credentials", "creds")) || initAuthCreds()
+  const creds = (readData("credentials", "creds")) || initAuthCreds();
 
   return {
     state: {
@@ -94,7 +91,7 @@ export async function useSQLite(dbPath) {
           const data = {}
           await Promise.all(
             ids.map(async (id) => {
-              let value = await readData(type, id)
+              let value = readData(type, id)
               if (type === "app-state-sync-key" && value) {
                 value = WAProto.Message.AppStateSyncKeyData.fromObject(value)
               }
@@ -116,7 +113,7 @@ export async function useSQLite(dbPath) {
       },
     },
     saveCreds: async () => {
-      await writeData(creds, "credentials", "creds")
+      writeData(creds, "credentials", "creds")
     },
   }
 }

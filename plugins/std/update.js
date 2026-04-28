@@ -10,9 +10,9 @@
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { fromOwner } from '../settings.js';
-import { existsSync, unlinkSync } from 'fs';
+import { existsSync, unlinkSync } from 'node:fs';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {

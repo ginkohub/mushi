@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { loadEnvFile } from "process";
+import { loadEnvFile } from "node:process";
 import pen from "./src/pen.js";
 import { Wangsaf } from "./src/client.js";
 import { Handler } from "./src/handler.js";
@@ -16,7 +16,7 @@ import { StoreJson } from "./src/store.js";
 import { getFile } from "./src/data.js";
 import { Browsers } from "baileys";
 import pino from "pino";
-import path from "path";
+import path from "node:path";
 
 /* Load environment variables from .env file */
 try {

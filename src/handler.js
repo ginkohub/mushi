@@ -8,10 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { readdirSync, statSync } from 'fs';
+import { readdirSync, statSync } from 'node:fs';
 import { Ctx } from './context.js';
-import { platform } from 'os';
-import { pathToFileURL } from 'url';
+import { platform } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { Plugin } from './plugin.js';
 import { Pen } from './pen.js';
 import { Events } from './const.js';

@@ -8,16 +8,16 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { execFile } from 'child_process';
-import fs from 'fs/promises';
-import path, { resolve } from 'path';
-import { promisify } from 'util';
+import { execFile } from 'node:child_process';
+import fs from 'node:fs/promises';
+import path, { resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
 import { fromOwner, storeMsg } from '../settings.js';
-import { existsSync } from 'fs';
-import os from 'os';
+import { existsSync } from 'node:fs';
+import os from 'node:os';
 import { google } from 'googleapis';
 
 const execFileAsync = promisify(execFile);
