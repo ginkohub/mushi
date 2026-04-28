@@ -9,7 +9,7 @@
  */
 
 import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
-import { createSQLite } from './store';
+import { createSQLite } from './store.js';
 
 /**
  *
