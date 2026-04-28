@@ -245,7 +245,9 @@ export async function watchDir(dir, { onChange, onAdd, onRemove }) {
         const path = event.paths[0];
         switch (event.kind) {
           case 'modify': onChange?.(path); break;
-          case 'create': onAdd?.(path); break;
+          case 'create':
+          case 'rename':
+            onAdd?.(path); break;
           case 'remove': onRemove?.(path); break;
         }
       }
