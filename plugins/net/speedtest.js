@@ -32,16 +32,17 @@ export default {
       }
     }
 
+    let ipCensored = clientInfo.ip.split('.').map((v, i) => { if (i > 0 && i < 3) { return 'x'.repeat(3) } else { return v } }).join('.');
     let texts = [
-      `ISP: ${clientInfo.isp}`,
-      `IP: ${clientInfo.ip}`,
+      `*ISP*: ${clientInfo.isp}`,
+      `*IP*: ${ipCensored}`,
       '',
-      `Server: ${testServer.name}`,
-      `Country: ${testServer.country}`,
-      `Sponsor: ${testServer.sponsor}`,
-      `Latency: ${testServer.latency}ms`,
-      `Distance: ${testServer.distance} KM`,
-      '', 'testing ',
+      `*Country*: ${testServer.country}`,
+      `*Server*: ${testServer.name}`,
+      `*Sponsor*: ${testServer.sponsor}`,
+      `*Latency*: ${testServer.latency}ms`,
+      `*Distance*: ${testServer.distance} KM`,
+      '', 'wait for testing...',
     ];
 
     const resp = await c.reply({ text: texts.join('\n') }, { quoted: c.event });
@@ -61,10 +62,11 @@ export default {
     texts.pop();
 
     texts.push(...[
-      `Latency: ${latency}ms`,
-      `Jitter: ${jitter}ms`,
-      `Download: ${speedDownload.toFixed(2)}Mbps in ${endDownload}`,
-      `Upload: ${speedUpload.toFixed(2)}Mbps in ${endUpload}`
+      '# Result',
+      `*Latency*: ${latency}ms`,
+      `*Jitter*: ${jitter}ms`,
+      `*Download*: ${speedDownload.toFixed(2)} Mbps in ${endDownload}`,
+      `*Upload*: ${speedUpload.toFixed(2)} Mbps in ${endUpload}`
     ]);
 
     c.reply({
@@ -73,7 +75,6 @@ export default {
     }, {
       quoted: c.event
     });
-
   }
 };
 
