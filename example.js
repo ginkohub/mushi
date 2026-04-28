@@ -8,7 +8,6 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { loadEnvFile } from "node:process";
 import pen from "./src/pen.js";
 import { Wangsaf } from "./src/client.js";
 import { Handler } from "./src/handler.js";
@@ -17,10 +16,17 @@ import { getFile } from "./src/data.js";
 import { Browsers } from "baileys";
 import pino from "pino";
 import path from "node:path";
+import { isDeno } from "./src/tools.js";
 
 /* Load environment variables from .env file */
 try {
-  loadEnvFile();
+  if (isDeno) {
+    const { load } = await import('jsr:@std/dotenv');
+    await load({ export: true });
+  } else {
+    const { loadEnvFile } = await import("node:process");
+    loadEnvFile();
+  }
 } catch (e) {
   pen.Debug('loadEnvFile', e.message);
 }
