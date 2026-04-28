@@ -11,7 +11,7 @@
 import os from 'node:os';
 import fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { formatBytes, formatElapse } from '../../src/tools.js';
+import { formatBytes, formatElapse, isBun, isDeno } from '../../src/tools.js';
 import { MESSAGES_UPSERT } from '../../src/const.js';
 import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import { fromOwner } from '../settings.js';
@@ -72,6 +72,18 @@ export default {
     const memoryUsage = process.memoryUsage();
     const cpus = os.cpus();
 
+    let runtime = isBun ? {
+      name: 'Bun',
+      version: Bun.version
+    } : (isDeno ? {
+      name: 'Deno',
+      version: Deno.version.deno
+    } : {
+      name: 'NodeJS',
+      version: process.version
+    }
+    );
+
     const infoText = `
 *Server Information*
 
@@ -87,9 +99,9 @@ export default {
 *Free*: ${formatBytes(freeMem)}
 *Total*: ${formatBytes(totalMem)}
 
-*Node.js Information*
-*Node.js*: ${process.version}
-*Runtime*: ${formatElapse(process.uptime() * 1000, ' ')}
+*Runtime Information*
+*Runtime*: ${runtime.name} ${runtime.version}
+*Running*: ${formatElapse(process.uptime() * 1000, ' ')}
 *RSS*: ${formatBytes(memoryUsage.rss)}
 *Heap Total*: ${formatBytes(memoryUsage.heapTotal)}
 *Heap Used*: ${formatBytes(memoryUsage.heapUsed)}
