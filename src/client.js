@@ -130,6 +130,8 @@ export class Wangsaf {
    * @param {Config} config 
    */
   async connect() {
+    await this.handler?.waitReady();
+
     if (!this.session) throw new Error('session is required');
     this.dateStarted = new Date();
 
@@ -142,6 +144,7 @@ export class Wangsaf {
       auth: state,
       browser: this.browser ? this.browser : Browsers.macOS('Safari'),
       logger: pino({ level: 'error' }),
+      version: [2, 3000, 1038162681],
     }
 
     if (this.socketOptions) {
