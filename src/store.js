@@ -10,8 +10,7 @@
 
 import pen from './pen.js';
 import fs from 'node:fs';
-import { DatabaseSync } from 'node:sqlite';
-import { isDeno, watchFile } from './tools.js';
+import { isBun, watchDir } from './tools.js';
 
 /**
  * Store ${this.tableName} in JSON file
@@ -33,12 +32,14 @@ export class StoreJson {
 
     /* Watch changes on disk */
     if (autoLoad) {
-      this.watcher = watchFile(this.saveName, (loc) => {
-        if (!this.saveState) {
-          pen.Debug('Reload', loc)
-          this.load();
-        } else {
-          this.saveState = false;
+      this.watcher = watchDir(this.saveName, {
+        onChange: (loc) => {
+          if (!this.saveState) {
+            pen.Debug('Reload', loc)
+            this.load();
+          } else {
+            this.saveState = false;
+          }
         }
       });
     }
@@ -101,6 +102,16 @@ export class StoreJson {
   }
 }
 
+export async function createSQLite(saveName) {
+  if (isBun) {
+    const { Database } = await import('bun:sqlite');
+    return new Database(saveName);
+  } else {
+    const { DatabaseSync } = await import('node:sqlite');
+    return new DatabaseSync(saveName);
+  }
+}
+
 /** @type {object} List of SQLite connections */
 export const connectionList = {};
 
@@ -119,11 +130,15 @@ export class StoreSQLite {
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
     this.tableName = tableName ?? 'data';
-    this._init();
+    this.ready = this._init();
   }
 
-  _init() {
-    if (!connectionList[this.saveName]) connectionList[this.saveName] = new DatabaseSync(this.saveName);
+  async waitReady() {
+    return this.ready;
+  }
+
+  async _init() {
+    if (!connectionList[this.saveName]) connectionList[this.saveName] = await createSQLite(this.saveName);
 
     this.db = connectionList[this.saveName];
     this.db.exec('PRAGMA journal_mode=WAL');

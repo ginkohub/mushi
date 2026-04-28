@@ -71,7 +71,7 @@ export const ActionMap = {
     if (doAction) {
       try {
         pen.Warn(`Try to delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `);
-        const possible = false;
+        let possible = false;
         if (c.isGroup) {
           const meta = c.handler()?.getGroupMetadata(c.chat);
           /* check if bot are admin */
@@ -106,7 +106,7 @@ export const ActionMap = {
     if (doAction) {
       pen.Warn(`Try to kick : ${c.senderName} (${c.sender}) from ${c.chatName}, Reason : ${r.reason} `);
       try {
-        const possible = false;
+        let possible = false;
         if (c.isGroup) {
           const meta = c.handler()?.getGroupMetadata(c.chat);
           /* check if bot are admin */

@@ -50,7 +50,7 @@ export async function useStore(sessionStr) {
     const { state, saveCreds } = await usePostgres(sessionStr);
     return { state, saveCreds, type: 'postgres' };
   } else if (sessionStr.includes('.sqlite') || sessionStr.includes('.db')) {
-    const { state, saveCreds } = useSQLite(sessionStr);
+    const { state, saveCreds } = await useSQLite(sessionStr);
     return { state, saveCreds, type: 'sqlite' };
   } else {
     const { state, saveCreds } = await useMultiFileAuthState(sessionStr);

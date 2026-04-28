@@ -16,8 +16,7 @@ import { Plugin } from './plugin.js';
 import { Pen } from './pen.js';
 import { Events } from './const.js';
 import { jidNormalizedUser } from 'baileys';
-import { delay, genHEX, hashCRC32, shouldUsePolling } from './tools.js';
-import * as chokidar from 'chokidar';
+import { delay, genHEX, hashCRC32, shouldUsePolling, watchDir } from './tools.js';
 import { Reason } from './reason.js';
 
 /**
@@ -86,24 +85,21 @@ export class Handler {
     this.scanPlugin(this.pluginDir);
 
     /* Watch changes in pluginDir */
-    this.watcher = chokidar.watch(this.pluginDir, {
-      ignoreInitial: true,
-      usePolling: shouldUsePolling(),
-      interval: 1000,
-    })
-      .on('change', (loc) => {
+    this.watcher = watchDir(this.pluginDir, {
+      onChange: (loc) => {
         this.pen.Debug(`Plugin changed:`, loc);
         this.loadFile(loc);
-      })
-      .on('add', (loc) => {
+      },
+      onAdd: (loc) => {
         this.pen.Debug(`Plugin added:`, loc);
         this.loadFile(loc);
-      })
-      .on('unlink', (loc) => {
+      },
+      onRemove: (loc) => {
         this.pen.Debug(`Plugin removed:`, loc);
         const hash = hashCRC32(loc);
         this.removeOn(hash);
-      });
+      }
+    });
   }
 
   /**

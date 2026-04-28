@@ -232,31 +232,34 @@ export async function runTask(id, fn, onError, onFinal) {
 }
 
 /**
- * Watch flle changes
+ * Watch dir changes
  * @param {string} filePath
  * @param {Function} onChange
  * @returns {any}
  */
-export async function watchFile(filePath, onChange) {
+export async function watchDir(dir, { onChange, onAdd, onRemove }) {
   if (isDeno) {
-    const watcher = Deno.watchFs(filePath);
+    const watcher = Deno.watchFs(dir);
     (async () => {
       for await (const event of watcher) {
-        if (event.kind === 'modify') {
-          for (const path of event.paths) {
-            onChange(path);
-          }
+        const path = event.paths[0];
+        switch (event.kind) {
+          case 'modify': onChange?.(path); break;
+          case 'create': onAdd?.(path); break;
+          case 'remove': onRemove?.(path); break;
         }
       }
     })();
-
     return watcher;
   } else {
     const { default: chokidar } = await import('chokidar');
-    return chokidar.watch(filePath, {
+    return chokidar.watch(dir, {
       ignoreInitial: true,
       usePolling: shouldUsePolling(),
       interval: 1000,
-    }).on('change', onChange);
+    })
+      .on('change', onChange ?? (() => { }))
+      .on('add', onAdd ?? (() => { }))
+      .on('unlink', onRemove ?? (() => { }));
   }
 }

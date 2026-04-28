@@ -9,15 +9,15 @@
  */
 
 import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
-import { DatabaseSync } from 'node:sqlite';
+import { createSQLite } from './store';
 
 /**
  *
  * @param {string} dbPath
  * @returns {import('baileys').AuthenticationCreds, Promise<void>}
  */
-export function useSQLite(dbPath) {
-  const db = new DatabaseSync(dbPath);
+export async function useSQLite(dbPath) {
+  const db = await createSQLite(dbPath);
 
   db.exec("PRAGMA journal_mode=WAL");
   db.exec("PRAGMA foreign_keys=ON");

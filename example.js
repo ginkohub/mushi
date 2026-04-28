@@ -16,7 +16,7 @@ import { getFile } from "./src/data.js";
 import { Browsers } from "baileys";
 import pino from "pino";
 import path from "node:path";
-import { isDeno } from "./src/tools.js";
+import { isBun, isDeno } from "./src/tools.js";
 
 /* Load environment variables from .env file */
 try {
@@ -24,8 +24,10 @@ try {
     const { load } = await import('jsr:@std/dotenv');
     await load({ export: true });
   } else {
-    const { loadEnvFile } = await import("node:process");
-    loadEnvFile();
+    if (!isBun) {
+      const { loadEnvFile } = await import("process");
+      loadEnvFile();
+    }
   }
 } catch (e) {
   pen.Debug('loadEnvFile', e.message);

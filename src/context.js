@@ -413,7 +413,7 @@ export class Ctx {
     this.parseJIDs = (...by) => {
       if (!by || by.length === 0) by = [JIDBy.Participant, JIDBy.Mentions, JIDBy.Text];
 
-      const jids = [];
+      let jids = [];
 
       if (by?.includes(JIDBy.Participant)) { if (this.participant) jids.push(this.participant); }
       if (by?.includes(JIDBy.Mentions)) {
