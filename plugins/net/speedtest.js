@@ -13,7 +13,7 @@ export default {
   timeout: 15,
   cat: 'net',
   desc: 'Speedtest.',
-  accepts: [MESSAGES_UPSERT],
+  events: [MESSAGES_UPSERT],
   midware: fromMe,
 
   /** @param {import('../../src/context.js').Ctx} c */

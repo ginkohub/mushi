@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,18 +9,6 @@
  */
 
 import { Reason } from './reason.js';
-
-/**
- * @readonly
- * @enum {number | string | any}
- */
-export const Role = {
-  GUEST: 0,
-  USER: 1,
-  PREMIUM: 2,
-  ADMIN: 3,
-  OWNER: 4,
-}
 
 /**
  * @typedef {Object} Plugin
@@ -33,8 +21,8 @@ export const Role = {
  * @property {string} cat
  * @property {boolean} disabled
  * @property {boolean} hidden
- * @property {string[]} accepts - Event type
- * @property {Role | any} role
+ * @property {string[]} events
+ * @property {any[]} roles
  * @property {number} timeout
  * @property {boolean} noPrefix
  * @property {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} midware
@@ -48,7 +36,8 @@ export const Role = {
  */
 export class Plugin {
   /** @param {Plugin} */
-  constructor({ cmd, prefix, desc, cat, tags, disabled, hidden, eventNames, role, timeout, noPrefix, midware, exec, final, location }) {
+  constructor({ cmd, prefix, desc, cat, tags, disabled, hidden, events, roles, timeout,
+    noPrefix, midware, exec, final, location }) {
     /** @type {import('./handler.js').Handler} */
     this.handler = null;
 
@@ -80,16 +69,12 @@ export class Plugin {
     this.hidden = hidden;
 
     /** @type {string[]} */
-    this.eventNames = eventNames;
+    this.events = events;
 
-    /** @type {Role | any} */
-    this.role = role;
+    /** @type {any[]} */
+    this.roles = roles ?? [];
 
-    /**
-     * Timeout in second
-     *
-     * @type {number}
-     */
+    /** @type {number} Timeout in second */
     this.timeout = timeout;
 
     /** @type {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} */
@@ -107,7 +92,6 @@ export class Plugin {
 
   /**
    * Checker before execution
-   *
    * @param {import('./context.js').Ctx} ctx
    * @return {Promise<Reason>}
    */
@@ -119,19 +103,19 @@ export class Plugin {
       message: `This plugin is ready to execute`
     });
 
-    if (this.disabled) return res.setSuccess(false)
+    if (this.disabled) return res.setBad()
       .setCode('plugin-disabled')
       .setMessage(`This plugin is disabled`);
 
     if (this.timeout > 0) {
       const diff = new Date().getTime() - ctx.timestamp;
-      if (diff > (this.timeout * 1000)) return res.setSuccess(false)
+      if (diff > (this.timeout * 1000)) return res.setBad()
         .setCode('plugin-timeout')
         .setMessage(`This plugin is timed out`);
     }
 
-    if (this.accepts && !this.accepts?.includes(ctx.eventType)) {
-      return res.setSuccess(false)
+    if (this.events && !this.events?.includes(ctx.eventType)) {
+      return res.setBad()
         .setCode('event-type')
         .setMessage('Event type not match');
     }

@@ -135,7 +135,7 @@ export default [
     timeout: 15,
     desc: 'Gemini chat plugin',
     cat: 'ai',
-    eventNames: [MESSAGES_UPSERT],
+    events: [MESSAGES_UPSERT],
     midware: midwareAnd(fromMe, fromOwner),
     exec: processChat
   },

@@ -20,7 +20,7 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Ping the bot and get the response time.',
-  eventNames: [MESSAGES_UPSERT],
+  events: [MESSAGES_UPSERT],
   midware: midwareOr(fromMe, fromOwner),
 
   exec: async (c) => {
