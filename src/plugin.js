@@ -114,7 +114,7 @@ export class Plugin {
         .setMessage(`This plugin is timed out`);
     }
 
-    if (this.events && !this.events?.includes(ctx.eventType)) {
+    if (this.events && !this.events?.includes(ctx.eventName)) {
       return res.setBad()
         .setCode('event-type')
         .setMessage('Event type not match');
