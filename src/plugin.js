@@ -123,13 +123,14 @@ export class Plugin {
     }
 
     if (this.roles && this.roles?.length > 0) {
-      if (ctx.user?.roles && ctx.user?.roles?.length === 0) {
+      const user = ctx.user();
+      if (user?.roles && user?.roles?.length === 0) {
         return reason.setBad()
           .setCode('plugin-user-empty-role')
           .setMessage('User has no role');
       } else {
         const pluginRoles = this.roles.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
-        const userRoles = ctx.user?.roles?.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
+        const userRoles = user?.roles?.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
         const minLevelPlugin = Math.min(...pluginRoles);
         const maxLevelUser = Math.max(...userRoles);
         if (minLevelPlugin > maxLevelUser) {

@@ -467,6 +467,7 @@ export class Handler {
         eventType: eventType
       });
 
+      await ctx.init();
       await this.updateData(ctx);
 
       for (const lsid of this.listens.values()) {
@@ -770,8 +771,8 @@ export class Handler {
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
     if (!data) this.runTask('get-group-metadata_' + jid, async () => {
-      this.updateGroupMetadata(jid)
-        .catch((e) => this.pen.Error('get-group-metadata', jid, e));
+      try { await this.updateGroupMetadata(jid); }
+      catch (e) { this.pen.Error('get-group-metadata', jid, e); }
     });
     return data;
   }
@@ -841,9 +842,7 @@ export class Handler {
       return data?.subject;
     } else if (jid.endsWith('@s.whatsapp.net')) {
       const data = this.getContact(jid);
-      if (data) {
-        return data.name;
-      }
+      return data?.name;
     }
 
     /* TODO: Handle other types of jids

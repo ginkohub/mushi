@@ -87,11 +87,22 @@ export class Ctx {
     /** @returns {import('baileys').WASocket} */
     this.sock = () => handler?.client?.sock;
 
+    /** @type {string} */
+    this.eventName = eventName;
+
+    /** @type {import('baileys').WAMessage | any} */
+    this.event = event;
+
+    /** @type {string} */
+    this.eventType = eventType;
+  }
+
+  async init() {
     /**
      * @param {string} jid
      * @returns (string|any)} 
      */
-    this.getName = (jid) => handler?.getName(jid);
+    this.getName = (jid) => this.handler()?.getName(jid);
 
     /**
      * @param {string} jid
@@ -99,7 +110,7 @@ export class Ctx {
      * @param {import('baileys').MessageGenerationOptions} options 
      * @returns {Promise<import('baileys').proto.WebMessageInfo>} 
      */
-    this.sendMessage = async (jid, content, options) => await handler?.sendMessage(jid, content, options);
+    this.sendMessage = async (jid, content, options) => await this.handler()?.sendMessage(jid, content, options);
 
     /** 
      * @param {string} jid
@@ -107,7 +118,7 @@ export class Ctx {
      * @param {import('baileys').MessageRelayOptions} options
      * @returns {Promise<string>} 
      */
-    this.relayMessage = async (jid, content, options) => await handler?.relayMessage(jid, content, options);
+    this.relayMessage = async (jid, content, options) => await this.handler()?.relayMessage(jid, content, options);
 
     /** 
      * @param {import('baileys').AnyMessageContent} content
@@ -116,7 +127,7 @@ export class Ctx {
      */
     this.reply = async (content, options) => {
       if (!this.chat) throw new Error('chat jid not provided');
-      return await handler?.sendMessage(this.chat, content, options);
+      return await this.sendMessage(this.chat, content, options);
     };
 
     /**
@@ -126,7 +137,7 @@ export class Ctx {
      */
     this.replyRelay = async (content, options) => {
       if (!this.chat) throw new Error('chat jid not provided');
-      return await handler?.relayMessage(this.chat, content, options);
+      return await this.relayMessage(this.chat, content, options);
     };
 
     /**
@@ -136,7 +147,7 @@ export class Ctx {
      * @param {import('baileys').MessageGenerationOptions} [options] - Message options
      * @returns {Promise<import('baileys').proto.IWebMessageInfo>}
      */
-    this.reactIt = async (jid, emoji, key, options) => await handler.sendMessage(jid, { react: { text: emoji, key: key } }, options);
+    this.reactIt = async (jid, emoji, key, options) => await this.sendMessage(jid, { react: { text: emoji, key: key } }, options);
 
     /**
      * @param {string} emoji - Emoji to react with
@@ -176,90 +187,79 @@ export class Ctx {
         this.args = splitted.slice(1)?.join(' ');
 
         /** @type {boolean} */
-        this.isCMD = handler?.isCMD(this.pattern);
+        this.isCMD = this.handler()?.isCMD(this.pattern);
 
         if (this.args && this.args?.length > 0) {
           try {
             /** @type {import('minimist').ParsedArgs} */
             this.argv = minimist(parseArgsStringToArgv(this.args));
-          } catch {
-            /* do nothing */
-          }
+          } catch {/* do nothing */ }
         }
       }
     };
 
-    /** @type {string} */
-    this.eventName = eventName;
-
-    /** @type {import('baileys').WAMessage | any} */
-    this.event = event;
-
-    /** @type {string} */
-    this.eventType = eventType;
-
     /** @type {number} */
-    this.timestamp = event?.messageTimestamp ? event.messageTimestamp * 1000 : Date.now();
+    this.timestamp = this.event?.messageTimestamp ? this.event.messageTimestamp * 1000 : Date.now();
 
     /** @type {string} */
-    this.me = jidNormalizedUser(handler?.client?.sock?.user?.id);
+    this.me = jidNormalizedUser(this.handler()?.client?.sock?.user?.id);
 
     /** @type {string} */
-    this.meLID = jidNormalizedUser(handler?.client?.sock?.user?.lid);
+    this.meLID = jidNormalizedUser(this.handler()?.client?.sock?.user?.lid);
 
-    if (eventName === Events.GROUPS_UPDATE) {
+    if (this.eventName === Events.GROUPS_UPDATE) {
       /** @type {string} */
-      this.chat = event.id;
+      this.chat = this.event?.id;
 
       /** @type {string} */
-      this.sender = event.author;
+      this.sender = this.event?.author;
     }
 
-    if (eventName === Events.GROUP_PARTICIPANTS_UPDATE) {
-      this.chat = event.id;
-      this.sender = event.author;
+    if (this.eventName === Events.GROUP_PARTICIPANTS_UPDATE) {
+      this.chat = this.event?.id;
+      this.sender = this.event?.author;
 
       /** @type {string[]} */
-      this.mentionedJid = event.participants;
+      this.mentionedJid = this.event?.participants;
 
       /** @type {import('baileys').ParticipantAction} */
-      this.action = event.action;
+      this.action = this.event?.action;
     }
 
-    if (eventName === Events.CONTACTS_UPDATE) {
-      this.sender = event.id;
+    if (this.eventName === Events.CONTACTS_UPDATE) {
+      this.sender = this.event?.id;
 
       /** @type {string} */
-      this.pushName = event.notify;
+      this.pushName = this.event?.notify;
     }
 
-    if (eventName === Events.PRESENCE_UPDATE) {
-      this.chat = event.id;
-      for (const jid of Object.keys(event.presences)) {
+    if (this.eventName === Events.PRESENCE_UPDATE) {
+      this.chat = this.event?.id;
+      for (const jid of Object.keys(this.event?.presences)) {
         this.sender = jid;
 
         /** @type {import('baileys').WAPresence} */
-        this.presence = event.presences[jid].lastKnownPresence;
+        this.presence = this.event?.presences[jid].lastKnownPresence;
       }
     }
 
-    if (event.key) {
+    if (this.event?.key) {
       /** @type {import('baileys').WAMessageKey} */
-      this.key = event.key;
+      this.key = this.event?.key;
 
       /** @type {string} */
-      this.id = event.key.id;
+      this.id = this.event?.key.id;
 
       /** @type {boolean} */
-      this.fromMe = event.key.fromMe;
-      this.chat = event.key.remoteJid;
-      this.sender = event.key.participant;
+      this.fromMe = this.event?.key.fromMe;
+      this.chat = this.event?.key.remoteJid;
+      this.sender = this.event?.key.participant;
     }
 
-    if (event.message) {
+    if (this.event?.message) {
       /** @type {import('baileys').proto.Message} */
-      this.message = event.message;
-      const ext = extractTextContext(event.message);
+      this.message = this.event?.message;
+      const ext = extractTextContext(this.event?.message);
 
       /** @type {boolean} */
       this.edited = ext.edited;
@@ -299,32 +299,32 @@ export class Ctx {
       this.expiration = ext.contextInfo?.expiration;
     }
 
-    if (eventType === 'append') {
-      this.sender = jidNormalizedUser(event.participant);
+    if (this.eventType === 'append') {
+      this.sender = jidNormalizedUser(this.event?.participant);
     }
 
-    if (event.reaction) {
-      this.text = event.reaction.text
-      this.stanzaId = event.reaction.key?.id;
-      this.remoteJid = event.reaction.key?.remoteJid;
-      this.participant = event.reaction.key?.participant;
+    if (this.event?.reaction) {
+      this.text = this.event?.reaction.text
+      this.stanzaId = this.event?.reaction.key?.id;
+      this.remoteJid = this.event?.reaction.key?.remoteJid;
+      this.participant = this.event?.reaction.key?.participant;
     }
 
-    if (eventName === Events.CALL) {
-      this.chat = event.groupJid ?? event.chatId;
-      this.sender = jidNormalizedUser(event.from);
-      this.id = event.id;
-      this.timestamp = event.date * 1000;
-      this.isGroup = event.isGroup;
+    if (this.eventName === Events.CALL) {
+      this.chat = this.event?.groupJid ?? this.event?.chatId;
+      this.sender = jidNormalizedUser(this.event?.from);
+      this.id = this.event?.id;
+      this.timestamp = this.event?.date * 1000;
+      this.isGroup = this.event?.isGroup;
 
       /** @type {boolean} */
-      this.isVideo = event.isVideo;
+      this.isVideo = this.event?.isVideo;
 
       /** @type {string} */
-      this.callStatus = event.status;
+      this.callStatus = this.event?.status;
     }
 
-    this.pushName = event?.pushName ?? this.pushName;
+    this.pushName = this.event?.pushName ?? this.pushName;
 
     /** @type {string} */
     this.chatName = this.getName(this.chat) ?? this.chat;
@@ -354,7 +354,7 @@ export class Ctx {
     this.isStatus = this.chat === 'status@broadcast';
 
     if (this.isGroup) {
-      const data = handler?.getGroupMetadata(this.chat);
+      const data = this.handler()?.getGroupMetadata(this.chat);
       if (data && Array.isArray(data?.participants)) {
         /** @type {'lid' | 'pn'} */
         this.addressingMode = data.addressingMode;
@@ -375,10 +375,7 @@ export class Ctx {
     }
 
     /** @type {string} */
-    this.senderJid = this.sender;
-    this.sock().signalRepository.lidMapping.getPNForLID(this.sender)
-      .then(pn => { if (pn) this.senderJid = jidNormalizedUser(pn); })
-      .catch(() => { });
+    this.senderJid = jidNormalizedUser(await this.sock().signalRepository.lidMapping.getPNForLID(this.sender) ?? this.sender);
 
     /** @type {boolean} */
     this.isViewOnce = !this.type && this.event?.messageStubParameters?.includes('Message absent from node');
@@ -445,6 +442,6 @@ export class Ctx {
       return jids;
     }
 
-    this.user = this.handler().userManager?.getUser(this.senderJid);
+    this.user = () => this.handler().userManager?.getUser(this.senderJid);
   }
 }
