@@ -213,14 +213,15 @@ export class Wangsaf {
                 break;
               }
               case "mongodb": {
-                /* Not implemented yet */
+                /* TODO: Implemented clear session for mongodb */
               }
             }
 
           } catch (e) {
             this.pen.Error(e);
           } finally {
-            this.connect();
+            this.pen.Warn('statusCode :', statusCode, 'Session terminated. Reconnecting in 5s...')
+            setTimeout(() => this.connect(), 5000);
           }
         }
       } else if (connection === 'open') {
