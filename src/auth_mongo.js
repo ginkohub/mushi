@@ -18,13 +18,13 @@ import pen from './pen.js';
  * @param {string} dbName - Database name
  * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void> }>}
  */
-export async function useMongoDB(url, dbName = 'mushi_auth') {
+export async function useMongoDB(url) {
   const client = new MongoClient(url);
   let collection;
 
   try {
     await client.connect();
-    const db = client.db(dbName);
+    const db = client.db();
     collection = db.collection('baileys_auth_store');
     pen.Debug('Connected to MongoDB for authentication');
   } catch (error) {
