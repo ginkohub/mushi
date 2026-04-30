@@ -82,7 +82,7 @@ export class Ctx {
     this.plugin = () => null;
 
     /** @type {string|any} */
-    this.prefix = '';
+    this.prefix = null;
 
     /** @returns {import('baileys').WASocket} */
     this.sock = () => handler?.client?.sock;
@@ -170,7 +170,7 @@ export class Ctx {
         this.pattern = splitted[0];
 
         /** @type {string} - No prefixed */
-        this.cmd = this.pattern?.slice(-(this.prefix?.length ?? 0));
+        this.cmd = this.pattern?.slice(this.prefix?.length ?? 1);
 
         /** @type {string} */
         this.args = splitted.slice(1)?.join(' ');
