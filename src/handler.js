@@ -685,7 +685,6 @@ export class Handler {
       let updated = false;
 
       if (data) {
-
         switch (ctx?.eventName) {
           case Events.GROUP_PARTICIPANTS_UPDATE: {
             switch (ctx?.action) {
@@ -693,7 +692,7 @@ export class Handler {
                 for (const add of ctx.mentionedJid) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = !add.endsWith('@lid');
+                  updated = !ctx.mentionedJid.some(jid => jid.endsWith('@lid'));
                 }
                 break;
               }
