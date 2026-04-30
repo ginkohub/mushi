@@ -64,10 +64,12 @@ export class StoreJson {
 
   save() {
     try {
-      fs.writeFileSync(this.saveName, JSON.stringify(this.data, null, 2), 'utf8');
+      const tempPath = this.saveName + '.tmp';
+      fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), 'utf8');
+      fs.renameSync(tempPath, this.saveName);
       this.saveState = true;
     } catch (e) {
-      pen.Error(e);
+      pen.Error('Failed saving data', e);
     }
   }
 
