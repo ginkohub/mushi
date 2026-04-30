@@ -29,6 +29,7 @@ export class StoreJson {
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
     this.saveState = true;
+    this.saveTimeout = null;
 
     /* Watch changes on disk */
     if (autoLoad) {
@@ -72,7 +73,11 @@ export class StoreJson {
 
   saveCheck() {
     if (this.autoSave) {
-      this.save();
+      if (this.saveTimeout) clearTimeout(this.saveTimeout);
+      this.saveTimeout = setTimeout(() => {
+        this.save();
+        this.saveTimeout = null;
+      }, 2000);
     }
   }
 
