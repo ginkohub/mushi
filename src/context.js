@@ -375,9 +375,9 @@ export class Ctx {
     }
 
     /** @type {string} */
-    this.senderJid = '';
+    this.senderJid = this.sender;
     this.sock().signalRepository.lidMapping.getPNForLID(this.sender)
-      .then(pn => this.senderJid = jidNormalizedUser(pn))
+      .then(pn => { if (pn) this.senderJid = jidNormalizedUser(pn); })
       .catch(() => { });
 
     /** @type {boolean} */
