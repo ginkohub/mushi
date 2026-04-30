@@ -126,7 +126,7 @@ export class StoreJson {
    * @returns {IterableIterator<string>}
    */
   keys() {
-    return this.data.keys();
+    return Object.keys(this.data);
   }
 
   /**
@@ -200,6 +200,12 @@ export class StoreSQLite {
    */
   get_(sql, ...params) { return this.db.prepare(sql).get(...params); }
 
+  /**
+   * @param {string} sql
+   * @param  {...any} params
+   */
+  all_(sql, ...params) { return this.db.prepare(sql).all(...params); }
+
   async load() {
     return this.run_(`CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`);
   }
@@ -251,8 +257,7 @@ export class StoreSQLite {
    * @returns {IterableIterator<string>}
    */
   keys() {
-    /* @ts-ignore */
-    return this.get_(`SELECT key FROM data`).map(row => row.key);
+    return this.all_(`SELECT key FROM data`).map(row => row.key);
   }
 
   /**
