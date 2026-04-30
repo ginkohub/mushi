@@ -60,7 +60,6 @@ export class UserManager {
     });
   }
 
-
   /**
    * Check if jid are owner
    * @param {string} jid
@@ -76,10 +75,11 @@ export class UserManager {
   /**
    * Get user data
    * @param {string} jid
-   * @returns {User}
+   * @returns {User|undefined}
    */
   getUser(jid) {
     jid = jidNormalizedUser(jid);
+    if (!jid || jid === '') return;
     /** @type {User} */
     let user = this.storage.get(jid);
 
