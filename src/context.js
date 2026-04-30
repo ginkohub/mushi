@@ -27,13 +27,13 @@ const skipMessageTypes = [
  * Extracts text content and context info from a message
  * 
  * @param {Partial<import('baileys').WAMessage>} m - Message object
- * @returns {{text: string, contextInfo: import('baileys').WAContextInfo | null, type: string, edited: boolean}} Extracted text and context
+ * @returns {{text: string, contextInfo: import('baileys').WAContextInfo | undefined, type: string, edited: boolean}}
  */
 export function extractTextContext(m) {
   let resp = {
-    text: "",
-    contextInfo: null,
-    type: null,
+    text: '',
+    contextInfo: undefined,
+    type: '',
     edited: false
   }
 
@@ -71,26 +71,30 @@ export function extractTextContext(m) {
 
 export class Ctx {
   /**
-   * @param {{handler: import('./handler.js').Handler, eventName: string, eventType: string, event: any}}
+   * @param {{handler: import('./handler.js').Handler, eventName: string, eventType: string, event: any}} opts
    */
   constructor({ handler, eventName, eventType, event }) {
 
     /** @returns {import('./handler.js').Handler} */
     this.handler = () => handler;
 
-    /** @type {import('./plugin.js').Plugin} */
-    this.plugin = null;
+    /** @returns {import('./plugin.js').Plugin|any} */
+    this.plugin = () => null;
 
-    /** @type {string} */
+    /** @type {string|any} */
     this.prefix = '';
 
     /** @returns {import('baileys').WASocket} */
     this.sock = () => handler?.client?.sock;
 
-    /** @returns {string} */
+    /**
+     * @param {string} jid
+     * @returns (string|any)} 
+     */
     this.getName = (jid) => handler?.getName(jid);
 
     /**
+     * @param {string} jid
      * @param {import('baileys').AnyMessageContent} content
      * @param {import('baileys').MessageGenerationOptions} options 
      * @returns {Promise<import('baileys').proto.WebMessageInfo>} 
@@ -107,7 +111,7 @@ export class Ctx {
 
     /** 
      * @param {import('baileys').AnyMessageContent} content
-     * @param {import('baileys').MessageGenerationOptions} options
+     * @param {import('baileys').MiscMessageGenerationOptions} options
      * @returns {Promise<import('baileys').proto.IWebMessageInfo>}
      */
     this.reply = async (content, options) => {
@@ -129,7 +133,7 @@ export class Ctx {
      * @param {string} jid - JID to download media from
      * @param {string} emoji - Emoji to react with
      * @param {import('baileys').WAMessageKey} key - Message key to react to
-     * @param {import('baileys').MessageGenerationOptions} options - Message options
+     * @param {import('baileys').MessageGenerationOptions} [options] - Message options
      * @returns {Promise<import('baileys').proto.IWebMessageInfo>}
      */
     this.reactIt = async (jid, emoji, key, options) => await handler.sendMessage(jid, { react: { text: emoji, key: key } }, options);
@@ -178,7 +182,7 @@ export class Ctx {
           try {
             /** @type {import('minimist').ParsedArgs} */
             this.argv = minimist(parseArgsStringToArgv(this.args));
-          } catch (e) {
+          } catch {
             /* do nothing */
           }
         }
@@ -269,24 +273,26 @@ export class Ctx {
       /* parse text for command and args */
       this.parseText(ext.text);
 
-      /** @type {import('baileys').WAContextInfo} */
+      /** @type {import('baileys').WAContextInfo|any} */
       this.contextInfo = ext.contextInfo;
 
-      /** @type {import('baileys').proto.IMessage} */
+      /** @type {import('baileys').proto.IMessage|any} */
       this.quotedMessage = ext?.contextInfo?.quotedMessage;
       const qext = extractTextContext(this.quotedMessage);
 
       /** @type {string} */
       this.quotedText = qext.text;
 
-      /** @type {string} */
+      /** @type {string|any} */
       this.stanzaId = ext.contextInfo?.stanzaId;
 
-      /** @type {string} */
+      /** @type {string|any} */
       this.participant = ext.contextInfo?.participant;
 
-      /** @type {string} */
+      /** @type {string|any} */
       this.remoteJid = ext.contextInfo?.remoteJid;
+
+      /** @type {string[]|any} */
       this.mentionedJid = ext.contextInfo?.mentionedJid;
 
       /** @type {number} */
@@ -354,22 +360,23 @@ export class Ctx {
         this.addressingMode = data.addressingMode;
 
         const botPart = data?.participants?.find(
-          part => (part.id == this.sender || part.jid == this.sender || part.lid == this.sender)
+          part => (part.id === this.sender || part.jid === this.sender || part.lid === this.sender)
         );
         this.isBotAdmin = botPart?.isAdmin ?? botPart?.isSuperAdmin ?? false;
 
 
         const part = data?.participants?.find(
-          part => (part.id == this.sender || part.jid == this.sender || part.lid == this.sender)
+          part => (part.id === this.sender || part.jid === this.sender || part.lid === this.sender)
         );
 
         /** @type {boolean} */
         this.isAdmin = part?.isAdmin ?? part?.isSuperAdmin ?? false;
 
-        /** @type {string} */
-        this.senderAlt = (this.sender?.endsWith('@lid') && part) ? part.jid : this.sender;
       }
     }
+
+    /** @type {string} */
+    this.senderJid = jidNormalizedUser(this.sock().signalRepository.lidMapping.getPNForLID(this.sender).then(pn => this.senderJid = pn) ?? '');
 
     /** @type {boolean} */
     this.isViewOnce = !this.type && this.event?.messageStubParameters?.includes('Message absent from node');
@@ -436,5 +443,6 @@ export class Ctx {
       return jids;
     }
 
+    this.user = this.handler().userManager?.getUser(this.sender);
   }
 }

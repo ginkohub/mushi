@@ -19,11 +19,7 @@ import pen from './pen.js';
  * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void> }>}
  */
 export async function useMongoDB(url, dbName = 'mushi_auth') {
-  const client = new MongoClient(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-
+  const client = new MongoClient(url);
   let collection;
 
   try {

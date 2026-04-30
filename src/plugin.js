@@ -9,85 +9,87 @@
  */
 
 import { Reason } from './reason.js';
+import { nameToLevel } from './roles.js';
 
 /**
- * @typedef {Object} Plugin
- * @property {import('./handler.js').Handler} handler
- * @property {import('baileys').WASocket} sock
- * @property {string | string[]} cmd
- * @property {string} prefix
- * @property {string} desc
- * @property {string[]} tags
- * @property {string} cat
- * @property {boolean} disabled
- * @property {boolean} hidden
- * @property {string[]} events
- * @property {any[]} roles
- * @property {number} timeout
- * @property {boolean} noPrefix
- * @property {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} midware
+ * @typedef {Object} PluginOpts
+ * @property {import('./handler.js').Handler} [handler]
+ * @property {import('baileys').WASocket} [sock]
+ * @property {string|string[]|any} [cmd]
+ * @property {string} [prefix]
+ * @property {string} [desc]
+ * @property {string[]} [tags]
+ * @property {string} [cat]
+ * @property {boolean} [disabled]
+ * @property {boolean} [hidden]
+ * @property {string[]} [events]
+ * @property {Role[]} [roles]
+ * @property {number} [timeout]
+ * @property {boolean} [noPrefix]
+ * @property {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} [midware]
  * @property {(ctx: import('./context.js').Ctx) => Promise<void>} exec
- * @property {(ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>} final
- * @property {string} location
+ * @property {(ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>} [final]
+ * @property {string} [location]
  */
 
 /**
  * Plugin class for handling event as listener or command
  */
 export class Plugin {
-  /** @param {Plugin} */
-  constructor({ cmd, prefix, desc, cat, tags, disabled, hidden, events, roles, timeout,
-    noPrefix, midware, exec, final, location }) {
-    /** @type {import('./handler.js').Handler} */
-    this.handler = null;
+  /** @param {PluginOpts} opts */
+  constructor(opts) {
+    /** @type {import('./handler.js').Handler|undefined} */
+    this.handler = undefined;
 
-    /** @type {import('baileys').WASocket} */
-    this.sock = null;
+    /** @type {import('baileys').WASocket|undefined} */
+    this.sock = undefined;
 
-    /** @type {string | string[]}*/
-    this.cmd = cmd;
+    /** @type {string|string[]|any}*/
+    this.cmd = opts?.cmd;
+
+    /** @type {string|any} */
+    this.prefix = opts?.prefix
+
+    /** @type {boolean|any} */
+    this.noPrefix = opts?.noPrefix;
+
+    /** @type {string|any} */
+    this.desc = opts?.desc;
+
+    /** @type {string[]|any} */
+    this.tags = opts?.tags;
 
     /** @type {string} */
-    this.prefix = prefix
+    this.cat = (opts?.cat && opts?.cat !== '') ? opts?.cat : 'uncategorized';
 
-    /** @type {boolean} */
-    this.noPrefix = noPrefix;
+    /** @type {boolean|any} */
+    this.disabled = opts?.disabled;
 
-    /** @type {string} */
-    this.desc = desc;
+    /** @type {boolean|any} */
+    this.hidden = opts?.hidden;
+
+    /** @type {string[]|any} */
+    this.events = opts?.events;
 
     /** @type {string[]} */
-    this.tags = tags;
+    this.roles = opts?.roles ?? [];
+    if (!Array.isArray(this.roles))
+      throw new Error('Roles must be an array');
 
-    /** @type {string} */
-    this.cat = (cat && cat !== '') ? cat : 'uncategorized';
+    /** @type {number|any} Timeout in second */
+    this.timeout = opts?.timeout;
 
-    /** @type {boolean} */
-    this.disabled = disabled;
-
-    /** @type {boolean} */
-    this.hidden = hidden;
-
-    /** @type {string[]} */
-    this.events = events;
-
-    /** @type {any[]} */
-    this.roles = roles ?? [];
-
-    /** @type {number} Timeout in second */
-    this.timeout = timeout;
-
-    /** @type {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} */
-    this.midware = midware;
+    /** @type {((ctx: import('./context.js').Ctx) => Promise<Reason>)| any} */
+    this.midware = opts?.midware;
 
     /** @type {(ctx: import('./context.js').Ctx) => Promise<void>} */
-    this.exec = exec;
+    this.exec = opts?.exec;
 
-    /** @type {(ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>} */
-    this.final = final;
+    /** @type {((ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>)|any} */
+    this.final = opts?.final;
 
-    /** @type {string} */
-    this.location = location;
+    /** @type {string|any} */
+    this.location = opts?.location;
   }
 
   /**
@@ -96,34 +98,52 @@ export class Plugin {
    * @return {Promise<Reason>}
    */
   async check(ctx) {
-    const res = new Reason({
+    const reason = new Reason({
       success: true,
       code: 'plugin-checker',
       author: this.location,
       message: `This plugin is ready to execute`
     });
 
-    if (this.disabled) return res.setBad()
+    if (this.disabled) return reason.setBad()
       .setCode('plugin-disabled')
       .setMessage(`This plugin is disabled`);
 
     if (this.timeout > 0) {
       const diff = new Date().getTime() - ctx.timestamp;
-      if (diff > (this.timeout * 1000)) return res.setBad()
+      if (diff > (this.timeout * 1000)) return reason.setBad()
         .setCode('plugin-timeout')
         .setMessage(`This plugin is timed out`);
     }
 
     if (this.events && !this.events?.includes(ctx.eventName)) {
-      return res.setBad()
+      return reason.setBad()
         .setCode('event-type')
         .setMessage('Event type not match');
+    }
+
+    if (this.roles && this.roles?.length > 0) {
+      if (ctx.user?.roles && ctx.user?.roles?.length === 0) {
+        return reason.setBad()
+          .setCode('plugin-user-empty-role')
+          .setMessage('User has no role');
+      } else {
+        const pluginRoles = this.roles.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
+        const userRoles = ctx.user?.roles?.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
+        const minLevelPlugin = Math.min(...pluginRoles);
+        const maxLevelUser = Math.max(...userRoles);
+        if (minLevelPlugin > maxLevelUser) {
+          return reason.setBad()
+            .setCode('plugin-user-role-not-match')
+            .setMessage('User role not match');
+        }
+      }
     }
 
     if (this.midware) {
       return new Reason(await this.midware(ctx));
     }
-    return res;
+    return reason;
   }
 
 }

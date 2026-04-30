@@ -9,9 +9,8 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { fromMe, midwareOr } from '../../src/midware.js';
+import { Role } from '../../src/roles.js';
 import { formatElapse } from '../../src/tools.js';
-import { fromOwner } from '../settings.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -21,8 +20,7 @@ export default {
   tags: ['system'],
   desc: 'Ping the bot and get the response time.',
   events: [MESSAGES_UPSERT],
-  midware: midwareOr(fromMe, fromOwner),
-
+  roles: [Role.GUEST, Role.USER],
   exec: async (c) => {
     const current = Date.now();
     let latency = current - c.timestamp;

@@ -14,7 +14,7 @@ import { createSQLite } from './store.js';
 /**
  *
  * @param {string} dbPath
- * @returns {import('baileys').AuthenticationCreds, Promise<void>}
+ * @returns {Promise<{state: import('baileys').AuthenticationState, saveCreds: () => Promise<void> }>}
  */
 export async function useSQLite(dbPath) {
   const db = await createSQLite(dbPath);
@@ -22,7 +22,9 @@ export async function useSQLite(dbPath) {
   db.exec("PRAGMA journal_mode=WAL");
   db.exec("PRAGMA foreign_keys=ON");
 
+  /** @type {(query: string, ...params: any[]) => any} */
   const run = (query, ...params) => db.prepare(query).run(...params);
+  /** @type {(query: string, ...params: any[]) => any} */
   const get = (query, ...params) => db.prepare(query).get(...params);
 
   /**
@@ -87,6 +89,7 @@ export async function useSQLite(dbPath) {
     state: {
       creds,
       keys: {
+        /* @ts-ignore */
         get: async (type, ids) => {
           const data = {}
           await Promise.all(
@@ -95,6 +98,7 @@ export async function useSQLite(dbPath) {
               if (type === "app-state-sync-key" && value) {
                 value = WAProto.Message.AppStateSyncKeyData.fromObject(value)
               }
+              /* @ts-ignore */
               data[id] = value
             }),
           )
@@ -103,7 +107,9 @@ export async function useSQLite(dbPath) {
         set: async (data) => {
           const tasks = []
           for (const category in data) {
+            /* @ts-ignore */
             for (const id in data[category]) {
+              /* @ts-ignore */
               const value = data[category][id]
               tasks.push(value ? writeData(value, category, id) : removeData(category, id))
             }

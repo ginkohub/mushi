@@ -18,6 +18,7 @@ import { useSQLite } from "./auth_sqlite.js";
 import { useMongoDB } from "./auth_mongo.js";
 import { usePostgres } from "./auth_postgres.js";
 import { rmSync, unlinkSync } from "node:fs";
+import { delay } from "./tools.js";
 
 
 /* Initialize readline */
@@ -26,19 +27,18 @@ const question = readline.createInterface({
   output: process.stdout
 })
 
-/* Ask for input text */
+/**
+ * Ask for input text 
+ * @param {string} prompt
+ */
 function ask(prompt) {
   return new Promise((resolve) => question.question(prompt, resolve))
 }
 
-/** @type {import('node:timers').Timer} */
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-
 /**
  *
  * @param {string} sessionStr 
- * @returns {{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' | 'postgres' } }
+ * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: string }|any> }
  */
 export async function useStore(sessionStr) {
   if (!sessionStr) return null;
@@ -89,7 +89,7 @@ export class Wangsaf {
     retry,
     pen
   }) {
-    /** @type {import('baileys').WASocket} */
+    /** @type {import('baileys').WASocket|any} */
     this.sock = null;
 
     /** @type {string} */
@@ -119,23 +119,20 @@ export class Wangsaf {
     /** @type {import('./pen.js').Pen} */
     this.pen = pen ?? new Pen({ prefix: 'sys' });
 
-    /** @type {Date} */
+    /** @type {number} */
     this.dateCreated = Date.now();
 
-    /** @type {Date} */
-    this.dateStarted = null;
+    /** @type {number} */
+    this.dateStarted = 0;
   }
 
-  /**
-   * @param {Config} config 
-   */
   async connect() {
     await this.handler?.waitReady();
 
     if (!this.session) throw new Error('session is required');
     this.dateStarted = Date.now();
 
-    /** @type {{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' } } */
+    /** @type {{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' | 'postgres'} } */
     const { state, saveCreds, type } = await useStore(this.session)
 
     /** @type {import('baileys').UserFacingSocketConfig} */
@@ -151,7 +148,7 @@ export class Wangsaf {
       Object.assign(socketOptions, this.socketOptions)
     }
 
-    /** @type {import('baileys').WASocket} */
+    /** @type {import('baileys').WASocket|any} */
     this.sock = makeWASocket(socketOptions)
     if (this.handler) {
       if (this.handler.attach) {
@@ -160,7 +157,7 @@ export class Wangsaf {
     }
 
     this.pen.Debug('Method :', this.method, ', Registered :', state?.creds?.registered, ', Platform :', state?.creds?.platform);
-    if (this.method == 'otp' && (!state?.creds?.registered && !state?.creds?.platform)) {
+    if (this.method === 'otp' && (!state?.creds?.registered && !state?.creds?.platform)) {
 
       this.pen.Debug('Delay for 3000ms before requesting pairing code')
       /* Delay needed for pairing code */
@@ -173,7 +170,7 @@ export class Wangsaf {
           phone = phone?.replace(/[^+0-9]/g, '');
           phone = phone?.trim()
 
-          if (!phone || phone == '') this.pen.Error('Invalid phone number')
+          if (!phone || phone === '') this.pen.Error('Invalid phone number')
         }
       }
 
@@ -184,9 +181,10 @@ export class Wangsaf {
       if (code) this.pen.Log('Enter this OTP :', code)
     }
 
+    /* @ts-ignore */
     this.sock.ev.on(Events.CONNECTION_UPDATE, async (update) => {
       const { connection, lastDisconnect, qr } = update;
-      if (qr && this.method == 'qr') {
+      if (qr && this.method === 'qr') {
         this.pen.Log('Scan this QR :\n', await QRCode.toString(qr, { type: 'terminal', small: true }))
       }
 

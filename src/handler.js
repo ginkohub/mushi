@@ -16,8 +16,10 @@ import { Plugin } from './plugin.js';
 import { Pen } from './pen.js';
 import { Events } from './const.js';
 import { jidNormalizedUser } from 'baileys';
-import { delay, genHEX, hashCRC32, shouldUsePolling, watchDir } from './tools.js';
+import { delay, genHEX, hashCRC32, watchDir } from './tools.js';
 import { Reason } from './reason.js';
+import { UserManger } from './user_manager.js';
+import { getFile } from './data.js';
 
 /**
  * @typedef {Object} HandlerOptions
@@ -28,39 +30,41 @@ import { Reason } from './reason.js';
  * @property {Map<string, import('baileys').GroupMetadata>} groupCache
  * @property {Map<string, import('baileys').Contact>} contactCache
  * @property {Map<string, number>} timerCache
+ * @property {import('./user_manager.js').UserManger} userManager
  */
+
 /**
  * Handler class for handling plugins
  */
 export class Handler {
   /**
-   * @param {HandlerOptions} 
+   * @param {HandlerOptions} opts
    */
-  constructor({ pluginDir, filter, prefix, pen, groupCache, contactCache, timerCache }) {
+  constructor({ pluginDir, filter, prefix, pen, groupCache, contactCache, timerCache, userManager }) {
     this.pluginDir = pluginDir ?? '../plugins';
 
     /** @type {Function} */
     this.filter = filter;
 
-    /** @type {import('./client.js').Wangsaf} */
-    this.client = null;
+    /** @type {import('./client.js').Wangsaf|any} */
+    this.client;
 
-    /** @type {import('./pen.js').Pen)} */
+    /** @type {import('./pen.js').Pen} */
     this.pen = pen ?? new Pen({ prefix: 'hand' });
 
     /** @type {string[]} */
     this.prefix = prefix ?? ['.', '/'];
 
-    /** @type {Map<number, import('./plugin.js').Plugin>} */
+    /** @type {Map<string, import('./plugin.js').Plugin>} */
     this.plugins = new Map();
 
-    /** @type {bool} */
+    /** @type {boolean} */
     this.isReady = false;
 
-    /** @type {Map<string, {id: number, prefix: string, cmd: string}>} */
+    /** @type {Map<string, {id: string, prefix?: string, cmd: string}>} */
     this.cmds = new Map();
 
-    /** @type {Map<number, number>} */
+    /** @type {Map<string, string>} */
     this.listens = new Map();
 
     /** @type {Map<string, import('baileys').GroupMetadata>} */
@@ -72,14 +76,17 @@ export class Handler {
     /** @type {Map<string, number>} */
     this.timerCache = timerCache ?? new Map();
 
-    /** @type {Array} */
+    /** @type {string[]} */
     this.watchID = [];
 
-    /** @type {Array} */
+    /** @type {string[]} */
     this.blockList = [];
 
-    /** @type {Object} */
+    /** @type {Record<string, any>} */
     this.taskList = {}
+
+    /** @type {import('./user_manager.js').UserManger} */
+    this.userManager = userManager ?? new UserManger({ saveName: getFile('user_manager.json') });
 
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);
@@ -149,6 +156,7 @@ export class Handler {
   /**
  * Block / unblock given jid
  * @param {string} jid
+ * @param {string} action
  * @returns {Promise<boolean | undefined>}
  */
   async updateBlock(jid, action) {
@@ -231,7 +239,7 @@ export class Handler {
   /**
    * Add plugin to handler
    * @param {string} location
-   * @param {import('./plugin.js').Plugin} opts 
+   * @param {import('./plugin.js').PluginOpts[]} opts 
    */
   async on(location, ...opts) {
     let i = 0;
@@ -292,6 +300,7 @@ export class Handler {
    * @param {string} dir
    */
   async scanPlugin(dir) {
+    /** @type {string[]} */
     let files = [];
     try {
       files = readdirSync(dir);
@@ -335,12 +344,13 @@ export class Handler {
   async loadFile(loc) {
     if (loc.endsWith('.js')) {
       try {
+        /** @type {string|any} */
         const filename = loc.split('/').pop();
-        if (
+        if (filename && (
           filename.startsWith('_') ||
           filename.startsWith('.') ||
           filename.endsWith('.test.js')
-        ) {
+        )) {
           this.pen.Debug('Skip:', loc)
           return;
         }
@@ -389,7 +399,7 @@ export class Handler {
   /** 
    * Get command by pattern
    * @param {string} p
-   * @returns {{id: number, prefix: string, cmd: string, plugin:import('./plugin.js').Plugin}|undefined}
+   * @returns {{id: string, prefix?: string, cmd: string, plugin:import('./plugin.js').Plugin}|undefined}
    */
   getCMD(p) {
     if (!p) return;
@@ -446,7 +456,7 @@ export class Handler {
 
   /**
    * Handle event and passed it to all plugins whether it is a command or a listener
-   * @param {{event: any, eventType: string, eventName: string}}
+   * @param {{event: any, eventType: string, eventName: string}} otps
    */
   async handle({ event, eventType, eventName }) {
     try {
@@ -460,7 +470,7 @@ export class Handler {
       await this.updateData(ctx);
 
       for (const lsid of this.listens.values()) {
-        /** @type {import('./plugin.js').Plugin} */
+        /** @type {import('./plugin.js').Plugin|undefined} */
         const listen = this.plugins.get(lsid);
         try {
           if (!listen) continue;
@@ -544,7 +554,7 @@ export class Handler {
         case Events.CONTACTS_UPDATE:
         case Events.CONTACTS_UPSERT: {
           this.updateContact(ctx.sender, {
-            jid: ctx.sender,
+            id: ctx.sender,
             name: ctx.pushName,
           });
           break;
@@ -563,7 +573,7 @@ export class Handler {
           const ev = ctx.event;
           switch (ev?.type) {
             case 'add': {
-              this.blockList.push(...ev?.blocklist);
+              this.blockList.push(...(ev?.blocklist ?? []));
               break;
             }
             case 'remove': {
@@ -607,48 +617,59 @@ export class Handler {
 
     this.client = client;
 
-    this.client.sock.ev.process(events => {
-      for (const eventName of Object.keys(events)) {
-        const update = events[eventName];
-        switch (eventName) {
-          case Events.MESSAGES_UPSERT: {
-            for (const event of update?.messages) {
-              this.handle({ eventName: eventName, event: event, eventType: update.type });
+
+    this.client.sock.ev.process(
+      /** @param {import('baileys').BaileysEventMap} events */
+      (events) => {
+        for (const eventName of Object.keys(events)) {
+          const update = events[/** @type {keyof import('baileys').BaileysEventMap} */(eventName)];
+          switch (eventName) {
+            case Events.CONNECTION_UPDATE: {
+              const owner = client.sock?.user;
+              if (owner) {
+                this.userManager?.addOwners(owner.id);
+                if (owner.lid) this.userManager?.addOwners(owner.lid)
+              }
+              break;
             }
-            break;
-          }
-
-          case Events.CALL:
-          case Events.MESSAGES_REACTION:
-          case Events.MESSAGES_UPDATE:
-          case Events.CONTACTS_UPDATE:
-          case Events.CONTACTS_UPSERT:
-          case Events.GROUPS_UPSERT:
-          case Events.GROUPS_UPDATE: {
-            for (const event of update) {
-              this.handle({ eventName: eventName, event: event, eventType: update.type });
+            case Events.MESSAGES_UPSERT: {
+              for (const event of update?.messages ?? []) {
+                this.handle({ eventName: eventName, event: event, eventType: update.type });
+              }
+              break;
             }
-            break;
-          }
 
-          case Events.GROUP_PARTICIPANTS_UPDATE:
-          case Events.PRESENCE_UPDATE: {
-            this.handle({ eventName: eventName, event: update, eventType: update.type });
-            break;
-          }
-
-          default: {
-            if (Array.isArray(update)) {
+            case Events.CALL:
+            case Events.MESSAGES_REACTION:
+            case Events.MESSAGES_UPDATE:
+            case Events.CONTACTS_UPDATE:
+            case Events.CONTACTS_UPSERT:
+            case Events.GROUPS_UPSERT:
+            case Events.GROUPS_UPDATE: {
               for (const event of update) {
                 this.handle({ eventName: eventName, event: event, eventType: update.type });
               }
-            } else {
+              break;
+            }
+
+            case Events.GROUP_PARTICIPANTS_UPDATE:
+            case Events.PRESENCE_UPDATE: {
               this.handle({ eventName: eventName, event: update, eventType: update.type });
+              break;
+            }
+
+            default: {
+              if (Array.isArray(update)) {
+                for (const event of update) {
+                  this.handle({ eventName: eventName, event: event, eventType: update.type });
+                }
+              } else {
+                this.handle({ eventName: eventName, event: update, eventType: update.type });
+              }
             }
           }
         }
-      }
-    });
+      });
   }
 
   /**
@@ -672,7 +693,7 @@ export class Handler {
                 for (const add of ctx.mentionedJid) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = true && !add.endsWith('@lid');
+                  updated = !add.endsWith('@lid');
                 }
                 break;
               }
@@ -709,7 +730,8 @@ export class Handler {
               case 'modify': {
                 break;
               }
-              default: { }
+              default:
+                break;
             }
             break;
           }
@@ -823,11 +845,12 @@ export class Handler {
       if (data) {
         return data.name;
       }
-    } else if (jid.endsWith('@newsletter')) {
-
-    } else if (jid.endsWith('@lid')) {
-
     }
+
+    /* TODO: Handle other types of jids
+    else if (jid.endsWith('@newsletter')) { } 
+    else if (jid.endsWith('@lid')) { }
+    */
 
     return null;
   }
@@ -836,8 +859,8 @@ export class Handler {
   * Send message to given jid
   * @param {string} jid
   * @param {import('baileys').AnyMessageContent} content
-  * @param {import('baileys').MessageGenerationOptions} options
-  * @returns {Promise<import('baileys').proto.IWebMessageInfo>}
+  * @param {import('baileys').MiscMessageGenerationOptions} [options]
+  * @returns {Promise<import('baileys').proto.IWebMessageInfo|any>}
   */
   async sendMessage(jid, content, options) {
     try {
@@ -853,6 +876,7 @@ export class Handler {
     } catch (e) {
       this.pen.Error('send-message', e);
     }
+    return;
   }
 
   /**

@@ -13,9 +13,11 @@ import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
 
 /** @type {boolean} True if the current runtime are Deno */
+/* @ts-ignore */
 export const isDeno = typeof Deno !== "undefined";
 
 /** @type {boolean} True if the current runtime are Bun */
+/* @ts-ignore */
 export const isBun = typeof Bun !== "undefined";
 
 
@@ -73,10 +75,10 @@ const DAY = 24 * HOUR;
 /**
  * Formats elapsed time in milliseconds into a human-readable string.
  * @param {number} elapse Time in milliseconds.
+ * @param {string} space=' ' The space character to use for formatting.
  * @returns {string} Formatted string (e.g., "5d 12h 30m 20s", "45m 30s", "30s", "100ms").
  */
-export function formatElapse(elapse, space) {
-  if (!space) space = '';
+export function formatElapse(elapse, space = '') {
   let est = `${elapse}ms`;
   if (elapse >= DAY) {
     est = [
@@ -190,29 +192,31 @@ export function shouldUsePolling() {
 /**
  * Import module with timestamp
  * @param {string} path The path to the module.
- * @param {import.meta} meta
- * @returns {any} The imported module.
+ * @param {ImportMeta} meta
+ * @returns {Promise<any>} The imported module.
  */
 export async function importy(path, meta) {
   const dirs = [];
   if (meta) dirs.push(meta.dirname);
   dirs.push(path);
   const loc = pathToFileURL(dirs.join('/')).href;
-  return import(loc + '?t=' + Date.now());
+  return await import(loc + '?t=' + Date.now());
 }
 
-/** @type {Object} */
-const taskList = {}
+/** @type {Map<string, Promise<any>>} */
+const taskList = new Map();
 
 /**
  * @param {string} id 
  * @param {() => Promise<any>} fn
+ * @param {(e:any) => Promise<any>} onError
+ * @param {(id:string) => Promise<any>} onFinal
  * @returns {Promise<any>}
  */
 export async function runTask(id, fn, onError, onFinal) {
-  if (taskList[id]) {
+  if (taskList.has(id)) {
     pen.Debug(`Task ${id} is already running`);
-    return taskList[id];
+    return taskList.get(id);
   }
 
   pen.Debug(`Task ${id} started`);
@@ -222,23 +226,24 @@ export async function runTask(id, fn, onError, onFinal) {
     } catch (e) {
       if (onError && typeof onError == 'function') onError(e);
     } finally {
-      delete taskList[id];
+      taskList.delete(id);
       if (onFinal && typeof onFinal == 'function') onFinal(id);
     }
   })();
 
-  taskList[id] = task;
+  taskList.set(id, task);
   return task;
 }
 
 /**
  * Watch dir changes
- * @param {string} filePath
- * @param {Function} onChange
- * @returns {any}
+ * @param {string} dir
+ * @param {{onChange?: (path: string) => void, onAdd?: (path: string) => void, onRemove?: (path: string) => void}}  handlers
+ * @returns {Promise<import('chokidar').FSWatcher>}
  */
 export async function watchDir(dir, { onChange, onAdd, onRemove }) {
   if (isDeno) {
+    /* eslint-disable-next-line */
     const watcher = Deno.watchFs(dir);
     (async () => {
       for await (const event of watcher) {

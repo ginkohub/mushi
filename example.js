@@ -36,7 +36,7 @@ try {
 const wea = new Wangsaf({
   dataDir: 'data',
   phone: process.env.PHONE ?? '',
-  method: process.env.METHOD ?? 'otp',
+  method: /** @type {any} */ (process.env.METHOD ?? 'otp'),
   session: process.env.SESSION ?? 'sesi',
   browser: Browsers.macOS(process.env.BROWSER ?? 'Safari'),
   handler: new Handler({

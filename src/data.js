@@ -24,7 +24,7 @@ function checkDataDir(targetDir) {
   try {
     fs.mkdirSync(targetDir);
   } catch (e) {
-    // Ignore error if the directory already exists (EEXIST)
+    /*Ignore error if the directory already exists (EEXIST) */
     if (e.code !== 'EEXIST') {
       pen.Error(`Failed to create directory ${targetDir}:`, e);
     }
