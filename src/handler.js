@@ -18,7 +18,7 @@ import { Events } from './const.js';
 import { jidNormalizedUser } from 'baileys';
 import { delay, genHEX, hashCRC32, watchDir } from './tools.js';
 import { Reason } from './reason.js';
-import { UserManger } from './user_manager.js';
+import { UserManager } from './user_manager.js';
 import { getFile } from './data.js';
 
 /**
@@ -30,7 +30,7 @@ import { getFile } from './data.js';
  * @property {Map<string, import('baileys').GroupMetadata>} groupCache
  * @property {Map<string, import('baileys').Contact>} contactCache
  * @property {Map<string, number>} timerCache
- * @property {import('./user_manager.js').UserManger} userManager
+ * @property {import('./user_manager.js').UserManager} userManager
  */
 
 /**
@@ -85,8 +85,8 @@ export class Handler {
     /** @type {Record<string, any>} */
     this.taskList = {}
 
-    /** @type {import('./user_manager.js').UserManger} */
-    this.userManager = userManager ?? new UserManger({ saveName: getFile('user_manager.json') });
+    /** @type {import('./user_manager.js').UserManager} */
+    this.userManager = userManager ?? new UserManager({ saveName: getFile('user_manager.json') });
 
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);

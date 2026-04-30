@@ -26,7 +26,7 @@ import { RoleLevel, Role, nameToLevel, rolesEnough } from './roles.js';
  * @property {number} addedAt
  */
 
-export class UserManger {
+export class UserManager {
 
   /**
    * @param {{saveName?: string, owners?: string[]}} options
