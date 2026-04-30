@@ -30,22 +30,30 @@ export class StoreJson {
     this.expiration = expiration ?? 0;
     this.saveState = true;
     this.saveTimeout = null;
-
-    /* Watch changes on disk */
-    if (autoLoad) {
-      this.watcher = watchDir(this.saveName, {
-        onChange: (loc) => {
-          if (!this.saveState) {
-            pen.Debug('Reload', loc)
-            this.load();
-          } else {
-            this.saveState = false;
-          }
-        }
-      });
-    }
+    this.autoLoad = autoLoad ?? false;
 
     this.load();
+    this.watch();
+  }
+
+  /**
+   * Watch for autoloader
+   */
+  async watch() {
+    if (!this.watcher && this.autoLoad) {
+      try {
+        this.watcher = watchDir(this.saveName, {
+          onChange: (loc) => {
+            if (!this.saveState) {
+              pen.Debug('Reload', loc)
+              this.load();
+            } else {
+              this.saveState = false;
+            }
+          }
+        });
+      } catch { }
+    }
   }
 
   /**
