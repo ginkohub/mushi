@@ -312,7 +312,7 @@ export class Pen {
    * @param {...any} args
   */
   Info(...args) {
-    if (this.level > LogLevel.Info || this.level === LogLevel.NONE) {
+    if (this.level > LogLevel.INFO || this.level === LogLevel.NONE) {
       return
     }
     this.Log(this.Cyan('[I]'), ...args);
