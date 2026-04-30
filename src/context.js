@@ -445,6 +445,6 @@ export class Ctx {
       return jids;
     }
 
-    this.user = this.handler().userManager?.getUser(this.sender);
+    this.user = this.handler().userManager?.getUser(this.senderJid);
   }
 }
