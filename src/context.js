@@ -371,12 +371,14 @@ export class Ctx {
 
         /** @type {boolean} */
         this.isAdmin = part?.isAdmin ?? part?.isSuperAdmin ?? false;
-
       }
     }
 
     /** @type {string} */
-    this.senderJid = jidNormalizedUser(this.sock().signalRepository.lidMapping.getPNForLID(this.sender).then(pn => this.senderJid = pn) ?? '');
+    this.senderJid = '';
+    this.sock().signalRepository.lidMapping.getPNForLID(this.sender)
+      .then(pn => this.senderJid = jidNormalizedUser(pn))
+      .catch(() => { });
 
     /** @type {boolean} */
     this.isViewOnce = !this.type && this.event?.messageStubParameters?.includes('Message absent from node');
@@ -432,9 +434,9 @@ export class Ctx {
 
         /* check if uncat contains /\+?\d+\s?[\d-]+/gi */
         const parsed = [...uncat.matchAll(/\+?\d+\s?[\d-]+/gi)].map(
-          (match) => match[0]?.replaceAll(/[^\d]/g, '') + (this.addressingMode === 'lid') ? '@lid' : S_WHATSAPP_NET
+          (match) => match[0]?.replaceAll(/[^\d]/g, '') + (this.addressingMode === 'lid' ? '@lid' : S_WHATSAPP_NET)
         );
-        if (parsed?.length > 0) jids.push(...parsed);
+        if (parsed.length > 0) jids.push(...parsed);
       }
 
       /* remove duplicate in jids */
