@@ -122,9 +122,9 @@ export class Plugin {
         .setMessage('Event type not match');
     }
 
-    if (this.roles && this.roles?.length > 0) {
+    if (this.roles?.length > 0) {
       const user = ctx.user();
-      if (user?.roles && user?.roles?.length === 0) {
+      if (!user?.roles?.length) {
         return reason.setBad()
           .setCode('plugin-user-empty-role')
           .setMessage('User has no role');
