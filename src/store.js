@@ -32,8 +32,7 @@ export class StoreJson {
     this.saveTimeout = null;
     this.autoLoad = autoLoad ?? false;
 
-    this.load();
-    this.watch();
+    this.load().catch(e => pen.Error('Failed loading data', e));
   }
 
   /**
@@ -70,12 +69,13 @@ export class StoreJson {
     }
   }
 
-  save() {
+  async save() {
     try {
       const tempPath = this.saveName + '.tmp';
       fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), 'utf8');
       fs.renameSync(tempPath, this.saveName);
       this.saveState = true;
+      if (!this.watcher) await this.watch();
     } catch (e) {
       pen.Error('Failed saving data', e);
     }
@@ -84,8 +84,8 @@ export class StoreJson {
   saveCheck() {
     if (this.autoSave) {
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
-      this.saveTimeout = setTimeout(() => {
-        this.save();
+      this.saveTimeout = setTimeout(async () => {
+        await this.save();
         this.saveTimeout = null;
       }, 2000);
     }
