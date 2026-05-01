@@ -176,24 +176,32 @@ export class Gemini {
       const resp = await chat.sendMessage(params);
       return resp;
     } catch (e) {
-      if (e.status === 429) {
-        if (this.listModels.size > 0) {
-          this.listModels.delete(this.modelName);
-          this.chats.delete(id);
+      switch (e.status) {
+        case 429: {
+          if (this.listModels.size > 0) {
+            this.listModels.delete(this.modelName);
+            this.chats.delete(id);
 
-          if (this.settings) {
-            this.settings.limitedModels[this.modelName] = Date.now();
+            if (this.settings) {
+              this.settings.limitedModels[this.modelName] = Date.now();
 
+            }
+            const prevModel = this.modelName;
+            this.switchModel();
+            pen.Warn(e.status, `try switching model from ${prevModel} to ${this.modelName}`);
+            return await this.chat(id, params);
+          } else {
+            pen.Error('gemini-chat', 'All model is limited, please try again later.');
           }
-          const prevModel = this.modelName;
-          this.switchModel();
-          pen.Warn(e.status, `try switching model from ${prevModel} to ${this.modelName}`);
-          return await this.chat(id, params);
-        } else {
-          pen.Error('gemini-chat', 'All model is limited, please try again later.');
+          break;
         }
-      } else {
-        pen.Error('gemini-chat', e.message);
+        case 400: {
+          this.chats.delete(id);
+          break;
+        }
+        default: {
+          pen.Error('gemini-chat', e.message);
+        }
       }
     }
   }
