@@ -93,18 +93,18 @@ export class Handler {
 
     /* Watch changes in pluginDir */
     this.watcher = watchDir(this.pluginDir, {
-      onChange: (loc) => {
+      onChange: async (loc) => {
         this.pen.Debug(`Plugin changed:`, loc);
-        this.loadFile(loc);
+        await this.loadFile(loc);
       },
-      onAdd: (loc) => {
+      onAdd: async (loc) => {
         this.pen.Debug(`Plugin added:`, loc);
-        this.loadFile(loc);
+        await this.loadFile(loc);
       },
-      onRemove: (loc) => {
+      onRemove: async (loc) => {
         this.pen.Debug(`Plugin removed:`, loc);
         const hash = hashCRC32(loc);
-        this.removeOn(hash);
+        await this.removeOn(hash);
       }
     });
   }
@@ -618,7 +618,6 @@ export class Handler {
 
     this.client = client;
 
-
     this.client.sock.ev.process(
       /** @param {import('baileys').BaileysEventMap} events */
       (events) => {
@@ -626,16 +625,15 @@ export class Handler {
           const update = events[/** @type {keyof import('baileys').BaileysEventMap} */(eventName)];
           switch (eventName) {
             case Events.CONNECTION_UPDATE: {
-              const owner = client.sock?.user;
-              if (owner) {
-                this.userManager?.addOwners(owner.id);
-                if (owner.lid) this.userManager?.addOwners(owner.lid)
-              }
+              const owner = this.client?.sock?.user;
+              if (owner) { this.userManager?.addOwners(owner.id); }
               break;
             }
             case Events.MESSAGES_UPSERT: {
               for (const event of update?.messages ?? []) {
-                this.handle({ eventName: eventName, event: event, eventType: update.type });
+                this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                  this.pen.Error(eventName, e);
+                });
               }
               break;
             }
@@ -648,24 +646,32 @@ export class Handler {
             case Events.GROUPS_UPSERT:
             case Events.GROUPS_UPDATE: {
               for (const event of update) {
-                this.handle({ eventName: eventName, event: event, eventType: update.type });
+                this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                  this.pen.Error(eventName, e);
+                });
               }
               break;
             }
 
             case Events.GROUP_PARTICIPANTS_UPDATE:
             case Events.PRESENCE_UPDATE: {
-              this.handle({ eventName: eventName, event: update, eventType: update.type });
+              this.handle({ eventName: eventName, event: update, eventType: update.type }).catch((e) => {
+                this.pen.Error(eventName, e);
+              });
               break;
             }
 
             default: {
               if (Array.isArray(update)) {
                 for (const event of update) {
-                  this.handle({ eventName: eventName, event: event, eventType: update.type });
+                  this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                    this.pen.Error(eventName, e);
+                  });
                 }
               } else {
-                this.handle({ eventName: eventName, event: update, eventType: update.type });
+                this.handle({ eventName: eventName, event: update, eventType: update.type }).catch((e) => {
+                  this.pen.Error(eventName, e);
+                });
               }
             }
           }
