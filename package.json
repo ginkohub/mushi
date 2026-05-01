@@ -4,7 +4,7 @@
   "description": "Wangsaf bot",
   "type": "module",
   "scripts": {
-    "dev": "node --watch example.js",
+    "dev": "node --watch-path=./src example.js",
     "start": "node example.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
