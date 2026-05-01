@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,9 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { fromMe, midwareOr } from '../../src/midware.js';
+import { Role } from '../../src/roles.js';
 import { formatElapse } from '../../src/tools.js';
-import { fromOwner } from '../settings.js';
 
 const emoMap = {
   'info': 'ℹ️',
@@ -27,16 +26,11 @@ const emoMap = {
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-
   cmd: 'menu',
   timeout: 15,
   cat: 'info',
   desc: 'Show the menu of commands',
-
-  midware: midwareOr(
-    fromMe, fromOwner
-  ),
-
+  roles: [Role.GUEST],
   exec: async (c) => {
 
     const prefix = c.pattern[0];
@@ -66,7 +60,7 @@ export default {
       }
 
 
-      for (const [k, p] of plugins?.entries()) {
+      for (const [k, p] of plugins?.entries() ?? []) {
         texts.push(
           `Detail of \`${k}\``,
           `- Cmds : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(', ') : `\`${prefix + p.cmd}\``}`,
@@ -82,7 +76,7 @@ export default {
     } else {
       texts.push('*# Available menu*');
 
-      const since = new Date() - c.handler()?.client?.dateCreated;
+      const since = Date.now() - c.handler()?.client?.dateCreated;
       texts.push('',
         `*Uptime:* ${formatElapse(since, ' ')}`,
         '*Prefix :* ' + c.handler()?.prefix?.map((p) => `\`${p}\``).join(', '),
@@ -90,7 +84,7 @@ export default {
 
       const categories = new Map();
       let cmdCount = 0;
-      for (const dataCMD of c.handler()?.cmds?.values()) {
+      for (const dataCMD of c.handler()?.cmds?.values() ?? []) {
         const p = c.handler()?.plugins?.get(dataCMD?.id);
         if (!p || p?.hidden) continue;
         if (!categories.has(p.cat)) categories.set(p.cat, new Map());
@@ -114,7 +108,7 @@ export default {
         const cat = categories.get(catname);
         if (catname !== lascat) texts.push('', `*${emoMap[catname] ? emoMap[catname] : '🧩'} ${catname.toUpperCase()}*`);
         if (cat.size > 0) {
-          for (const [_, patt] of cat.entries()) {
+          for (const [, patt] of cat.entries()) {
             if (patt.plugin.disabled) disabledCount++;
             texts.push(`  \`${patt.pre}\` ${patt.plugin.disabled ? '❗' : ''}`);
             if (withDesc) texts.push(`    _${patt.plugin.desc?.trim()}_`);

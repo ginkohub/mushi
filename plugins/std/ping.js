@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,7 +20,7 @@ export default {
   tags: ['system'],
   desc: 'Ping the bot and get the response time.',
   events: [MESSAGES_UPSERT],
-  roles: [Role.GUEST, Role.USER],
+  roles: [Role.GUEST],
   exec: async (c) => {
     const current = Date.now();
     let latency = current - c.timestamp;

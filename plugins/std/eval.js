@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
-import { fromOwner } from '../settings.js';
+import { Role } from '../../src/roles.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -20,10 +18,7 @@ export default {
   tags: ['system'],
   desc: 'Evaluate JavaScript code',
 
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT),
-    midwareOr(fromMe, fromOwner),
-  ),
+  roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
     const src = c.args?.trim();

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -136,7 +136,7 @@ export default {
 
         const audioBuffer = await fs.readFile(audioFilePath);
 
-        let mimetype = 'audio/mp4'; // default for m4a
+        let mimetype = 'audio/mp4'; /* default for m4a */
         if (fileExtension === 'mp3') mimetype = 'audio/mpeg';
         else if (fileExtension === 'ogg') mimetype = 'audio/ogg';
         else if (fileExtension === 'webm') mimetype = 'audio/webm';
