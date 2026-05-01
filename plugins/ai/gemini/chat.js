@@ -9,13 +9,12 @@
  */
 
 import { MESSAGES_UPSERT } from '../../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../../src/midware.js';
 import pen from '../../../src/pen.js';
 import { StoreJson } from '../../../src/store.js';
 import { getFile } from '../../../src/data.js';
 import { extractTextContext } from '../../../src/context.js';
 import { formatMD } from '../../../src/tools.js';
-import { fromOwner } from '../../settings.js';
+import { Role } from '../../../src/roles.js';
 
 /** @type {import('./gemini.js').Gemini} */
 const gemini = await import(`./gemini.js?t=${new Date()}`).then(m => m.gemini);
@@ -128,7 +127,7 @@ async function processChat(c) {
   }
 }
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('../../../src/plugin.js').Plugin[]} */
 export default [
   {
     cmd: ['gm', 'gemini'],
@@ -136,16 +135,15 @@ export default [
     desc: 'Gemini chat plugin',
     cat: 'ai',
     events: [MESSAGES_UPSERT],
-    midware: midwareAnd(fromMe, fromOwner),
+    roles: [Role.PREMIUM],
     exec: processChat
   },
   {
     timeout: 15,
     desc: 'Gemini chat listener',
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT), fromMe,
-      (c) => ({ success: chatWatch.has(c.stanzaId) }),
-    ),
+    events: [MESSAGES_UPSERT],
+    roles: [Role.PREMIUM],
+    midware: (c) => ({ success: chatWatch.has(c.stanzaId) }),
     exec: processChat
   }
 ];
