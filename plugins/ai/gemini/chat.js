@@ -111,7 +111,7 @@ async function processChat(c) {
 
   if (parts.length > 0) {
     try {
-      pen.Debug(`Parts ${parts.length}, Query : ${query?.length}`);
+      /* pen.Debug(`Parts ${parts.length}, Query : ${query?.length}`); */
 
       const resp = await gemini.chat(c.chat, { message: parts });
       const respText = formatMD(resp?.text?.trim());
@@ -145,8 +145,33 @@ export default [
     roles: [Role.PREMIUM],
     midware: (c) => ({ success: chatWatch.has(c.stanzaId) }),
     exec: processChat
+  },
+  {
+    cmd: ['gm.models'],
+    timeout: 15,
+    desc: 'List available models',
+    cat: 'ai',
+    roles: [Role.PREMIUM],
+    exec: async (c) => {
+      const texts = ['*# List available models*', ''];
+
+      for (let [key,] of gemini.listModels.entries()) {
+        texts.push(`- ${key}`);
+      }
+
+      await c.reply({ text: texts.join('\n') }, { quoted: c.event });
+    }
+  },
+  {
+    cmd: ['gm.set'],
+    timeout: 15,
+    desc: 'Set model name',
+    cat: 'ai',
+    roles: [Role.PREMIUM],
+    exec: async (c) => {
+      const modelName = c.args?.trim();
+      if (modelName && modelName.length > 0) gemini.setModelName(modelName)
+    }
   }
 ];
-
-
 
