@@ -238,7 +238,7 @@ export async function runTask(id, fn, onError, onFinal) {
 /**
  * Watch dir changes
  * @param {string} dir
- * @param {{onChange?: (path: string) => void, onAdd?: (path: string) => void, onRemove?: (path: string) => void}}  handlers
+ * @param {{onChange?: (path: string) => Promise<void>, onAdd?: (path: string) => Promise<void>, onRemove?: (path: string) => Promise<void>}}  handlers
  * @returns {Promise<import('chokidar').FSWatcher>}
  */
 export async function watchDir(dir, { onChange, onAdd, onRemove }) {
@@ -249,11 +249,11 @@ export async function watchDir(dir, { onChange, onAdd, onRemove }) {
       for await (const event of watcher) {
         const path = event.paths[0];
         switch (event.kind) {
-          case 'modify': onChange?.(path); break;
+          case 'modify': await onChange?.(path); break;
           case 'create':
           case 'rename':
             onAdd?.(path); break;
-          case 'remove': onRemove?.(path); break;
+          case 'remove': await onRemove?.(path); break;
         }
       }
     })();
