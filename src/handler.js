@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -365,20 +365,20 @@ export class Handler {
 
         if (loaded.pre) {
           if (Array.isArray(loaded.pre)) {
-            this.preLoad(...loaded.pre);
+            await this.preLoad(...loaded.pre);
             pre = loaded.pre.length;
           } else {
-            this.preLoad(loaded.pre);
+            await this.preLoad(loaded.pre);
             pre = 1;
           }
         }
 
         if (loaded.default) {
           if (Array.isArray(loaded.default)) {
-            this.on(loc, ...loaded.default);
+            await this.on(loc, ...loaded.default);
             def = loaded.default.length;
           } else {
-            this.on(loc, loaded.default);
+            await this.on(loc, loaded.default);
             def = 1;
           }
         }
