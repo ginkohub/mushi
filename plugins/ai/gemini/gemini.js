@@ -249,7 +249,7 @@ export class Gemini {
     const pager = await this.genAI?.models.list();
     if (pager) {
       for (const model of pager.page) {
-        if (model?.name?.includes('gemini')) {
+        if (!model?.name.includes('tts') && model?.name?.includes('gemini')) {
           const keyName = model.name.split('/')?.pop();
           if (keyName) {
             this.listModels.set(keyName, model);
