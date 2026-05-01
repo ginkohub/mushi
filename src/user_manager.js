@@ -57,6 +57,13 @@ export class UserManager {
     if (jids) jids.forEach(jid => {
       jid = jidNormalizedUser(jid);
       if (!this.owners?.includes(jid)) this.owners?.push(jid);
+      const user = this.getUser(jid);
+      if (user) {
+        if (!user.roles.includes(Role.OWNER)) {
+          user.roles.push(Role.OWNER);
+          this.updateUser(jid, user);
+        }
+      }
     });
   }
 
