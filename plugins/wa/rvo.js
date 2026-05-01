@@ -9,7 +9,7 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
+import { Role } from '../../src/roles.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -17,10 +17,8 @@ export default {
   cat: 'whatsapp',
   desc: 'Read View Once messages',
   timeout: 15,
-
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT), fromMe,
-  ),
+  roles: [Role.USER],
+  events: [MESSAGES_UPSERT],
 
   exec: async (c) => {
     /** @type {import('baileys').proto.IMessage} */

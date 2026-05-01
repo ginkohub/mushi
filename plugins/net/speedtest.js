@@ -1,7 +1,7 @@
-import { fromMe } from '../../src/midware.js';
 import { SpeedTestService } from '@ginkohub/speedtest-js';
 import pen from '../../src/pen.js';
 import { MESSAGES_UPSERT } from '../../src/const.js';
+import { Role } from '../../src/roles.js';
 
 const service = new SpeedTestService();
 const clientInfo = await service.fetchClientInfo();
@@ -14,8 +14,7 @@ export default {
   cat: 'net',
   desc: 'Speedtest.',
   events: [MESSAGES_UPSERT],
-  midware: fromMe,
-
+  roles: [Role.PREMIUM],
   /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
     let testServer = bestServer;

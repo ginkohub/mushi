@@ -9,7 +9,6 @@
  */
 
 import { Events } from '../../src/const.js';
-import { eventNameIs, midwareAnd } from '../../src/midware.js';
 import pen from '../../src/pen.js';
 import { settings } from '../settings.js';
 
@@ -171,10 +170,8 @@ class Result {
 export default [
   {
     desc: 'Defense system',
-    midware: midwareAnd(
-      eventNameIs(Events.MESSAGES_UPSERT),
-      (c) => ({ success: settings.get(`defense`) && !c.fromMe }),
-    ),
+    events: [Events.MESSAGES_UPSERT],
+    midware: (c) => ({ success: settings.get(`defense`) && !c.fromMe }),
 
     exec: async (c) => {
       let detect = new Result({ suspect: false });

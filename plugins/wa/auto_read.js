@@ -9,10 +9,10 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import { delay, randomNumber } from '../../src/tools.js';
-import { fromOwner, settings } from '../settings.js';
+import { settings } from '../settings.js';
 import pen from '../../src/pen.js';
+import { Role } from '../../src/roles.js';
 
 const skipTypes = [
   'senderKeyDistributionMessage',
@@ -25,11 +25,12 @@ export default [
   {
     desc: 'Auto read message',
     timeout: 15,
-
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT),
-      (c) => ({ success: !c.isStatus && !c.fromMe && !skipTypes.includes(c.type) && settings.get(AUTO_READ_KEY) }),
-    ),
+    events: [MESSAGES_UPSERT],
+    midware: (c) => ({
+      success: !c.isStatus && !c.fromMe
+        && !skipTypes.includes(c.type)
+        && settings.get(AUTO_READ_KEY)
+    }),
 
     exec: async (c) => {
       await delay(randomNumber(1000, 2000));
@@ -42,11 +43,8 @@ export default [
     cat: 'whatsapp',
     desc: 'Auto read message',
     timeout: 15,
-
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT),
-      midwareOr(fromMe, fromOwner),
-    ),
+    events: [MESSAGES_UPSERT],
+    roles: [Role.SUPERADMIN],
 
     exec: async (c) => {
       let pattern = c.pattern;

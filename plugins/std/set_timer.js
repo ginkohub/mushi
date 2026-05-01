@@ -9,7 +9,6 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd } from '../../src/midware.js';
 import pen from '../../src/pen.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
@@ -19,10 +18,8 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Set the chat ephemeral',
-
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT), fromMe,
-  ),
+  events: [MESSAGES_UPSERT],
+  roles: ['admin'],
 
   exec: async (c) => {
     const latest = c.handler()?.getTimer(c.chat);

@@ -13,8 +13,7 @@ import fs from 'node:fs';
 import { execSync } from 'node:child_process';
 import { formatBytes, formatElapse, isBun, isDeno } from '../../src/tools.js';
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
-import { fromOwner } from '../settings.js';
+import { Role } from '../../src/roles.js';
 
 function getDistro() {
   const platform = os.platform();
@@ -60,11 +59,8 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Show server information.',
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT),
-    midwareOr(fromMe, fromOwner)
-  ),
-
+  events: [MESSAGES_UPSERT],
+  roles: [Role.USER],
   exec: async (c) => {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();

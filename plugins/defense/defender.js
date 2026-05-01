@@ -9,9 +9,9 @@
  */
 
 import { Events } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
-import { fromOwner, settings } from '../settings.js';
+import { Role } from '../../src/roles.js';
+import { settings } from '../settings.js';
 import { allowed } from './detector.js';
 
 const KEY_DEFENSE_ALLOW_STATUS = 'defense_allow_status';
@@ -34,10 +34,8 @@ export default [
     cat: 'defense',
     desc: 'Create and send sample message as json.',
     timeout: 15,
-    midware: midwareAnd(
-      eventNameIs(Events.MESSAGES_UPSERT),
-      midwareOr(fromMe),
-    ),
+    events: [Events.MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
 
     exec: async (c) => {
       c.reply({
@@ -47,17 +45,13 @@ export default [
       });
     }
   },
-
   {
     cmd: ['defense', 'defense+', 'defense-'],
     cat: 'defense',
     desc: 'Manage defense status',
     timeout: 15,
-
-    midware: midwareAnd(
-      eventNameIs(Events.MESSAGES_UPSERT),
-      midwareOr(fromMe, fromOwner),
-    ),
+    events: [Events.MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
 
     exec: async (c) => {
       const key = `defense`;
@@ -93,17 +87,13 @@ export default [
       )
     }
   },
-
   {
     cmd: ['skip', 'skip+', 'skip-'],
     cat: 'defense',
     desc: 'Manage skip message type on status.',
     timeout: 15,
-
-    midware: midwareAnd(
-      eventNameIs(Events.MESSAGES_UPSERT),
-      midwareOr(fromMe, fromOwner),
-    ),
+    events: [Events.MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
 
     exec: async (c) => {
       let newAllowed = c.argv?._;

@@ -9,10 +9,9 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import { execSync } from 'node:child_process';
-import { fromOwner } from '../settings.js';
 import { existsSync, unlinkSync } from 'node:fs';
+import { Role } from '../../src/roles.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -21,11 +20,8 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Execute git fetch and pull command shell command, also removing git lock files before execution.',
-
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT),
-    midwareOr(fromMe, fromOwner),
-  ),
+  events: [MESSAGES_UPSERT],
+  roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
     /* waiting */

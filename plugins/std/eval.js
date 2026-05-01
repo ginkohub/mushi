@@ -17,7 +17,6 @@ export default {
   cat: 'system',
   tags: ['system'],
   desc: 'Evaluate JavaScript code',
-
   roles: [Role.SUPERADMIN],
 
   exec: async (c) => {

@@ -9,9 +9,9 @@
  */
 
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
-import { fromOwner, settings } from '../settings.js';
+import { Role } from '../../src/roles.js';
+import { settings } from '../settings.js';
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default [
@@ -21,11 +21,8 @@ export default [
     cat: 'system',
     tags: ['system'],
     desc: 'Set / remove the prefix (split with space).',
-
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT),
-      midwareOr(fromMe, fromOwner)
-    ),
+    events: [MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
 
     exec: async (c) => {
       let newPrefix = c.args?.trim()?.split(' ');

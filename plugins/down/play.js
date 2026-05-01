@@ -13,12 +13,12 @@ import fs from 'node:fs/promises';
 import path, { resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
 import pen from '../../src/pen.js';
-import { fromOwner, storeMsg } from '../settings.js';
+import { storeMsg } from '../settings.js';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import { google } from 'googleapis';
+import { Role } from '../../src/roles.js';
 
 const execFileAsync = promisify(execFile);
 const ytdlps = [
@@ -35,10 +35,8 @@ export default {
   cat: 'downloader',
   tags: ['youtube', 'downloader', 'mp3', 'yt-dlp'],
   desc: 'Search for a video on YouTube using yt-dlp, and download the audio.',
-  midware: midwareAnd(
-    eventNameIs(MESSAGES_UPSERT),
-    midwareOr(fromOwner, fromMe),
-  ),
+  events: [MESSAGES_UPSERT],
+  roles: [Role.USER],
 
   exec: async (c) => {
     await c.react('🔍');

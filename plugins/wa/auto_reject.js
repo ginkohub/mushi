@@ -9,10 +9,11 @@
  */
 
 import { CALL, MESSAGES_UPSERT } from '../../src/const.js';
-import { eventNameIs, fromMe, midwareAnd, midwareOr } from '../../src/midware.js';
+import { midwareAnd } from '../../src/midware.js';
 import pen from '../../src/pen.js';
+import { Role } from '../../src/roles.js';
 import { delay, randomNumber } from '../../src/tools.js';
-import { fromOwner, settings } from '../settings.js';
+import { settings } from '../settings.js';
 
 const AUTO_REJECT_KEY = 'auto_reject';
 
@@ -21,12 +22,12 @@ export default [
   {
     desc: 'Auto reject call',
     timeout: 15,
+    events: [CALL],
 
     midware: midwareAnd(
-      eventNameIs(CALL),
       (ctx) => ({ success: !ctx.isStatus }),
       (ctx) => ({ success: !ctx.fromMe }),
-      (ctx) => ({ success: settings.get(AUTO_REJECT_KEY) })
+      (_) => ({ success: settings.get(AUTO_REJECT_KEY) })
     ),
 
     exec: async (c) => {
@@ -44,10 +45,8 @@ export default [
     cat: 'whatsapp',
     desc: 'Set auto reject message',
     timeout: 15,
-    midware: midwareAnd(
-      eventNameIs(MESSAGES_UPSERT),
-      midwareOr(fromMe, fromOwner)
-    ),
+    events: [MESSAGES_UPSERT],
+    roles: [Role.SUPERADMIN],
     exec: async (c) => {
       let pattern = c.pattern;
       const tail = c.pattern.slice(-1);
