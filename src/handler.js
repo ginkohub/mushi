@@ -53,7 +53,7 @@ export class Handler {
     this.pen = pen ?? new Pen({ prefix: 'hand' });
 
     /** @type {string[]} */
-    this.prefix = prefix ?? ['.', '/'];
+    this.prefix = Array.isArray(prefix) ? prefix : ['.', '/'];
 
     /** @type {Map<string, import('./plugin.js').Plugin>} */
     this.plugins = new Map();
