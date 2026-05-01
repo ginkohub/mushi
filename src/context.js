@@ -169,6 +169,18 @@ export class Ctx {
     this.readMessages = async (keys) => await this.sock()?.readMessages(keys);
 
     /**
+      * @param {string} lid
+      * @returns {string|any}
+      */
+    this.LIDToPN = async (lid) => jidNormalizedUser(await this.sock().signalRepository.lidMapping.getPNForLID(lid));
+
+    /**
+      * @param {string} jid
+      * @returns {string|any}
+      */
+    this.PNToLID = async (jid) => jidNormalizedUser(await this.sock().signalRepository.lidMapping.getLIDForPN(jid));
+
+    /**
      * @param {string} text - Text to parse
      */
     this.parseText = (text) => {
@@ -375,7 +387,7 @@ export class Ctx {
     }
 
     /** @type {string} */
-    this.senderJid = jidNormalizedUser(await this.sock().signalRepository.lidMapping.getPNForLID(this.sender) ?? this.sender);
+    this.senderJid = this.sender?.includes('@lid') ? await this.LIDToPN(this.sender) : this.sender;
 
     /** @type {boolean} */
     this.isViewOnce = !this.type && this.event?.messageStubParameters?.includes('Message absent from node');
@@ -442,6 +454,7 @@ export class Ctx {
       return jids;
     }
 
+    /** @returns {string} */
     this.user = () => this.handler().userManager?.getUser(this.senderJid);
   }
 }
