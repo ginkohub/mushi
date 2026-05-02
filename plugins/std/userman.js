@@ -14,7 +14,7 @@ import { Role } from '../../src/roles.js';
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
-    cmd: ['role'],
+    cmd: ['user'],
     timeout: 15,
     cat: 'user',
     tags: ['user', 'role'],
@@ -25,6 +25,9 @@ export default [
     exec: async (c) => {
       const jids = c.parseJIDs();
       const targets = jids.length > 0 ? jids : [c.senderJid];
+      for (let i = 0; i < targets.length; i++) {
+        if (targets[i].includes('@lid')) targets[i] = await c.LIDToPN(targets[i]);
+      }
 
       let texts = ['*📃 User Information*', ''];
       for (const jid of targets) {
@@ -111,6 +114,45 @@ export default [
       }
 
       await c.reply({ text: `Removed role *${role}* from ${jids.length} user(s).` });
+    }
+  },
+  {
+    cmd: ['user?'],
+    timeout: 15,
+    cat: 'user',
+    tags: ['user', 'role'],
+    desc: 'Sync and update user info (name, jid, lid)',
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+
+    exec: async (c) => {
+      const jids = c.parseJIDs();
+      const targets = jids.length > 0 ? jids : [c.senderJid];
+      for (let i = 0; i < targets.length; i++) {
+        if (targets[i].includes('@lid')) targets[i] = await c.LIDToPN(targets[i]);
+      }
+
+      let texts = ['*🔄 Syncing User Information*', ''];
+      for (const jid of targets) {
+        const name = c.getName(jid);
+        const updateData = { name, jid };
+
+        const lid = await c.PNToLID(jid).catch(() => null);
+        if (lid) {
+          updateData.lid = lid;
+
+          const lidName = c.getName(lid);
+          if (lidName) updateData.name = lidName;
+        }
+
+        const user = c.handler().userManager.updateUser(jid, updateData);
+        texts.push(`*Target*: ${jid}`);
+        texts.push(`*Name*: ${user.name || 'N/A'}`);
+        texts.push(`*JID*: ${user.jid || 'N/A'}`);
+        texts.push(`*LID*: ${user.lid || 'N/A'}`, '');
+      }
+
+      await c.reply({ text: texts.join('\n').trim() }, { quoted: c.event });
     }
   },
 ];
