@@ -8,29 +8,31 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../../src/const.js';
-import pen from '../../../src/pen.js';
-import { StoreJson } from '../../../src/store.js';
-import { getFile } from '../../../src/data.js';
-import { extractTextContext } from '../../../src/context.js';
-import { formatMD } from '../../../src/tools.js';
-import { Role } from '../../../src/roles.js';
+import { MESSAGES_UPSERT } from "../../../src/const.js";
+import { extractTextContext } from "../../../src/context.js";
+import { getFile } from "../../../src/data.js";
+import pen from "../../../src/pen.js";
+import { Role } from "../../../src/roles.js";
+import { StoreJson } from "../../../src/store.js";
+import { formatMD } from "../../../src/tools.js";
 
 /** @type {import('./gemini.js').Gemini} */
-const gemini = await import(`./gemini.js?t=${new Date()}`).then(m => m.gemini);
+const gemini = await import(`./gemini.js?t=${new Date()}`).then(
+  (m) => m.gemini,
+);
 
 const chatWatch = new StoreJson({
   autoSave: true,
-  saveName: getFile('gemini_id.json')
+  saveName: getFile("gemini_id.json"),
 });
 
 const contentSupport = [
-  'audioMessage',
-  'imageMessage',
-  'videoMessage',
-  'documentMessage',
-  'stickerMessage',
-  'documentWithCaptionMessage',
+  "audioMessage",
+  "imageMessage",
+  "videoMessage",
+  "documentMessage",
+  "stickerMessage",
+  "documentWithCaptionMessage",
 ];
 
 /**
@@ -61,51 +63,47 @@ async function processChat(c) {
     if (!m || !ext) continue;
     if (!contentSupport.includes(ext.type)) continue;
 
-    let mtype = 'unknown';
     let content = null;
 
     switch (ext.type) {
-      case 'audioMessage': {
-        mtype = 'audio';
+      case "audioMessage": {
         content = m.audioMessage;
         break;
       }
-      case 'imageMessage': {
-        mtype = 'image';
+      case "imageMessage": {
         content = m.imageMessage;
         break;
       }
-      case 'videoMessage': {
-        mtype = 'video';
+      case "videoMessage": {
         content = m.videoMessage;
         break;
       }
-      case 'documentWithCaptionMessage': {
+      case "documentWithCaptionMessage": {
         m = m.documentWithCaptionMessage.message;
+        break;
       }
-      case 'documentMessage': {
-        mtype = 'document';
+      case "documentMessage": {
         content = m.documentMessage;
         break;
       }
-      case 'stickerMessage': {
-        mtype = 'sticker';
+      case "stickerMessage": {
         content = m.stickerMessage;
         break;
       }
     }
 
-    let mimetype = content?.mimetype || 'unknown';
-    if (mimetype?.startsWith('application/') && !mimetype?.endsWith('pdf')) mimetype = 'text/plain';
+    let mimetype = content?.mimetype || "unknown";
+    if (mimetype?.startsWith("application/") && !mimetype?.endsWith("pdf"))
+      mimetype = "text/plain";
 
-    const buff = await c.downloadIt({ message: m }, 'buffer', {});
+    const buff = await c.downloadIt({ message: m }, "buffer", {});
     if (!buff) continue;
 
     parts.push({
       inlineData: {
-        data: Buffer.from(buff).toString('base64'),
-        mimeType: mimetype
-      }
+        data: Buffer.from(buff).toString("base64"),
+        mimeType: mimetype,
+      },
     });
   }
 
@@ -130,48 +128,47 @@ async function processChat(c) {
 /** @type {import('../../../src/plugin.js').Plugin[]} */
 export default [
   {
-    cmd: ['gm', 'gemini'],
+    cmd: ["gm", "gemini"],
     timeout: 15,
-    desc: 'Gemini chat plugin',
-    cat: 'ai',
+    desc: "Gemini chat plugin",
+    cat: "ai",
     events: [MESSAGES_UPSERT],
     roles: [Role.PREMIUM],
-    exec: processChat
+    exec: processChat,
   },
   {
     timeout: 15,
-    desc: 'Gemini chat listener',
+    desc: "Gemini chat listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.PREMIUM],
     midware: (c) => ({ success: chatWatch.has(c.stanzaId) }),
-    exec: processChat
+    exec: processChat,
   },
   {
-    cmd: ['gm.models'],
+    cmd: ["gm.models"],
     timeout: 15,
-    desc: 'List available models',
-    cat: 'ai',
+    desc: "List available models",
+    cat: "ai",
     roles: [Role.PREMIUM],
     exec: async (c) => {
-      const texts = ['*# List available models*', ''];
+      const texts = ["*# List available models*", ""];
 
-      for (let [key,] of gemini.listModels.entries()) {
+      for (const [key] of gemini.listModels.entries()) {
         texts.push(`- ${key}`);
       }
 
-      await c.reply({ text: texts.join('\n') }, { quoted: c.event });
-    }
+      await c.reply({ text: texts.join("\n") }, { quoted: c.event });
+    },
   },
   {
-    cmd: ['gm.set'],
+    cmd: ["gm.set"],
     timeout: 15,
-    desc: 'Set model name',
-    cat: 'ai',
+    desc: "Set model name",
+    cat: "ai",
     roles: [Role.PREMIUM],
     exec: async (c) => {
       const modelName = c.args?.trim();
-      if (modelName && modelName.length > 0) gemini.setModelName(modelName)
-    }
-  }
+      if (modelName && modelName.length > 0) gemini.setModelName(modelName);
+    },
+  },
 ];
-

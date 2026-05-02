@@ -8,22 +8,22 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import { execSync } from 'node:child_process';
-import { Role } from '../../src/roles.js';
+import { execSync } from "node:child_process";
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['!'],
+  cmd: ["!"],
   timeout: 15,
-  cat: 'system',
-  tags: ['system'],
-  desc: 'Execute command shell command.',
+  cat: "system",
+  tags: ["system"],
+  desc: "Execute command shell command.",
   events: [MESSAGES_UPSERT],
   roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
-    await c.react('⌛');
+    await c.react("⌛");
     if (!c.args || c.args?.length === 0) return;
 
     try {
@@ -31,14 +31,16 @@ export default {
       stdout = stdout?.toString();
 
       if (stdout && stdout?.length > 0) {
-        return await c.reply({ text: `${stdout.toString()}`.trim() }, { quoted: c.event });
+        return await c.reply(
+          { text: `${stdout.toString()}`.trim() },
+          { quoted: c.event },
+        );
       }
     } catch (e) {
-      await c.react('❌');
+      await c.react("❌");
       await c.reply({ text: `${e}` }, { quoted: c.event });
     } finally {
-      await c.react('');
+      await c.react("");
     }
-  }
+  },
 };
-

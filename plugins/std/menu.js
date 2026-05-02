@@ -8,31 +8,30 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Role } from '../../src/roles.js';
-import { formatElapse } from '../../src/tools.js';
+import { Role } from "../../src/roles.js";
+import { formatElapse } from "../../src/tools.js";
 
 const emoMap = {
-  'info': 'ℹ️',
-  'fun': '🎉',
-  'admin': '🔧',
-  'util': '🔧',
-  'system': '⚙️',
-  'dev': '⚠️',
-  'defense': '🛡️',
-  'net': '🌐',
-  'ai': '❇️',
-  'whatsapp': '💬',
+  info: "ℹ️",
+  fun: "🎉",
+  admin: "🔧",
+  util: "🔧",
+  system: "⚙️",
+  dev: "⚠️",
+  defense: "🛡️",
+  net: "🌐",
+  ai: "❇️",
+  whatsapp: "💬",
 };
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: 'menu',
+  cmd: "menu",
   timeout: 15,
-  cat: 'info',
-  desc: 'Show the menu of commands',
+  cat: "info",
+  desc: "Show the menu of commands",
   roles: [Role.GUEST],
   exec: async (c) => {
-
     const prefix = c.pattern[0];
     const texts = [];
     const withDesc = c.argv?.desc || c.argv?.d;
@@ -40,10 +39,9 @@ export default {
     if (c.args?.length > 0 && !withDesc) {
       /** @type {Map<string, import('../../src/plugin.js').Plugin>} */
       const plugins = new Map();
-      const userKeys = c.args?.toLowerCase().split(' ');
+      const userKeys = c.args?.toLowerCase().split(" ");
 
       if (userKeys) {
-
         c.handler()?.plugins?.forEach((p, k) => {
           if (!p?.cmd) return;
 
@@ -51,35 +49,40 @@ export default {
             p.cmd.forEach((x) => {
               if (userKeys.includes(x.toLowerCase())) plugins.set(k, p);
             });
-          } else if (typeof p.cmd === 'string') {
+          } else if (typeof p.cmd === "string") {
             if (userKeys.includes(p?.cmd?.toLowerCase())) plugins.set(k, p);
           }
         });
       } else {
-        texts.push('No command found :', c.args);
+        texts.push("No command found :", c.args);
       }
-
 
       for (const [k, p] of plugins?.entries() ?? []) {
         texts.push(
           `Detail of \`${k}\``,
-          `- Cmds : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(', ') : `\`${prefix + p.cmd}\``}`,
-          `- NoPrefix : ${p.noPrefix ? '✅' : '❌'}`,
-          `- Hidden : ${p.hidden ? '✅' : '❌'}`,
-          `- Timeout : ${p.timeout ? p.timeout : '∞'}`,
-          `- Disabled : ${p.disabled ? '✅' : '❌'}`,
+          `- Cmds : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
+          `- NoPrefix : ${p.noPrefix ? "✅" : "❌"}`,
+          `- Hidden : ${p.hidden ? "✅" : "❌"}`,
+          `- Timeout : ${p.timeout ? p.timeout : "∞"}`,
+          `- Disabled : ${p.disabled ? "✅" : "❌"}`,
           `- Cat  : ${p.cat}`,
           `- Desc : ${p.desc}`,
-          `- Path : ${p.location}`, ''
-        )
+          `- Path : ${p.location}`,
+          "",
+        );
       }
     } else {
-      texts.push('*# Available menu*');
+      texts.push("*# Available menu*");
 
       const since = Date.now() - c.handler()?.client?.dateCreated;
-      texts.push('',
-        `*Uptime:* ${formatElapse(since, ' ')}`,
-        '*Prefix :* ' + c.handler()?.prefix?.map((p) => `\`${p}\``).join(', '),
+      texts.push(
+        "",
+        `*Uptime:* ${formatElapse(since, " ")}`,
+        "*Prefix :* " +
+          c
+            .handler()
+            ?.prefix?.map((p) => `\`${p}\``)
+            .join(", "),
       );
 
       const categories = new Map();
@@ -96,44 +99,54 @@ export default {
 
         cat.set(dataCMD?.id, {
           pre: `${p.noPrefix ? patt : prefix + patt}`,
-          plugin: p
+          plugin: p,
         });
         cmdCount++;
       }
 
-      let lascat = '';
+      const lascat = "";
       let disabledCount = 0;
-      const cats = Array.from(categories.keys()).sort()
+      const cats = Array.from(categories.keys()).sort();
       for (const catname of cats) {
         const cat = categories.get(catname);
-        if (catname !== lascat) texts.push('', `*${emoMap[catname] ? emoMap[catname] : '🧩'} ${catname.toUpperCase()}*`);
+        if (catname !== lascat)
+          texts.push(
+            "",
+            `*${emoMap[catname] ? emoMap[catname] : "🧩"} ${catname.toUpperCase()}*`,
+          );
         if (cat.size > 0) {
           for (const [, patt] of cat.entries()) {
             if (patt.plugin.disabled) disabledCount++;
-            texts.push(`  \`${patt.pre}\` ${patt.plugin.disabled ? '❗' : ''}`);
+            texts.push(`  \`${patt.pre}\` ${patt.plugin.disabled ? "❗" : ""}`);
             if (withDesc) texts.push(`    _${patt.plugin.desc?.trim()}_`);
           }
         }
       }
-      texts.push('', `${cmdCount} cmd, ${c.handler()?.listens?.size} listener & ${disabledCount} disabled`);
+      texts.push(
+        "",
+        `${cmdCount} cmd, ${c.handler()?.listens?.size} listener & ${disabledCount} disabled`,
+      );
     }
 
     if (texts.length > 1) {
-      await c.reply({
-        text: texts.join('\n'),
-        contextInfo: {
-          externalAdReply: {
-            title: 'Mushi Bot',
-            body: 'Simple a multi porpuses whatsapp bot.',
-            renderLargerThumbnail: true,
-            mediaType: 1,
-            thumbnailUrl: 'https://opengraph.githubassets.com/new/ginkohub/mushi',
-            sourceUrl: 'https://github.com/ginkohub/mushi',
-            mediaUrl: 'https://github.com/ginkohub/mushi'
-          }
-        }
-      }, { quoted: c.event });
+      await c.reply(
+        {
+          text: texts.join("\n"),
+          contextInfo: {
+            externalAdReply: {
+              title: "Mushi Bot",
+              body: "Simple a multi porpuses whatsapp bot.",
+              renderLargerThumbnail: true,
+              mediaType: 1,
+              thumbnailUrl:
+                "https://opengraph.githubassets.com/new/ginkohub/mushi",
+              sourceUrl: "https://github.com/ginkohub/mushi",
+              mediaUrl: "https://github.com/ginkohub/mushi",
+            },
+          },
+        },
+        { quoted: c.event },
+      );
     }
-  }
+  },
 };
-

@@ -8,36 +8,35 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-export const CONNECTION_UPDATE = 'connection.update';
-export const CREDS_UPDATE = 'creds.update';
+export const CONNECTION_UPDATE = "connection.update";
+export const CREDS_UPDATE = "creds.update";
 export const MESSAGING_HISTORY_SET = "messaging-history.set";
-export const CHATS_UPSERT = 'chats.upsert';
-export const CHATS_UPDATE = 'chats.update';
-export const LID_MAPPING_UPDATE = 'lid-mapping.update';
-export const CHATS_DELETE = 'chats.delete';
-export const PRESENCE_UPDATE = 'presence.update';
-export const CONTACTS_UPSERT = 'contacts.upsert';
-export const CONTACTS_UPDATE = 'contacts.update';
-export const MESSAGES_DELETE = 'messages.delete';
-export const MESSAGES_UPDATE = 'messages.update';
-export const MESSAGES_MEDIA_UPDATE = 'messages.media-update';
-export const MESSAGES_UPSERT = 'messages.upsert';
-export const MESSAGES_REACTION = 'messages.reaction';
-export const MESSAGE_RECEIPT_UPDATE = 'message-receipt.update';
-export const GROUPS_UPSERT = 'groups.upsert';
-export const GROUPS_UPDATE = 'groups.update';
-export const GROUP_PARTICIPANTS_UPDATE = 'group-participants.update';
-export const GROUP_JOIN_REQUEST = 'group.join-request';
-export const BLOCKLIST_SET = 'blocklist.set';
-export const BLOCKLIST_UPDATE = 'blocklist.update';
-export const CALL = 'call';
-export const LABELS_EDIT = 'labels.edit';
-export const LABELS_ASSOCIATION = 'labels.association';
-export const NEWSLETTER_REACTION = 'newsletter.reaction';
-export const NEWSLETTER_VIEW = 'newsletter.view';
-export const NEWSLETTER_PARTICIPANTS_UPDATE = 'newsletter-participants.update';
-export const NEWSLETTER_SETTINGS_UPDATE = 'newsletter-settings.update';
-
+export const CHATS_UPSERT = "chats.upsert";
+export const CHATS_UPDATE = "chats.update";
+export const LID_MAPPING_UPDATE = "lid-mapping.update";
+export const CHATS_DELETE = "chats.delete";
+export const PRESENCE_UPDATE = "presence.update";
+export const CONTACTS_UPSERT = "contacts.upsert";
+export const CONTACTS_UPDATE = "contacts.update";
+export const MESSAGES_DELETE = "messages.delete";
+export const MESSAGES_UPDATE = "messages.update";
+export const MESSAGES_MEDIA_UPDATE = "messages.media-update";
+export const MESSAGES_UPSERT = "messages.upsert";
+export const MESSAGES_REACTION = "messages.reaction";
+export const MESSAGE_RECEIPT_UPDATE = "message-receipt.update";
+export const GROUPS_UPSERT = "groups.upsert";
+export const GROUPS_UPDATE = "groups.update";
+export const GROUP_PARTICIPANTS_UPDATE = "group-participants.update";
+export const GROUP_JOIN_REQUEST = "group.join-request";
+export const BLOCKLIST_SET = "blocklist.set";
+export const BLOCKLIST_UPDATE = "blocklist.update";
+export const CALL = "call";
+export const LABELS_EDIT = "labels.edit";
+export const LABELS_ASSOCIATION = "labels.association";
+export const NEWSLETTER_REACTION = "newsletter.reaction";
+export const NEWSLETTER_VIEW = "newsletter.view";
+export const NEWSLETTER_PARTICIPANTS_UPDATE = "newsletter-participants.update";
+export const NEWSLETTER_SETTINGS_UPDATE = "newsletter-settings.update";
 
 /**
  * @readonly

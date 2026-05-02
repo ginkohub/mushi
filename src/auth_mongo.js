@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MongoClient } from 'mongodb';
-import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
-import pen from './pen.js';
+import { BufferJSON, initAuthCreds, WAProto } from "baileys";
+import { MongoClient } from "mongodb";
+import pen from "./pen.js";
 
 /**
  * Use MongoDB to store authentication state
@@ -25,16 +25,20 @@ export async function useMongoDB(url) {
   try {
     await client.connect();
     const db = client.db();
-    collection = db.collection('baileys_auth_store');
-    pen.Debug('Connected to MongoDB for authentication');
+    collection = db.collection("baileys_auth_store");
+    pen.Debug("Connected to MongoDB for authentication");
   } catch (error) {
-    pen.Error('Failed to connect to MongoDB:', error);
+    pen.Error("Failed to connect to MongoDB:", error);
     throw error;
   }
 
   const writeData = async (key, data) => {
     const value = JSON.stringify(data, BufferJSON.replacer);
-    await collection.updateOne({ _id: key }, { $set: { value } }, { upsert: true });
+    await collection.updateOne(
+      { _id: key },
+      { $set: { value } },
+      { upsert: true },
+    );
   };
 
   const readData = async (key) => {
@@ -61,7 +65,7 @@ export async function useMongoDB(url) {
                 value = WAProto.Message.AppStateSyncKeyData.fromObject(value);
               }
               data[id] = value;
-            })
+            }),
           );
           return data;
         },

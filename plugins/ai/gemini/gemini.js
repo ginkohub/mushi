@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2025-2026 Ginko
  *
-* This Source Code Form is subject to the terms of the Mozilla Public
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/
  *
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { GoogleGenAI } from '@google/genai';
-import pen from '../../../src/pen.js';
-import { getFile } from '../../../src/data.js';
+import { readFileSync, writeFileSync } from "node:fs";
+import { GoogleGenAI } from "@google/genai";
+import { getFile } from "../../../src/data.js";
+import pen from "../../../src/pen.js";
 
 /**
  * @typedef {Object} Gemini - Gemini AI model
@@ -20,7 +20,7 @@ import { getFile } from '../../../src/data.js';
  * @property {Map<string,import('@google/genai').Session>} [chats] - Chat sessions map
  */
 
-/** 
+/**
  * @typedef {Object} GeminiOpts
  * @property {string} apiKey - API key for the Gemini AI model
  * @property {string} modelName - Name of the Gemini AI model to use
@@ -29,16 +29,15 @@ import { getFile } from '../../../src/data.js';
  */
 
 const DEFAULT_SYSTEM_INSTRUCTION = [
-  'Nama lu Ginko, humble, expert ngoding bahasa apa aja, kalem, gk banyak ngomong, gk suka pamer.',
+  "Nama lu Ginko, humble, expert ngoding bahasa apa aja, kalem, gk banyak ngomong, gk suka pamer.",
   'Bicara pake bahasa sehari-hari "lu" "gw".',
-  'Sebisa mungkin persingkat kalimat, seperti sedang chat di WhatsApp.',
+  "Sebisa mungkin persingkat kalimat, seperti sedang chat di WhatsApp.",
 ];
 
 /**
  * @class Gemini - Gemini AI model
  */
 export class Gemini {
-
   /**
    * @param {GeminiOpts} options - Options for the Gemini AI model
    */
@@ -50,12 +49,15 @@ export class Gemini {
     this.apiKey = apiKey;
 
     /** @type {string} */
-    this.modelName = modelName ?? 'gemini-2.0-flash';
+    this.modelName = modelName ?? "gemini-2.0-flash";
 
     /** @type {string} */
-    this.systemInstruction = systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION.join(' ');
+    this.systemInstruction =
+      systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION.join(" ");
 
-    this.genAI = new GoogleGenAI({ apiKey: apiKey ?? process.env.GEMINI_API_KEY });
+    this.genAI = new GoogleGenAI({
+      apiKey: apiKey ?? process.env.GEMINI_API_KEY,
+    });
 
     /** @type {Map<string,import('@google/genai').Model>} */
     this.listModels = new Map();
@@ -65,7 +67,7 @@ export class Gemini {
       try {
         await this.genAI.files.upload(params);
       } catch (e) {
-        pen.Error('gemini-upload', e);
+        pen.Error("gemini-upload", e);
       }
     };
 
@@ -75,9 +77,9 @@ export class Gemini {
     /** @param {string} name */
     this.deleteFile = async (name) => {
       try {
-        await this.genAI.files.delete({ name: name })
+        await this.genAI.files.delete({ name: name });
       } catch (e) {
-        pen.Error('gemini-delete')
+        pen.Error("gemini-delete", e);
       }
     };
 
@@ -86,7 +88,7 @@ export class Gemini {
       try {
         return await this.genAI.files.list({});
       } catch (e) {
-        pen.Error('gemini-delete')
+        pen.Error("gemini-list-file", e);
       }
       return;
     };
@@ -96,7 +98,7 @@ export class Gemini {
       for (const file of files) {
         await this.deleteFile(file.name);
       }
-    }
+    };
 
     /** @type {Record<string, Object>} */
     this.settings = {
@@ -106,7 +108,7 @@ export class Gemini {
     /** @type {Map<string,import('@google/genai').Chat>} */
     this.chats = new Map();
 
-    this.init().catch(e => pen.Error('gemini-init', e));
+    this.init().catch((e) => pen.Error("gemini-init", e));
   }
 
   async init() {
@@ -118,9 +120,9 @@ export class Gemini {
    * Load configuration from the given name
    */
   async load() {
-    if (!this.settingName) return
+    if (!this.settingName) return;
     try {
-      const text = readFileSync(this.settingName, 'utf-8');
+      const text = readFileSync(this.settingName, "utf-8");
       const config = JSON.parse(text);
       this.settings = { ...this.settings, ...config };
 
@@ -134,9 +136,10 @@ export class Gemini {
         this.settings.limitedModels = {};
       }
 
-      if (this.settings?.systemInstruction) this.systemInstruction = this.settings.systemInstruction;
+      if (this.settings?.systemInstruction)
+        this.systemInstruction = this.settings.systemInstruction;
     } catch (e) {
-      if (e.code !== 'ENOENT') pen.Error('gemini-load', e);
+      if (e.code !== "ENOENT") pen.Error("gemini-load", e);
     }
   }
 
@@ -144,9 +147,9 @@ export class Gemini {
     if (this.settingName) {
       try {
         const text = JSON.stringify(this.settings, null, 2);
-        writeFileSync(this.settingName, text, 'utf-8');
+        writeFileSync(this.settingName, text, "utf-8");
       } catch (e) {
-        pen.Error('gemini-save', e);
+        pen.Error("gemini-save", e);
       }
     }
   }
@@ -166,8 +169,8 @@ export class Gemini {
         config: {
           systemInstruction: {
             text: this.systemInstruction,
-          }
-        }
+          },
+        },
       });
       this.chats.set(id, chat);
     }
@@ -185,10 +188,17 @@ export class Gemini {
             }
             const prevModel = this.modelName;
             this.switchModel();
-            pen.Warn(e.status, `try switching model from ${prevModel} to ${this.modelName}`);
+            pen.Warn(
+              e.status,
+              `try switching model from ${prevModel} to ${this.modelName}`,
+            );
             return await this.chat(id, params);
           } else {
-            pen.Error('gemini-chat', this.modelName, 'All model is limited, please try again later.');
+            pen.Error(
+              "gemini-chat",
+              this.modelName,
+              "All model is limited, please try again later.",
+            );
           }
           break;
         }
@@ -196,7 +206,7 @@ export class Gemini {
           break;
         }
         default: {
-          pen.Error('gemini-chat', this.modelName, e.message);
+          pen.Error("gemini-chat", this.modelName, e.message);
         }
       }
     }
@@ -215,7 +225,6 @@ export class Gemini {
         this.setModelName(key);
         break;
       } else {
-        continue;
       }
     }
 
@@ -231,9 +240,10 @@ export class Gemini {
     if (!params) return;
     if (!params?.model) params.model = this.modelName;
     if (!params?.config) params.config = {};
-    if (!params.config?.systemInstruction) params.config.systemInstruction = {
-      text: DEFAULT_SYSTEM_INSTRUCTION.join('\n'),
-    };
+    if (!params.config?.systemInstruction)
+      params.config.systemInstruction = {
+        text: DEFAULT_SYSTEM_INSTRUCTION.join("\n"),
+      };
 
     return await this.genAI.models.generateContent(params);
   }
@@ -245,8 +255,8 @@ export class Gemini {
     const pager = await this.genAI?.models.list();
     if (pager) {
       for (const model of pager.page) {
-        if (!model?.name.includes('tts') && model?.name?.includes('gemini')) {
-          const keyName = model.name.split('/')?.pop();
+        if (!model?.name.includes("tts") && model?.name?.includes("gemini")) {
+          const keyName = model.name.split("/")?.pop();
           if (keyName) {
             this.listModels.set(keyName, model);
           }
@@ -267,7 +277,7 @@ export class Gemini {
 /** @type {Gemini} */
 export const gemini = new Gemini({
   apiKey: process.env.GEMINI_API_KEY,
-  modelName: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
-  systemInstruction: DEFAULT_SYSTEM_INSTRUCTION.join(' '),
-  settingName: getFile('gemini_settings.json'),
+  modelName: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
+  systemInstruction: DEFAULT_SYSTEM_INSTRUCTION.join(" "),
+  settingName: getFile("gemini_settings.json"),
 });

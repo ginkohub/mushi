@@ -8,14 +8,14 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Events } from '../../src/const.js';
-import { BotDetector } from '../../src/detector.js';
-import pen from '../../src/pen.js';
-import { formatElapse } from '../../src/tools.js';
+import { Events } from "../../src/const.js";
+import { BotDetector } from "../../src/detector.js";
+import pen from "../../src/pen.js";
+import { formatElapse } from "../../src/tools.js";
 
 const storeID = [];
 function hasID(c) {
-  const key = `${c.sender}_${c.id}`
+  const key = `${c.sender}_${c.id}`;
   if (storeID.indexOf(key) > -1) {
     return true;
   } else {
@@ -24,7 +24,6 @@ function hasID(c) {
     }
     storeID.push(key);
     return false;
-
   }
 }
 const detect = new BotDetector({ delay: 2000 });
@@ -32,25 +31,25 @@ const detect = new BotDetector({ delay: 2000 });
 /** @type {void} */
 const sliceStr = (str, len, mid) => {
   if (!str || str?.length <= len) return str;
-  if (!mid) mid = '';
-  const half = Math.round(len / 2)
-  const start = str.slice(0, half)
-  const end = str.slice(str.length - half, str.length)
-  return `${start}${mid}${end}`
-}
+  if (!mid) mid = "";
+  const half = Math.round(len / 2);
+  const start = str.slice(0, half);
+  const end = str.slice(str.length - half, str.length);
+  return `${start}${mid}${end}`;
+};
 
 /** @type {void} */
 const cleanName = (str) => {
-  if (typeof str === 'string') {
-    str = str.replaceAll('\n', ' ');
-    while (str.includes('  ')) {
-      str = str.replaceAll('  ', ' ');
+  if (typeof str === "string") {
+    str = str.replaceAll("\n", " ");
+    while (str.includes("  ")) {
+      str = str.replaceAll("  ", " ");
     }
     str = str.trim();
   }
 
   return str;
-}
+};
 
 const skipEvents = [
   Events.MESSAGE_RECEIPT_UPDATE,
@@ -63,10 +62,10 @@ const skipEvents = [
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  desc: 'Logs the message to the console',
+  desc: "Logs the message to the console",
 
   midware: (c) => ({
-    success: !skipEvents.includes(c.eventName)
+    success: !skipEvents.includes(c.eventName),
   }),
 
   exec: async (c) => {
@@ -75,12 +74,12 @@ export default {
     const senderName = cleanName(c.senderName);
 
     switch (c.eventType) {
-      case 'append': {
-        data.push('📩');
+      case "append": {
+        data.push("📩");
         break;
       }
-      case 'notify': {
-        data.push('📧');
+      case "notify": {
+        data.push("📧");
         break;
       }
     }
@@ -88,101 +87,97 @@ export default {
     switch (c.eventName) {
       case Events.PRESENCE_UPDATE: {
         switch (c.presence) {
-          case 'composing': {
-            data.push('✍️', '');
+          case "composing": {
+            data.push("✍️", "");
             break;
           }
-          case 'recording': {
-            data.push('🎤')
+          case "recording": {
+            data.push("🎤");
             break;
           }
           default:
             data.push(c.presence);
         }
 
-        data.push(
-          pen.Blue(chatName),
-          '<',
-          pen.Red(senderName),
-        );
+        data.push(pen.Blue(chatName), "<", pen.Red(senderName));
 
         break;
       }
 
       case Events.MESSAGES_REACTION:
       case Events.MESSAGES_UPSERT: {
-
         /* Indicator section */
-        if (c.isAdmin) data.push('🛡️', '');
+        if (c.isAdmin) data.push("🛡️", "");
 
         if (c.isCMD) {
-          data.push('⚡');
+          data.push("⚡");
 
           const dataCMD = c.handler()?.getCMD(c.pattern);
-          if (!dataCMD?.plugin?.check(c)) data.push('❌');
+          if (!dataCMD?.plugin?.check(c)) data.push("❌");
         }
 
-        if (c.id && c.type !== 'senderKeyDistributionMessage') {
+        if (c.id && c.type !== "senderKeyDistributionMessage") {
           if (hasID(c)) {
-            data.push('⚠️', '');
+            data.push("⚠️", "");
           }
         }
-        if ((await detect.isBot(c))?.success) data.push('🤖');
-        if (c.sender?.endsWith('@lid')) data.push('🥷');
-
+        if ((await detect.isBot(c))?.success) data.push("🤖");
+        if (c.sender?.endsWith("@lid")) data.push("🥷");
 
         /* Data section */
-        data.push(formatElapse(new Date().getTime() - c.timestamp));
-        if (c.stanzaId) data.push(sliceStr(c.stanzaId, 8, '-'), '<<');
-        data.push(sliceStr(c.id, 8, '-'));
+        data.push(formatElapse(Date.now() - c.timestamp));
+        if (c.stanzaId) data.push(sliceStr(c.stanzaId, 8, "-"), "<<");
+        data.push(sliceStr(c.id, 8, "-"));
 
         data.push(
-          pen.GreenBr(c.type?.replaceAll('Message', '')),
+          pen.GreenBr(c.type?.replaceAll("Message", "")),
           pen.Blue(chatName),
-          '<',
+          "<",
           pen.Red(senderName),
-          c.text?.slice(0, 100).replaceAll('\n', ' ') || ''
+          c.text?.slice(0, 100).replaceAll("\n", " ") || "",
         );
 
         break;
       }
 
       case Events.GROUP_PARTICIPANTS_UPDATE: {
-        data.push('👥');
+        data.push("👥");
 
         switch (c.action) {
-          case 'invite':
-          case 'add': {
-            data.push('⤵️');
+          case "invite":
+          case "add": {
+            data.push("⤵️");
             break;
           }
-          case 'promote': {
-            data.push('⬆️');
+          case "promote": {
+            data.push("⬆️");
             break;
           }
-          case 'demote': {
-            data.push('⬇️');
+          case "demote": {
+            data.push("⬇️");
             break;
           }
-          case 'leave': {
-            data.push('⤴️');
+          case "leave": {
+            data.push("⤴️");
             break;
           }
           default:
             data.push(c.action);
         }
-        data.push('',
-          pen.Blue(chatName), '<',
+        data.push(
+          "",
+          pen.Blue(chatName),
+          "<",
           pen.Red(senderName),
-          c.mentionedJid?.map(jid => pen.Green(jid)).join(', ')
+          c.mentionedJid?.map((jid) => pen.Green(jid)).join(", "),
         );
 
         break;
       }
 
       case Events.CALL: {
-        data.push('📞', c.callStatus, 'from', pen.Blue(chatName));
-        break
+        data.push("📞", c.callStatus, "from", pen.Blue(chatName));
+        break;
       }
 
       default:
@@ -190,6 +185,5 @@ export default {
     }
 
     if (data.length > 0) pen.Info(...data);
-  }
+  },
 };
-

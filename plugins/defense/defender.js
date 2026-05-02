@@ -8,13 +8,13 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Events } from '../../src/const.js';
-import pen from '../../src/pen.js';
-import { Role } from '../../src/roles.js';
-import { settings } from '../settings.js';
-import { allowed } from './detector.js';
+import { Events } from "../../src/const.js";
+import pen from "../../src/pen.js";
+import { Role } from "../../src/roles.js";
+import { settings } from "../settings.js";
+import { allowed } from "./detector.js";
 
-const KEY_DEFENSE_ALLOW_STATUS = 'defense_allow_status';
+const KEY_DEFENSE_ALLOW_STATUS = "defense_allow_status";
 
 /* filter duplicate types and defaults */
 try {
@@ -24,15 +24,15 @@ try {
   setTypes = setTypes.filter((v) => !allowed?.includes(v));
   settings.set(KEY_DEFENSE_ALLOW_STATUS, setTypes);
 } catch (e) {
-  pen.Error('defender-filter-types', e);
+  pen.Error("defender-filter-types", e);
 }
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
-    cmd: ['smp'],
-    cat: 'defense',
-    desc: 'Create and send sample message as json.',
+    cmd: ["smp"],
+    cat: "defense",
+    desc: "Create and send sample message as json.",
     timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
@@ -41,14 +41,14 @@ export default [
       c.reply({
         document: Buffer.from(JSON.stringify(c)),
         fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
-        mimetype: 'application/json',
+        mimetype: "application/json",
       });
-    }
+    },
   },
   {
-    cmd: ['defense', 'defense+', 'defense-'],
-    cat: 'defense',
-    desc: 'Manage defense status',
+    cmd: ["defense", "defense+", "defense-"],
+    cat: "defense",
+    desc: "Manage defense status",
     timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
@@ -58,15 +58,15 @@ export default [
       let pattern = c.pattern;
       const tail = pattern.slice(-1);
       switch (tail) {
-        case '+': {
-          settings.set(key, true)
+        case "+": {
+          settings.set(key, true);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Activating defense for ${c.me}`);
           break;
         }
 
-        case '-': {
-          settings.set(key, false)
+        case "-": {
+          settings.set(key, false);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Deactivating defense for ${c.me}`);
           break;
@@ -75,22 +75,21 @@ export default [
       const set = settings.get(key);
 
       const texts = [
-        `🛡️ *Defense status* : *${(set === true) ? 'Active ✅' : 'Inactive ⚠️'}*`,
-        '', '', 'NB :',
+        `🛡️ *Defense status* : *${set === true ? "Active ✅" : "Inactive ⚠️"}*`,
+        "",
+        "",
+        "NB :",
         `  *${pattern}-* _to deactivating_`,
-        `  *${pattern}+* _to activating_`
+        `  *${pattern}+* _to activating_`,
       ];
 
-      c.reply(
-        { text: texts.join('\n') },
-        { quoted: c.event },
-      )
-    }
+      c.reply({ text: texts.join("\n") }, { quoted: c.event });
+    },
   },
   {
-    cmd: ['skip', 'skip+', 'skip-'],
-    cat: 'defense',
-    desc: 'Manage skip message type on status.',
+    cmd: ["skip", "skip+", "skip-"],
+    cat: "defense",
+    desc: "Manage skip message type on status.",
     timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
@@ -104,49 +103,61 @@ export default [
       if (!setAllows || !Array.isArray(setAllows)) setAllows = [];
 
       const tail = c.pattern.slice(-1);
-      let pattern = ['-', '+'].includes(tail) ? c.pattern.slice(0, -1) : c.pattern;
-      let status = '';
+      const pattern = ["-", "+"].includes(tail)
+        ? c.pattern.slice(0, -1)
+        : c.pattern;
+      let status = "";
 
       const texts = [];
 
       switch (tail) {
-        case '+': {
-          setAllows.push(...newAllowed.filter((v) => !setAllows?.includes(v) && !allowed?.includes(v)));
-          status = 'add';
+        case "+": {
+          setAllows.push(
+            ...newAllowed.filter(
+              (v) => !setAllows?.includes(v) && !allowed?.includes(v),
+            ),
+          );
+          status = "add";
           break;
         }
 
-        case '-': {
+        case "-": {
           setAllows = setAllows.filter((v) => !newAllowed.includes(v));
-          status = 'remove';
+          status = "remove";
           break;
         }
       }
 
       if (status?.length > 0) {
         settings.set(KEY_DEFENSE_ALLOW_STATUS, setAllows);
-        texts.push(`Success ${status} ${status === 'add' ? 'to' : 'from'} setting`, '');
+        texts.push(
+          `Success ${status} ${status === "add" ? "to" : "from"} setting`,
+          "",
+        );
       }
 
       texts.push(
         `*# Skip from setting* :`,
-        ...setAllows?.map((v) => `- \`${v}\``)
+        ...(setAllows?.map((v) => `- \`${v}\``) ?? []),
       );
 
       texts.push(
-        '', `*# Default skip types* :`,
-        ...allowed?.map((v) => `- \`${v}\``)
+        "",
+        `*# Default skip types* :`,
+        ...(allowed?.map((v) => `- \`${v}\``) ?? []),
       );
 
-
       texts.push(
-        '', 'NB :',
+        "",
+        "NB :",
         `  *${pattern}-* _to remove_`,
-        `  *${pattern}+* _to add_`, '',
-        'Example :', '',
-        `  *${pattern}+ audioMessage imageMessage*`);
-      c.reply({ text: texts.join('\n')?.trim() }, { quoted: c.event })
-    }
-  }
+        `  *${pattern}+* _to add_`,
+        "",
+        "Example :",
+        "",
+        `  *${pattern}+ audioMessage imageMessage*`,
+      );
+      c.reply({ text: texts.join("\n")?.trim() }, { quoted: c.event });
+    },
+  },
 ];
-

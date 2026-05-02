@@ -8,18 +8,18 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { S_WHATSAPP_NET } from 'baileys';
-import { midwareAnd, midwareOr } from './midware.js';
-import { Reason } from './reason.js';
+import { S_WHATSAPP_NET } from "baileys";
+import { midwareAnd, midwareOr } from "./midware.js";
+import { Reason } from "./reason.js";
 
 /**
  * @constant {string[]} onlyOfficial
  * @description A list of message types that are often associated with unofficial or modified WhatsApp clients.
  */
 const onlyOfficial = [
-  'buttonsMessage',
-  'botInvokeMessage',
-  'interactiveResponseMessage',
+  "buttonsMessage",
+  "botInvokeMessage",
+  "interactiveResponseMessage",
 ];
 
 /**
@@ -32,12 +32,10 @@ const onlyOfficial = [
  * - The participant JID is '0@s.whatsapp.net'.
  */
 const detect = midwareOr(
-  midwareAnd(
-    (ctx) => {
-      /* Check if id contains non hex char */
-      return new Reason({ success: /[^0-9a-fA-F]+/.test(ctx.id) });
-    }
-  ),
+  midwareAnd((ctx) => {
+    /* Check if id contains non hex char */
+    return new Reason({ success: /[^0-9a-fA-F]+/.test(ctx.id) });
+  }),
   (ctx) => {
     if (!ctx.id) return new Reason({ success: false });
     /* Check if id contains lowercase */
@@ -49,8 +47,8 @@ const detect = midwareOr(
   },
   (ctx) => {
     /* Check if participant is a 0 + S_WHATSAPP_NET */
-    return new Reason({ success: ctx.participant === '0' + S_WHATSAPP_NET });
-  }
+    return new Reason({ success: ctx.participant === `0${S_WHATSAPP_NET}` });
+  },
 );
 
 /**

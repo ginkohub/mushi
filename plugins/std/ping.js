@@ -8,17 +8,17 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import { Role } from '../../src/roles.js';
-import { formatElapse } from '../../src/tools.js';
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import { Role } from "../../src/roles.js";
+import { formatElapse } from "../../src/tools.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['ping', 'p'],
+  cmd: ["ping", "p"],
   timeout: 120,
-  cat: 'system',
-  tags: ['system'],
-  desc: 'Ping the bot and get the response time.',
+  cat: "system",
+  tags: ["system"],
+  desc: "Ping the bot and get the response time.",
   events: [MESSAGES_UPSERT],
   roles: [Role.GUEST],
   exec: async (c) => {
@@ -35,8 +35,7 @@ export default {
     text += `\n*⏱️ Resp:* ${formatElapse(latency)}`;
     return await c.reply({
       text: text,
-      edit: resp.key
-    })
-  }
+      edit: resp.key,
+    });
+  },
 };
-

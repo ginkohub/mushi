@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Reason } from './reason.js';
+import { Reason } from "./reason.js";
 
 /**
  * A middleware function that checks if at least one of the provided middlewares passes.
@@ -18,7 +18,7 @@ import { Reason } from './reason.js';
  */
 export function midwareOr(...midwares) {
   return async (ctx) => {
-    for (let midware of midwares) {
+    for (const midware of midwares) {
       const result = new Reason(await midware(ctx));
       if (result?.success) {
         return result;
@@ -26,9 +26,9 @@ export function midwareOr(...midwares) {
     }
     return new Reason({
       success: false,
-      code: 'midware-or',
+      code: "midware-or",
       author: import.meta.url,
-      message: 'Forbidden',
+      message: "Forbidden",
     });
   };
 }
@@ -41,7 +41,7 @@ export function midwareOr(...midwares) {
  */
 export function midwareAnd(...midwares) {
   return async (ctx) => {
-    for (let midware of midwares) {
+    for (const midware of midwares) {
       const result = new Reason(await midware(ctx));
       if (!result?.success) {
         return result;
@@ -49,9 +49,9 @@ export function midwareAnd(...midwares) {
     }
     return new Reason({
       success: true,
-      code: 'midware-and',
+      code: "midware-and",
       author: import.meta.url,
-      message: 'OK'
+      message: "OK",
     });
   };
 }
@@ -66,9 +66,9 @@ export function eventNameIs(...names) {
   return async (ctx) => {
     return new Reason({
       success: names?.includes(ctx?.eventName),
-      code: 'midware-event-name-is',
+      code: "midware-event-name-is",
       author: import.meta.url,
-      message: 'Event name is not allowed'
+      message: "Event name is not allowed",
     });
   };
 }
@@ -81,10 +81,10 @@ export function eventNameIs(...names) {
  */
 export function fromMe(ctx) {
   return new Reason({
-    success: ctx?.fromMe ? true : false,
+    success: !!ctx?.fromMe,
     code: 403,
     author: import.meta.url,
-    message: 'It is not from me'
+    message: "It is not from me",
   });
 }
 
@@ -96,10 +96,10 @@ export function fromMe(ctx) {
  */
 export function isGroup(ctx) {
   return new Reason({
-    success: ctx?.isGroup ? true : false,
-    code: 'is-group',
+    success: !!ctx?.isGroup,
+    code: "is-group",
     author: import.meta.url,
-    message: 'It is not from a group'
+    message: "It is not from a group",
   });
 }
 
@@ -111,10 +111,10 @@ export function isGroup(ctx) {
  */
 export function isPrivate(ctx) {
   return new Reason({
-    success: ctx?.isGroup ? false : true,
-    code: 'is-private',
+    success: !ctx?.isGroup,
+    code: "is-private",
     author: import.meta.url,
-    message: 'It is not from a private chat'
+    message: "It is not from a private chat",
   });
 }
 
@@ -126,9 +126,9 @@ export function isPrivate(ctx) {
  */
 export function isStatus(ctx) {
   return new Reason({
-    success: ctx?.isStatus ? true : false,
-    code: 'is-status',
+    success: !!ctx?.isStatus,
+    code: "is-status",
     author: import.meta.url,
-    message: 'It is not a status message'
+    message: "It is not a status message",
   });
 }

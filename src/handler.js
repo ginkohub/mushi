@@ -8,18 +8,18 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { readdirSync, statSync } from 'node:fs';
-import { Ctx } from './context.js';
-import { platform } from 'node:os';
-import { pathToFileURL } from 'node:url';
-import { Plugin } from './plugin.js';
-import { Pen } from './pen.js';
-import { Events } from './const.js';
-import { jidNormalizedUser } from 'baileys';
-import { delay, genHEX, hashCRC32, watchDir } from './tools.js';
-import { Reason } from './reason.js';
-import { UserManager } from './user_manager.js';
-import { getFile } from './data.js';
+import { readdirSync, statSync } from "node:fs";
+import { platform } from "node:os";
+import { pathToFileURL } from "node:url";
+import { jidNormalizedUser } from "baileys";
+import { Events } from "./const.js";
+import { Ctx } from "./context.js";
+import { getFile } from "./data.js";
+import { Pen } from "./pen.js";
+import { Plugin } from "./plugin.js";
+import { Reason } from "./reason.js";
+import { delay, genHEX, hashCRC32, watchDir } from "./tools.js";
+import { UserManager } from "./user_manager.js";
 
 /**
  * @typedef {Object} HandlerOptions
@@ -40,8 +40,17 @@ export class Handler {
   /**
    * @param {HandlerOptions} opts
    */
-  constructor({ pluginDir, filter, prefix, pen, groupCache, contactCache, timerCache, userManager }) {
-    this.pluginDir = pluginDir ?? '../plugins';
+  constructor({
+    pluginDir,
+    filter,
+    prefix,
+    pen,
+    groupCache,
+    contactCache,
+    timerCache,
+    userManager,
+  }) {
+    this.pluginDir = pluginDir ?? "../plugins";
 
     /** @type {Function} */
     this.filter = filter;
@@ -50,10 +59,10 @@ export class Handler {
     this.client;
 
     /** @type {import('./pen.js').Pen} */
-    this.pen = pen ?? new Pen({ prefix: 'hand' });
+    this.pen = pen ?? new Pen({ prefix: "hand" });
 
     /** @type {string[]} */
-    this.prefix = Array.isArray(prefix) ? prefix : ['.', '/'];
+    this.prefix = Array.isArray(prefix) ? prefix : [".", "/"];
 
     /** @type {Map<string, import('./plugin.js').Plugin>} */
     this.plugins = new Map();
@@ -83,10 +92,12 @@ export class Handler {
     this.blockList = [];
 
     /** @type {Record<string, any>} */
-    this.taskList = {}
+    this.taskList = {};
 
     /** @type {import('./user_manager.js').UserManager} */
-    this.userManager = userManager ?? new UserManager({ saveName: getFile('user_manager.json') });
+    this.userManager =
+      userManager ??
+      new UserManager({ saveName: getFile("user_manager.json") });
 
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);
@@ -105,7 +116,7 @@ export class Handler {
         this.pen.Debug(`Plugin removed:`, loc);
         const hash = hashCRC32(loc);
         await this.removeOn(hash);
-      }
+      },
     });
   }
 
@@ -119,7 +130,7 @@ export class Handler {
   }
 
   /**
-   * @param {string} id 
+   * @param {string} id
    * @param {() => Promise<any>} fn
    * @returns {Promise<any>}
    */
@@ -134,7 +145,7 @@ export class Handler {
       try {
         return await fn();
       } catch (e) {
-        this.pen.Error('run-task', `Task ${id} failed`, e);
+        this.pen.Error("run-task", `Task ${id} failed`, e);
       } finally {
         delete this.taskList[id];
       }
@@ -154,27 +165,29 @@ export class Handler {
   }
 
   /**
- * Block / unblock given jid
- * @param {string} jid
- * @param {string} action
- * @returns {Promise<boolean | undefined>}
- */
+   * Block / unblock given jid
+   * @param {string} jid
+   * @param {string} action
+   * @returns {Promise<boolean | undefined>}
+   */
   async updateBlock(jid, action) {
     try {
       await this.client?.sock?.updateBlockStatus(jid, action);
       switch (action) {
-        case 'block': {
+        case "block": {
           this.blockList.push(jidNormalizedUser(jid));
           break;
         }
-        case 'unblock': {
-          this.blockList = this.blockList.filter(x => x !== jidNormalizedUser(jid));
+        case "unblock": {
+          this.blockList = this.blockList.filter(
+            (x) => x !== jidNormalizedUser(jid),
+          );
           break;
         }
       }
-      return true
+      return true;
     } catch (e) {
-      this.pen.Error('update-block', e);
+      this.pen.Error("update-block", e);
     }
   }
 
@@ -184,10 +197,10 @@ export class Handler {
    */
   setPrefix(prefix) {
     if (!Array.isArray(prefix) || prefix?.length === 0) {
-      return this.pen.Warn('Prefix must be an array larger than 0');
+      return this.pen.Warn("Prefix must be an array larger than 0");
     }
     this.prefix = prefix;
-    this.cmds.clear()
+    this.cmds.clear();
     for (const [id, plugin] of this.plugins) {
       if (!plugin.cmd) continue;
       this.genCMD(id, plugin);
@@ -205,7 +218,7 @@ export class Handler {
       let precmds = [];
       if (Array.isArray(plugin.cmd)) {
         precmds = plugin.cmd;
-      } else if (typeof plugin.cmd === 'string') {
+      } else if (typeof plugin.cmd === "string") {
         precmds = [plugin.cmd];
       }
 
@@ -239,7 +252,7 @@ export class Handler {
   /**
    * Add plugin to handler
    * @param {string} location
-   * @param {import('./plugin.js').PluginOpts[]} opts 
+   * @param {import('./plugin.js').PluginOpts[]} opts
    */
   async on(location, ...opts) {
     let i = 0;
@@ -291,7 +304,7 @@ export class Handler {
         }
       }
     } catch (e) {
-      this.pen.Error('remove-on', e);
+      this.pen.Error("remove-on", e);
     }
   }
 
@@ -305,15 +318,16 @@ export class Handler {
     try {
       files = readdirSync(dir);
     } catch (e) {
-      this.pen.Error('scan-plugin', e);
+      this.pen.Error("scan-plugin", e);
     }
     for (const file of files) {
-      let loc = `${dir}/${file}`.replace('//', '/');
+      const loc = `${dir}/${file}`.replace("//", "/");
 
       try {
-        if (statSync(loc)?.isDirectory() && !file?.startsWith('.')) await this.scanPlugin(loc);
+        if (statSync(loc)?.isDirectory() && !file?.startsWith("."))
+          await this.scanPlugin(loc);
       } catch (e) {
-        this.pen.Error('scan-plugin-stat', e.message);
+        this.pen.Error("scan-plugin-stat", e.message);
       }
 
       await this.loadFile(loc);
@@ -332,7 +346,7 @@ export class Handler {
       try {
         await callback(this);
       } catch (e) {
-        this.pen.Error('pre-load', e);
+        this.pen.Error("pre-load", e);
       }
     }
   }
@@ -342,20 +356,21 @@ export class Handler {
    * @param {string} loc
    */
   async loadFile(loc) {
-    if (loc.endsWith('.js')) {
+    if (loc.endsWith(".js")) {
       try {
         /** @type {string|any} */
-        const filename = loc.split('/').pop();
-        if (filename && (
-          filename.startsWith('_') ||
-          filename.startsWith('.') ||
-          filename.endsWith('.test.js')
-        )) {
-          this.pen.Debug('Skip:', loc)
+        const filename = loc.split("/").pop();
+        if (
+          filename &&
+          (filename.startsWith("_") ||
+            filename.startsWith(".") ||
+            filename.endsWith(".test.js"))
+        ) {
+          this.pen.Debug("Skip:", loc);
           return;
         }
 
-        if (platform() === 'win32') {
+        if (platform() === "win32") {
           loc = pathToFileURL(loc).href;
         }
 
@@ -383,20 +398,19 @@ export class Handler {
           }
         }
 
-        const msgs = ['Loaded'];
+        const msgs = ["Loaded"];
         if (pre > 0) msgs.push(`${pre} pre`);
         if (def > 0) msgs.push(`${def} default`);
         msgs.push(loc);
 
         this.pen.Debug(...msgs);
       } catch (e) {
-        this.pen.Error('load-file', loc, e);
+        this.pen.Error("load-file", loc, e);
       }
     }
-
   }
 
-  /** 
+  /**
    * Get command by pattern
    * @param {string} p
    * @returns {{id: string, prefix?: string, cmd: string, plugin:import('./plugin.js').Plugin}|undefined}
@@ -415,7 +429,7 @@ export class Handler {
     };
   }
 
-  /** 
+  /**
    * Check if given pattern is a command
    * @param {string} p
    * @returns {boolean}
@@ -446,9 +460,10 @@ export class Handler {
    * @returns {boolean|undefined}
    */
   isSafe(ctx) {
-    const isAppend = ctx?.eventType === 'append';
-    const isPrekey = ctx?.type === 'senderKeyDistributionMessage';
-    const isUndefined = ctx?.type === 'undefined' || typeof ctx?.type === 'undefined';
+    const isAppend = ctx?.eventType === "append";
+    const isPrekey = ctx?.type === "senderKeyDistributionMessage";
+    const isUndefined =
+      ctx?.type === "undefined" || typeof ctx?.type === "undefined";
     const idExist = isPrekey || isUndefined ? true : this.idExist(ctx);
 
     return !(isAppend || isPrekey || isUndefined || idExist);
@@ -464,7 +479,7 @@ export class Handler {
         handler: this,
         eventName: eventName,
         event: event,
-        eventType: eventType
+        eventType: eventType,
       });
 
       await ctx.init();
@@ -488,13 +503,17 @@ export class Handler {
           /* Exec */
           if (listen.exec) await listen.exec(ctx);
         } catch (e) {
-          this.pen.Error('handle-listen', e);
-          if (listen?.final) await listen.final(ctx, new Reason({
-            success: false,
-            code: 'handle-listen-error',
-            author: import.meta.url,
-            message: e.message,
-          }));
+          this.pen.Error("handle-listen", e);
+          if (listen?.final)
+            await listen.final(
+              ctx,
+              new Reason({
+                success: false,
+                code: "handle-listen-error",
+                author: import.meta.url,
+                message: e.message,
+              }),
+            );
         } finally {
           ctx.plugin = null;
         }
@@ -509,7 +528,7 @@ export class Handler {
         try {
           ctx.plugin = () => data.plugin;
           ctx.prefix = data.prefix;
-          ctx.cmd = data.cmd
+          ctx.cmd = data.cmd;
 
           /* Check rules and midware before exec */
           const reason = await data?.plugin?.check(ctx);
@@ -521,29 +540,32 @@ export class Handler {
           /* Exec */
           if (data?.plugin?.exec) await data?.plugin?.exec(ctx);
         } catch (e) {
-          this.pen.Error('handle-command', ctx.pattern, e);
-          if (data?.plugin?.final) await data?.plugin?.final(ctx, new Reason({
-            success: false,
-            code: 'handle-command-error',
-            author: import.meta.url,
-            message: e.message,
-          }));
+          this.pen.Error("handle-command", ctx.pattern, e);
+          if (data?.plugin?.final)
+            await data?.plugin?.final(
+              ctx,
+              new Reason({
+                success: false,
+                code: "handle-command-error",
+                author: import.meta.url,
+                message: e.message,
+              }),
+            );
         } finally {
           ctx.plugin = null;
         }
       }
     } catch (e) {
-      this.pen.Error('handle', e);
+      this.pen.Error("handle", e);
     }
   }
 
   /**
-   * Handle update data 
+   * Handle update data
    * @param {import('./context.js').Ctx} ctx
    */
   async updateData(ctx) {
     try {
-
       switch (ctx.eventName) {
         case Events.GROUPS_UPSERT:
         case Events.GROUP_PARTICIPANTS_UPDATE:
@@ -562,7 +584,12 @@ export class Handler {
         }
 
         case Events.MESSAGES_UPSERT: {
-          if (ctx?.fromMe && !ctx?.edited && ctx?.eventType !== 'append' && ctx?.type !== 'senderKeyDistributionMessage') {
+          if (
+            ctx?.fromMe &&
+            !ctx?.edited &&
+            ctx?.eventType !== "append" &&
+            ctx?.type !== "senderKeyDistributionMessage"
+          ) {
             this.updateTimer(ctx.chat, ctx.expiration, ctx.eventName);
           }
           break;
@@ -573,16 +600,19 @@ export class Handler {
           /** @type {{blocklist: string[], type: 'add' | 'remove'}} */
           const ev = ctx.event;
           switch (ev?.type) {
-            case 'add': {
+            case "add": {
               this.blockList.push(...(ev?.blocklist ?? []));
               break;
             }
-            case 'remove': {
-              this.blockList = this.blockList.filter((jid) => !ev?.blocklist?.includes(jid));
+            case "remove": {
+              this.blockList = this.blockList.filter(
+                (jid) => !ev?.blocklist?.includes(jid),
+              );
               break;
             }
             default: {
-              if (ctx.eventName === Events.BLOCKLIST_SET) this.blockList = ev.blocklist;
+              if (ctx.eventName === Events.BLOCKLIST_SET)
+                this.blockList = ev.blocklist;
             }
           }
 
@@ -594,27 +624,27 @@ export class Handler {
           if (ctx?.event?.isOnline) {
             await delay(3000);
             try {
-              this.runTask('update-data-fetch-blocklist', async () => {
+              this.runTask("update-data-fetch-blocklist", async () => {
                 this.blockList = await this.client?.sock.fetchBlocklist();
-              })
+              });
             } catch (e) {
-              this.pen.Error('update-data-fetch-blocklist', e);
+              this.pen.Error("update-data-fetch-blocklist", e);
             }
           }
           break;
         }
       }
     } catch (e) {
-      this.pen.Error('update-data', e);
+      this.pen.Error("update-data", e);
     }
   }
 
-  /** 
-  * Attach client to handler & start listening for events
-  * @param {import('./client.js').Wangsaf} client 
-  */
+  /**
+   * Attach client to handler & start listening for events
+   * @param {import('./client.js').Wangsaf} client
+   */
   async attach(client) {
-    this.pen.Debug('Attaching client');
+    this.pen.Debug("Attaching client");
 
     this.client = client;
 
@@ -622,16 +652,25 @@ export class Handler {
       /** @param {import('baileys').BaileysEventMap} events */
       (events) => {
         for (const eventName of Object.keys(events)) {
-          const update = events[/** @type {keyof import('baileys').BaileysEventMap} */(eventName)];
+          const update =
+            events[
+              /** @type {keyof import('baileys').BaileysEventMap} */ (eventName)
+            ];
           switch (eventName) {
             case Events.CONNECTION_UPDATE: {
               const owner = this.client?.sock?.user;
-              if (owner) { this.userManager?.addOwners(owner.id); }
+              if (owner) {
+                this.userManager?.addOwners(owner.id);
+              }
               break;
             }
             case Events.MESSAGES_UPSERT: {
               for (const event of update?.messages ?? []) {
-                this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                this.handle({
+                  eventName: eventName,
+                  event: event,
+                  eventType: update.type,
+                }).catch((e) => {
                   this.pen.Error(eventName, e);
                 });
               }
@@ -646,7 +685,11 @@ export class Handler {
             case Events.GROUPS_UPSERT:
             case Events.GROUPS_UPDATE: {
               for (const event of update) {
-                this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                this.handle({
+                  eventName: eventName,
+                  event: event,
+                  eventType: update.type,
+                }).catch((e) => {
                   this.pen.Error(eventName, e);
                 });
               }
@@ -655,7 +698,11 @@ export class Handler {
 
             case Events.GROUP_PARTICIPANTS_UPDATE:
             case Events.PRESENCE_UPDATE: {
-              this.handle({ eventName: eventName, event: update, eventType: update.type }).catch((e) => {
+              this.handle({
+                eventName: eventName,
+                event: update,
+                eventType: update.type,
+              }).catch((e) => {
                 this.pen.Error(eventName, e);
               });
               break;
@@ -664,19 +711,28 @@ export class Handler {
             default: {
               if (Array.isArray(update)) {
                 for (const event of update) {
-                  this.handle({ eventName: eventName, event: event, eventType: update.type }).catch((e) => {
+                  this.handle({
+                    eventName: eventName,
+                    event: event,
+                    eventType: update.type,
+                  }).catch((e) => {
                     this.pen.Error(eventName, e);
                   });
                 }
               } else {
-                this.handle({ eventName: eventName, event: update, eventType: update.type }).catch((e) => {
+                this.handle({
+                  eventName: eventName,
+                  event: update,
+                  eventType: update.type,
+                }).catch((e) => {
                   this.pen.Error(eventName, e);
                 });
               }
             }
           }
         }
-      });
+      },
+    );
   }
 
   /**
@@ -687,7 +743,11 @@ export class Handler {
    */
   async updateGroupMetadata(jid, ctx) {
     try {
-      this.pen.Debug('Updating group metadata', jid, ctx ? `via ${ctx.eventName} with action : ${ctx.action}` : '');
+      this.pen.Debug(
+        "Updating group metadata",
+        jid,
+        ctx ? `via ${ctx.eventName} with action : ${ctx.action}` : "",
+      );
       let data = this.groupCache.get(jid);
       let updated = false;
 
@@ -695,18 +755,21 @@ export class Handler {
         switch (ctx?.eventName) {
           case Events.GROUP_PARTICIPANTS_UPDATE: {
             switch (ctx?.action) {
-              case 'add': {
+              case "add": {
                 for (const add of ctx.mentionedJid) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = !ctx.mentionedJid.some(jid => jid.endsWith('@lid'));
+                  updated = !ctx.mentionedJid.some((jid) =>
+                    jid.endsWith("@lid"),
+                  );
                 }
                 break;
               }
-              case 'remove': {
+              case "remove": {
                 for (const rm of ctx.mentionedJid) {
-                  const i = data.participants?.findIndex((part) =>
-                    part.id === rm || part.lid === rm || part.jid === rm
+                  const i = data.participants?.findIndex(
+                    (part) =>
+                      part.id === rm || part.lid === rm || part.jid === rm,
                   );
                   if (i !== -1) {
                     data.participants.splice(i, 1);
@@ -715,25 +778,31 @@ export class Handler {
                 }
                 break;
               }
-              case 'promote': {
+              case "promote": {
                 data?.participants?.forEach((part) => {
-                  if (ctx.mentionedJid?.includes(part.id) || ctx.mentionedJid?.includes(part.lid)) {
-                    part.admin = 'admin';
+                  if (
+                    ctx.mentionedJid?.includes(part.id) ||
+                    ctx.mentionedJid?.includes(part.lid)
+                  ) {
+                    part.admin = "admin";
                     updated = true;
                   }
                 });
                 break;
               }
-              case 'demote': {
+              case "demote": {
                 data?.participants?.forEach((part) => {
-                  if (ctx.mentionedJid?.includes(part.id) || ctx.mentionedJid?.includes(part.lid)) {
+                  if (
+                    ctx.mentionedJid?.includes(part.id) ||
+                    ctx.mentionedJid?.includes(part.lid)
+                  ) {
                     part.admin = null;
                     updated = true;
                   }
                 });
                 break;
               }
-              case 'modify': {
+              case "modify": {
                 break;
               }
               default:
@@ -742,7 +811,7 @@ export class Handler {
             break;
           }
           case Events.GROUPS_UPDATE: {
-            const skip = ['author', 'id'];
+            const skip = ["author", "id"];
             for (const key in ctx?.event) {
               if (skip.includes(key)) continue;
               data[key] = ctx.event[key];
@@ -763,9 +832,8 @@ export class Handler {
         this.updateTimer(data.id, data.ephemeralDuration, ctx?.eventName);
         return data;
       }
-
     } catch (e) {
-      this.pen.Error('update-group-metadata', jid, e);
+      this.pen.Error("update-group-metadata", jid, e);
     }
   }
 
@@ -776,10 +844,14 @@ export class Handler {
    */
   getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
-    if (!data) this.runTask('get-group-metadata_' + jid, async () => {
-      try { await this.updateGroupMetadata(jid); }
-      catch (e) { this.pen.Error('get-group-metadata', jid, e); }
-    });
+    if (!data)
+      this.runTask(`get-group-metadata_${jid}`, async () => {
+        try {
+          await this.updateGroupMetadata(jid);
+        } catch (e) {
+          this.pen.Error("get-group-metadata", jid, e);
+        }
+      });
     return data;
   }
 
@@ -792,7 +864,7 @@ export class Handler {
     try {
       if (data) this.contactCache.set(jid, data);
     } catch (e) {
-      this.pen.Error('update-contact', e);
+      this.pen.Error("update-contact", e);
     }
   }
 
@@ -812,12 +884,18 @@ export class Handler {
    * @param {string} via
    */
   updateTimer(jid, ephemeral, via) {
-    this.pen.Debug('Updating ephemeral for', jid, 'to', ephemeral, via ? `via ${via}` : '');
+    this.pen.Debug(
+      "Updating ephemeral for",
+      jid,
+      "to",
+      ephemeral,
+      via ? `via ${via}` : "",
+    );
     if (jid) {
       const data = this.timerCache.get(jid);
       if (data !== ephemeral) {
         if (!ephemeral) {
-          this.timerCache.delete(jid)
+          this.timerCache.delete(jid);
         } else {
           this.timerCache.set(jid, ephemeral);
         }
@@ -841,12 +919,12 @@ export class Handler {
    */
   getName(jid) {
     jid = jidNormalizedUser(jid);
-    if (!jid || jid === '') return null;
+    if (!jid || jid === "") return null;
 
-    if (jid.endsWith('@g.us')) {
-      let data = this.getGroupMetadata(jid);
+    if (jid.endsWith("@g.us")) {
+      const data = this.getGroupMetadata(jid);
       return data?.subject;
-    } else if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid')) {
+    } else if (jid.endsWith("@s.whatsapp.net") || jid.endsWith("@lid")) {
       const data = this.getContact(jid);
       return data?.name;
     }
@@ -858,16 +936,16 @@ export class Handler {
     return null;
   }
 
-  /** 
-  * Send message to given jid
-  * @param {string} jid
-  * @param {import('baileys').AnyMessageContent} content
-  * @param {import('baileys').MiscMessageGenerationOptions} [options]
-  * @returns {Promise<import('baileys').proto.IWebMessageInfo|any>}
-  */
+  /**
+   * Send message to given jid
+   * @param {string} jid
+   * @param {import('baileys').AnyMessageContent} content
+   * @param {import('baileys').MiscMessageGenerationOptions} [options]
+   * @returns {Promise<import('baileys').proto.IWebMessageInfo|any>}
+   */
   async sendMessage(jid, content, options) {
     try {
-      if (!content) throw new Error('content not provided');
+      if (!content) throw new Error("content not provided");
       if (!options) options = {};
 
       if (!options.messageId) options.messageId = genHEX(32);
@@ -877,7 +955,7 @@ export class Handler {
 
       return await this.client.sock.sendMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error('send-message', e);
+      this.pen.Error("send-message", e);
     }
     return;
   }
@@ -891,15 +969,15 @@ export class Handler {
    */
   async relayMessage(jid, content, options) {
     try {
-      if (!content) throw new Error('content not provided');
+      if (!content) throw new Error("content not provided");
       if (!options) options = {};
 
       if (!options.messageId) options.messageId = genHEX(32);
 
       const ephemeral = this.getTimer(jid);
-      for (let key in content) {
+      for (const key in content) {
         if (!content[key]) continue;
-        if (typeof content[key] === 'object') {
+        if (typeof content[key] === "object") {
           if (!content[key]?.contextInfo) {
             content[key].contextInfo = { expiration: ephemeral };
           } else {
@@ -911,14 +989,14 @@ export class Handler {
           content = {
             extendedTextMessage: {
               text: content.conversation,
-              contextInfo: { expiration: ephemeral }
-            }
-          }
+              contextInfo: { expiration: ephemeral },
+            },
+          };
         }
       }
       return await this.client.sock.relayMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error('relay-message', e);
+      this.pen.Error("relay-message", e);
     }
   }
 
@@ -934,10 +1012,10 @@ export class Handler {
 
     return this.sendMessage(jid, {
       document: {
-        file: filePath
+        file: filePath,
       },
       fileName: opts.filename,
-      caption: opts.caption
-    })
+      caption: opts.caption,
+    });
   }
 }

@@ -8,20 +8,20 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { resolve, join } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import pen from '../../src/pen.js';
-import { Role } from '../../src/roles.js';
-import YtDlpWrap from 'yt-dlp-wrap';
-import { storeMsg } from '../settings.js';
+import { existsSync, mkdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import YtDlpWrap from "yt-dlp-wrap";
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import pen from "../../src/pen.js";
+import { Role } from "../../src/roles.js";
+import { storeMsg } from "../settings.js";
 
-const BIN_DIR = resolve('./bin');
+const BIN_DIR = resolve("./bin");
 const YTDLP_PATHS = [
-  join(BIN_DIR, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
-  resolve('./node_modules/.bin/yt-dlp'),
-  resolve('~/bin/yt-dlp'),
-  resolve('bin/yt-dlp')
+  join(BIN_DIR, process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp"),
+  resolve("./node_modules/.bin/yt-dlp"),
+  resolve("~/bin/yt-dlp"),
+  resolve("bin/yt-dlp"),
 ];
 
 /** @type {Promise<YtDlpWrap> | null} */
@@ -38,11 +38,14 @@ async function resolveBinary() {
 
   try {
     if (!existsSync(BIN_DIR)) mkdirSync(BIN_DIR, { recursive: true });
-    pen.Info('yt-dlp binary not found. Downloading to ./bin...');
+    pen.Info("yt-dlp binary not found. Downloading to ./bin...");
     return await YtDlpWrap.downloadBinary(BIN_DIR);
   } catch (e) {
-    pen.Error('Failed to download yt-dlp binary, falling back to system PATH:', e);
-    return 'yt-dlp';
+    pen.Error(
+      "Failed to download yt-dlp binary, falling back to system PATH:",
+      e,
+    );
+    return "yt-dlp";
   }
 }
 
@@ -52,55 +55,55 @@ async function resolveBinary() {
  */
 async function getYT() {
   if (!ytDlpPromise) {
-    ytDlpPromise = resolveBinary().then(bin => new YtDlpWrap(bin));
+    ytDlpPromise = resolveBinary().then((bin) => new YtDlpWrap(bin));
   }
   return ytDlpPromise;
 }
 
 // Pre-initialize to speed up first use
-getYT().catch(e => pen.Error('yt-dlp pre-initialization failed:', e));
+getYT().catch((e) => pen.Error("yt-dlp pre-initialization failed:", e));
 
 /**
  * Formats a video caption with metadata.
- * @param {any} video 
+ * @param {any} video
  * @returns {string}
  */
 function formatCaption(video) {
   const parts = [
     `*${video.title}*`,
-    '',
-    `*Author:* ${video.uploader || 'Unknown'}`,
-    `*Duration:* ${video.duration_string || 'N/A'}`,
-    `*Views:* ${video.view_count?.toLocaleString('en-US') ?? 'N/A'}`
+    "",
+    `*Author:* ${video.uploader || "Unknown"}`,
+    `*Duration:* ${video.duration_string || "N/A"}`,
+    `*Views:* ${video.view_count?.toLocaleString("en-US") ?? "N/A"}`,
   ];
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 /**
  * Downloads a video from a link and returns the buffer.
- * @param {YtDlpWrap} ytDlp 
- * @param {string} link 
+ * @param {YtDlpWrap} ytDlp
+ * @param {string} link
  * @returns {Promise<Buffer>}
  */
 async function downloadVideo(ytDlp, link) {
-  return await ytDlp.getBuffer(link, ['-f', 'best[ext=mp4]/best']);
+  return await ytDlp.getBuffer(link, ["-f", "best[ext=mp4]/best"]);
 }
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['ytdlp'],
-  cat: 'downloader',
-  tags: ['youtube', 'downloader', 'video', 'yt-dlp'],
-  desc: 'Download videos from supported sites using direct links.',
+  cmd: ["ytdlp"],
+  cat: "downloader",
+  tags: ["youtube", "downloader", "video", "yt-dlp"],
+  desc: "Download videos from supported sites using direct links.",
   events: [MESSAGES_UPSERT],
   roles: [Role.USER],
 
   exec: async (c) => {
-    const links = c.argv?._?.filter(arg => /^https?:\/\//.test(arg)) || [];
-    if (links.length === 0) return c.react('❓');
+    const links = c.argv?._?.filter((arg) => /^https?:\/\//.test(arg)) || [];
+    if (links.length === 0) return c.react("❓");
 
     try {
-      c.react('⌛');
+      c.react("⌛");
 
       const ytDlp = await getYT();
 
@@ -124,22 +127,24 @@ export default {
             continue;
           }
 
-          const resp = await c.reply({
-            video: buffer,
-            mimetype: 'video/mp4',
-            fileName: `${video.title}.mp4`,
-            caption: formatCaption(video),
-          }, { quoted: c.event });
+          const resp = await c.reply(
+            {
+              video: buffer,
+              mimetype: "video/mp4",
+              fileName: `${video.title}.mp4`,
+              caption: formatCaption(video),
+            },
+            { quoted: c.event },
+          );
 
           if (resp) storeMsg.set(video.id, resp);
-
         } catch (err) {
           pen.Error(`Error processing link [${link}]:`, err.message);
         }
       }
     } catch (e) {
-      pen.Error('Fatal ytdlp error:', e);
-      c.react('❌');
+      pen.Error("Fatal ytdlp error:", e);
+      c.react("❌");
     }
-  }
+  },
 };

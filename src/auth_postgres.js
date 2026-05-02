@@ -8,12 +8,14 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import pg from 'pg';
-const { Pool } = pg;
-import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
-import pen from './pen.js';
+import pg from "pg";
 
-const TABLE_NAME = 'baileys_auth_store';
+const { Pool } = pg;
+
+import { BufferJSON, initAuthCreds, WAProto } from "baileys";
+import pen from "./pen.js";
+
+const TABLE_NAME = "baileys_auth_store";
 
 /**
  * Use PostgreSQL to store authentication state
@@ -34,9 +36,9 @@ export async function usePostgres(connectionString) {
 
   try {
     await ensureTable();
-    pen.Debug('Connected to PostgreSQL for authentication');
+    pen.Debug("Connected to PostgreSQL for authentication");
   } catch (error) {
-    pen.Error('Failed to connect to PostgreSQL or create table:', error);
+    pen.Error("Failed to connect to PostgreSQL or create table:", error);
     throw error;
   }
 
@@ -45,12 +47,15 @@ export async function usePostgres(connectionString) {
     await pool.query(
       `INSERT INTO ${TABLE_NAME} (key, value) VALUES ($1, $2)
        ON CONFLICT (key) DO UPDATE SET value = $2;`,
-      [key, value]
+      [key, value],
     );
   };
 
   const readData = async (key) => {
-    const result = await pool.query(`SELECT value FROM ${TABLE_NAME} WHERE key = $1;`, [key]);
+    const result = await pool.query(
+      `SELECT value FROM ${TABLE_NAME} WHERE key = $1;`,
+      [key],
+    );
     if (result.rows.length === 0) {
       return null;
     }
@@ -76,7 +81,7 @@ export async function usePostgres(connectionString) {
                 value = WAProto.Message.AppStateSyncKeyData.fromObject(value);
               }
               data[id] = value;
-            })
+            }),
           );
           return data;
         },

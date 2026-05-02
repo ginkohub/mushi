@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import pen from './pen.js';
-import fs from 'node:fs';
-import { isBun, watchDir } from './tools.js';
+import fs from "node:fs";
+import pen from "./pen.js";
+import { isBun, watchDir } from "./tools.js";
 
 /**
  * Store data in JSON file
@@ -20,7 +20,7 @@ export class StoreJson {
    * @param {{saveName?: string, autoSave?: boolean, autoLoad?: boolean, expiration?: number}} opts
    */
   constructor({ saveName, autoSave, autoLoad, expiration }) {
-    if (!saveName) throw Error('saveName required');
+    if (!saveName) throw Error("saveName required");
 
     /** @type {Record<string, any>} */
     this.data = {};
@@ -32,7 +32,7 @@ export class StoreJson {
     this.saveTimeout = null;
     this.autoLoad = autoLoad ?? false;
 
-    this.load().catch(e => pen.Error('Failed loading data', e));
+    this.load().catch((e) => pen.Error("Failed loading data", e));
   }
 
   /**
@@ -44,14 +44,14 @@ export class StoreJson {
         this.watcher = watchDir(this.saveName, {
           onChange: (loc) => {
             if (!this.saveState) {
-              pen.Debug('Reload', loc)
+              pen.Debug("Reload", loc);
               this.load();
             } else {
               this.saveState = false;
             }
-          }
+          },
         });
-      } catch { }
+      } catch {}
     }
   }
 
@@ -62,7 +62,9 @@ export class StoreJson {
   async load(saveName) {
     /* Read json data local storage */
     try {
-      this.data = JSON.parse(fs.readFileSync(saveName ?? this.saveName, 'utf8'));
+      this.data = JSON.parse(
+        fs.readFileSync(saveName ?? this.saveName, "utf8"),
+      );
     } catch (e) {
       pen.Error(e.message);
       this.data = {};
@@ -71,13 +73,13 @@ export class StoreJson {
 
   async save() {
     try {
-      const tempPath = this.saveName + '.tmp';
-      fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), 'utf8');
+      const tempPath = `${this.saveName}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), "utf8");
       fs.renameSync(tempPath, this.saveName);
       this.saveState = true;
       if (!this.watcher) await this.watch();
     } catch (e) {
-      pen.Error('Failed saving data', e);
+      pen.Error("Failed saving data", e);
     }
   }
 
@@ -154,11 +156,10 @@ export class StoreJson {
  */
 export async function createSQLite(saveName) {
   if (isBun) {
-    /* @ts-ignore */
-    const { Database } = await import('bun:sqlite');
+    const { Database } = await import("bun:sqlite");
     return new Database(saveName);
   } else {
-    const { DatabaseSync } = await import('node:sqlite');
+    const { DatabaseSync } = await import("node:sqlite");
     return new DatabaseSync(saveName);
   }
 }
@@ -174,12 +175,12 @@ export class StoreSQLite {
    * @param {{saveName: string, autoSave: boolean, expiration: number, tableName: string}} opts
    */
   constructor({ saveName, autoSave, expiration, tableName }) {
-    if (!saveName) throw Error('saveName required');
+    if (!saveName) throw Error("saveName required");
 
     this.autoSave = autoSave ?? false;
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
-    this.tableName = tableName ?? 'data';
+    this.tableName = tableName ?? "data";
     this.ready = this._init();
   }
 
@@ -188,11 +189,12 @@ export class StoreSQLite {
   }
 
   async _init() {
-    if (!connectionList[this.saveName]) connectionList[this.saveName] = await createSQLite(this.saveName);
+    if (!connectionList[this.saveName])
+      connectionList[this.saveName] = await createSQLite(this.saveName);
 
     this.db = connectionList[this.saveName];
-    this.db.exec('PRAGMA journal_mode=WAL');
-    this.db.exec('PRAGMA foreign_keys=ON');
+    this.db.exec("PRAGMA journal_mode=WAL");
+    this.db.exec("PRAGMA foreign_keys=ON");
     this.load();
   }
 
@@ -200,25 +202,33 @@ export class StoreSQLite {
    * @param {string} sql
    * @param  {...any} params
    */
-  run_(sql, ...params) { return this.db.prepare(sql).run(...params); }
-
-  /**
-   * @param {string} sql
-   * @param  {...any} params
-   */
-  get_(sql, ...params) { return this.db.prepare(sql).get(...params); }
-
-  /**
-   * @param {string} sql
-   * @param  {...any} params
-   */
-  all_(sql, ...params) { return this.db.prepare(sql).all(...params); }
-
-  async load() {
-    return this.run_(`CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`);
+  run_(sql, ...params) {
+    return this.db.prepare(sql).run(...params);
   }
 
-  save() { }
+  /**
+   * @param {string} sql
+   * @param  {...any} params
+   */
+  get_(sql, ...params) {
+    return this.db.prepare(sql).get(...params);
+  }
+
+  /**
+   * @param {string} sql
+   * @param  {...any} params
+   */
+  all_(sql, ...params) {
+    return this.db.prepare(sql).all(...params);
+  }
+
+  async load() {
+    return this.run_(
+      `CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`,
+    );
+  }
+
+  save() {}
 
   /**
    * Set data
@@ -228,7 +238,11 @@ export class StoreSQLite {
   set(key, value) {
     if (!key) return;
 
-    return this.run_(`INSERT OR REPLACE INTO ${this.tableName} (key, value) VALUES (?,?)`, key, JSON.stringify(value));
+    return this.run_(
+      `INSERT OR REPLACE INTO ${this.tableName} (key, value) VALUES (?,?)`,
+      key,
+      JSON.stringify(value),
+    );
   }
 
   /**
@@ -238,7 +252,10 @@ export class StoreSQLite {
    */
   get(key) {
     if (!key) return;
-    const row = this.get_(`SELECT value FROM ${this.tableName} WHERE key = ?`, key);
+    const row = this.get_(
+      `SELECT value FROM ${this.tableName} WHERE key = ?`,
+      key,
+    );
     if (!row) return;
 
     return JSON.parse(row.value);
@@ -254,8 +271,8 @@ export class StoreSQLite {
   }
 
   /**
-  * Clear data
-  */
+   * Clear data
+   */
   clear() {
     return this.run_(`DELETE FROM data`);
   }
@@ -265,7 +282,7 @@ export class StoreSQLite {
    * @returns {IterableIterator<string>}
    */
   keys() {
-    return this.all_(`SELECT key FROM data`).map(row => row.key);
+    return this.all_(`SELECT key FROM data`).map((row) => row.key);
   }
 
   /**
@@ -274,8 +291,11 @@ export class StoreSQLite {
    * @returns {boolean}
    */
   has(key) {
-    if (!key || typeof key !== 'string') return false;
-    return this.get_(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !== undefined;
+    if (!key || typeof key !== "string") return false;
+    return (
+      this.get_(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !==
+      undefined
+    );
   }
 
   /**
@@ -284,6 +304,11 @@ export class StoreSQLite {
    * @returns {StoreSQLite}
    */
   use(tableName) {
-    return new StoreSQLite({ saveName: this.saveName, autoSave: this.autoSave, expiration: this.expiration, tableName: tableName });
+    return new StoreSQLite({
+      saveName: this.saveName,
+      autoSave: this.autoSave,
+      expiration: this.expiration,
+      tableName: tableName,
+    });
   }
 }

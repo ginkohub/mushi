@@ -8,39 +8,37 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Role } from '../../src/roles.js';
+import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['>'],
+  cmd: [">"],
   timeout: 15,
-  cat: 'system',
-  tags: ['system'],
-  desc: 'Evaluate JavaScript code',
+  cat: "system",
+  tags: ["system"],
+  desc: "Evaluate JavaScript code",
   roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
     const src = c.args?.trim();
     if (!src) {
-      return await c.react('⁉️');
+      return await c.react("⁉️");
     }
 
     try {
+      /* biome-ignore lint/security/noGlobalEval: it's a feature */
       let res = await eval(`(async () => { ${src} })()`);
       if (!res) {
-        return await c.react('❔');
+        return await c.react("❔");
       }
 
-      if (typeof res === 'object' && !(
-        res instanceof Buffer
-
-      )) res = JSON.stringify(res, null, 2);
+      if (typeof res === "object" && !(res instanceof Buffer))
+        res = JSON.stringify(res, null, 2);
 
       await c.reply({ text: `${res}` }, { quoted: c.event });
     } catch (e) {
-      await c.react('‼️');
+      await c.react("‼️");
       await c.reply({ text: `${e}` }, { quoted: c.event });
     }
-  }
+  },
 };
-

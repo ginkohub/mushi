@@ -8,12 +8,11 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+import fs from "node:fs";
+import path from "node:path";
+import pen from "./pen.js";
 
-import fs from 'node:fs';
-import pen from './pen.js';
-import path from 'node:path';
-
-const dataDir = 'data';
+const dataDir = "data";
 
 /**
  * Ensures that a directory exists, creating it if it doesn't.
@@ -24,8 +23,8 @@ function checkDataDir(targetDir) {
   try {
     fs.mkdirSync(targetDir);
   } catch (e) {
-    /*Ignore error if the directory already exists (EEXIST) */
-    if (e.code !== 'EEXIST') {
+    /* Ignore error if the directory already exists (EEXIST) */
+    if (e.code !== "EEXIST") {
       pen.Error(`Failed to create directory ${targetDir}:`, e);
     }
   }
@@ -53,4 +52,3 @@ export function getFile(name) {
   checkDataDir(dataDir);
   return path.join(dataDir, name);
 }
-

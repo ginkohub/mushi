@@ -13,13 +13,10 @@ import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
 
 /** @type {boolean} True if the current runtime are Deno */
-/* @ts-ignore */
 export const isDeno = typeof Deno !== "undefined";
 
 /** @type {boolean} True if the current runtime are Bun */
-/* @ts-ignore */
 export const isBun = typeof Bun !== "undefined";
-
 
 /**
  * Generates a random hexadecimal string of a given length.
@@ -27,7 +24,7 @@ export const isBun = typeof Bun !== "undefined";
  * @returns {string} The generated uppercase hex string.
  */
 export function genHEX(n) {
-  let hex = "0123456789abcdef";
+  const hex = "0123456789abcdef";
   let result = "";
   for (let i = 0; i < n; i++) {
     result += hex.charAt(Math.floor(Math.random() * 16));
@@ -78,32 +75,30 @@ const DAY = 24 * HOUR;
  * @param {string} space=' ' The space character to use for formatting.
  * @returns {string} Formatted string (e.g., "5d 12h 30m 20s", "45m 30s", "30s", "100ms").
  */
-export function formatElapse(elapse, space = '') {
+export function formatElapse(elapse, space = "") {
   let est = `${elapse}ms`;
   if (elapse >= DAY) {
     est = [
       `${Math.floor(elapse / DAY)}d`,
       `${Math.floor((elapse % DAY) / HOUR)}h`,
       `${Math.floor((elapse % HOUR) / MINUTE)}m`,
-      `${Math.floor((elapse % MINUTE) / SECOND)}s`
+      `${Math.floor((elapse % MINUTE) / SECOND)}s`,
     ].join(space);
   } else if (elapse >= HOUR) {
     est = [
       `${Math.floor((elapse % DAY) / HOUR)}h`,
       `${Math.floor((elapse % HOUR) / MINUTE)}m`,
-      `${Math.floor((elapse % MINUTE) / SECOND)}s`
+      `${Math.floor((elapse % MINUTE) / SECOND)}s`,
     ].join(space);
   } else if (elapse >= MINUTE) {
     est = [
       `${Math.floor((elapse % HOUR) / MINUTE)}m`,
-      `${Math.floor((elapse % MINUTE) / SECOND)}s`
+      `${Math.floor((elapse % MINUTE) / SECOND)}s`,
     ].join(space);
   } else if (elapse >= SECOND) {
-    est = [
-      `${Math.floor((elapse % MINUTE) / SECOND)}s`
-    ].join(space);
+    est = [`${Math.floor((elapse % MINUTE) / SECOND)}s`].join(space);
   }
-  return est
+  return est;
 }
 
 /**
@@ -113,7 +108,7 @@ export function formatElapse(elapse, space = '') {
  * @returns {Promise<void>} A promise that resolves after the delay.
  */
 export function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -132,10 +127,10 @@ const reItalic = /\*(.+?)\*/g;
 const reStrike = /~~(.+?)~~/g;
 const reMono = /```[\w]*\n([\s\S]+?)\n```/g;
 
-const BOLD_ITALIC_START = '#{BI}';
-const BOLD_ITALIC_END = '#{BE}';
-const BOLD = '#{BB}';
-const ITALIC = '#{II}';
+const BOLD_ITALIC_START = "#{BI}";
+const BOLD_ITALIC_END = "#{BE}";
+const BOLD = "#{BB}";
+const ITALIC = "#{II}";
 
 /**
  * Formats a string with Markdown-like syntax to WhatsApp's formatting syntax.
@@ -148,18 +143,18 @@ const ITALIC = '#{II}';
  * @returns {string} The formatted string.
  */
 export function formatMD(s) {
-  if (!s || typeof s !== 'string') return s;
+  if (!s || typeof s !== "string") return s;
   s = s.replace(reBoldItalic, `${BOLD_ITALIC_START}$1${BOLD_ITALIC_END}`);
   s = s.replace(reBold, `${BOLD}$1${BOLD}`);
   s = s.replace(reItalic, `${ITALIC}$1${ITALIC}`);
   s = s.replace(reStrike, `~$1~`);
 
-  s = s.replace(new RegExp(BOLD_ITALIC_START, 'g'), '_*');
-  s = s.replace(new RegExp(BOLD_ITALIC_END, 'g'), '*_');
-  s = s.replace(new RegExp(BOLD, 'g'), '*');
-  s = s.replace(new RegExp(ITALIC, 'g'), '_');
+  s = s.replace(new RegExp(BOLD_ITALIC_START, "g"), "_*");
+  s = s.replace(new RegExp(BOLD_ITALIC_END, "g"), "*_");
+  s = s.replace(new RegExp(BOLD, "g"), "*");
+  s = s.replace(new RegExp(ITALIC, "g"), "_");
 
-  s = s.replace(reMono, '```$1```');
+  s = s.replace(reMono, "```$1```");
   return s;
 }
 
@@ -169,12 +164,12 @@ export function formatMD(s) {
  * @returns {string} The formatted string representation of the bytes.
  */
 export function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+}
 
 /**
  * Checks if the current platform should use polling instead of events for file changes.
@@ -182,7 +177,7 @@ export function formatBytes(bytes) {
  */
 export function shouldUsePolling() {
   try {
-    if (fs.existsSync('/.dockerenv')) return true;
+    if (fs.existsSync("/.dockerenv")) return true;
   } catch {
     return true;
   }
@@ -199,15 +194,15 @@ export async function importy(path, meta) {
   const dirs = [];
   if (meta) dirs.push(meta.dirname);
   dirs.push(path);
-  const loc = pathToFileURL(dirs.join('/')).href;
-  return await import(loc + '?t=' + Date.now());
+  const loc = pathToFileURL(dirs.join("/")).href;
+  return await import(`${loc}?t=${Date.now()}`);
 }
 
 /** @type {Map<string, Promise<any>>} */
 const taskList = new Map();
 
 /**
- * @param {string} id 
+ * @param {string} id
  * @param {() => Promise<any>} fn
  * @param {(e:any) => Promise<any>} onError
  * @param {(id:string) => Promise<any>} onFinal
@@ -224,10 +219,10 @@ export async function runTask(id, fn, onError, onFinal) {
     try {
       return await fn();
     } catch (e) {
-      if (onError && typeof onError == 'function') onError(e);
+      if (onError && typeof onError === "function") onError(e);
     } finally {
       taskList.delete(id);
-      if (onFinal && typeof onFinal == 'function') onFinal(id);
+      if (onFinal && typeof onFinal === "function") onFinal(id);
     }
   })();
 
@@ -235,38 +230,65 @@ export async function runTask(id, fn, onError, onFinal) {
   return task;
 }
 
+/** @type {Map<string, any>} */
+const watchers = new Map();
+
 /**
  * Watch dir changes
  * @param {string} dir
- * @param {{onChange?: (path: string) => Promise<void>, onAdd?: (path: string) => Promise<void>, onRemove?: (path: string) => Promise<void>}}  handlers
+ * @param {{recursive?: string, onChange?: (path: string) => Promise<void>, onAdd?: (path: string) => Promise<void>, onRemove?: (path: string) => Promise<void>}}  handlers
  * @returns {Promise<import('chokidar').FSWatcher>}
  */
-export async function watchDir(dir, { onChange, onAdd, onRemove }) {
+export async function watchDir(
+  dir,
+  {
+    recursive = true,
+    onChange = () => { },
+    onAdd = () => { },
+    onRemove = () => { },
+  },
+) {
+  if (watchers.has(dir)) {
+    watchers.get(dir).close?.();
+    watchers.delete(dir);
+  }
+
   if (isDeno) {
-    /* eslint-disable-next-line */
-    const watcher = Deno.watchFs(dir);
+    const watcher = Deno.watchFs(dir, { recursive: recursive });
     (async () => {
       for await (const event of watcher) {
         const path = event.paths[0];
         switch (event.kind) {
-          case 'modify': await onChange?.(path); break;
-          case 'create':
-          case 'rename':
-            onAdd?.(path); break;
-          case 'remove': await onRemove?.(path); break;
+          case "modify":
+            await onChange(path);
+            break;
+          case "create":
+          case "rename":
+            onAdd(path);
+            break;
+          case "remove":
+            await onRemove(path);
+            break;
         }
       }
     })();
+
+    watchers.set(dir, watcher);
     return watcher;
   } else {
-    const { default: chokidar } = await import('chokidar');
-    return chokidar.watch(dir, {
-      ignoreInitial: true,
-      usePolling: shouldUsePolling(),
-      interval: 1000,
-    })
-      .on('change', onChange ?? (() => { }))
-      .on('add', onAdd ?? (() => { }))
-      .on('unlink', onRemove ?? (() => { }));
+    const { default: chokidar } = await import("chokidar");
+    const watcher = chokidar
+      .watch(dir, {
+        ignoreInitial: true,
+        usePolling: shouldUsePolling(),
+        interval: 1000,
+        recursive: recursive,
+      })
+      .on("change", onChange)
+      .on("add", onAdd)
+      .on("unlink", onRemove);
+
+    watchers.set(dir, watcher);
+    return watcher;
   }
 }

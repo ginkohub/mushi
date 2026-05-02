@@ -8,18 +8,18 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import pen from '../../src/pen.js';
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import pen from "../../src/pen.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['timer'],
+  cmd: ["timer"],
   timeout: 15,
-  cat: 'system',
-  tags: ['system'],
-  desc: 'Set the chat ephemeral',
+  cat: "system",
+  tags: ["system"],
+  desc: "Set the chat ephemeral",
   events: [MESSAGES_UPSERT],
-  roles: ['admin'],
+  roles: ["admin"],
 
   exec: async (c) => {
     const latest = c.handler()?.getTimer(c.chat);
@@ -27,6 +27,5 @@ export default {
     pen.Debug(text);
     c.handler()?.updateTimer(c.chat, c.expiration);
     return await c.reply({ text: text }, { quoted: c.event });
-  }
+  },
 };
-

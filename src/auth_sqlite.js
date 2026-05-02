@@ -8,8 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { WAProto, initAuthCreds, BufferJSON } from 'baileys';
-import { createSQLite } from './store.js';
+import { BufferJSON, initAuthCreds, WAProto } from "baileys";
+import { createSQLite } from "./store.js";
 
 /**
  *
@@ -32,7 +32,9 @@ export async function useSQLite(dbPath) {
    * @param {string} name - table name
    * @returns {string} - sanitized table name
    */
-  const sanitizeTableName = (name) => { return name.replace(/[^a-zA-Z0-9_]/g, "_") };
+  const sanitizeTableName = (name) => {
+    return name.replace(/[^a-zA-Z0-9_]/g, "_");
+  };
 
   /**
    * Create table if not exists
@@ -44,7 +46,7 @@ export async function useSQLite(dbPath) {
     run(`CREATE TABLE IF NOT EXISTS ${tableName} (
      key TEXT PRIMARY KEY,
      data TEXT )`);
-  }
+  };
 
   /**
    * @param {any} data - data to be saved
@@ -52,11 +54,15 @@ export async function useSQLite(dbPath) {
    * @param {string} key - key to identify the data
    */
   const writeData = (data, col, key) => {
-    const tableName = sanitizeTableName(col)
+    const tableName = sanitizeTableName(col);
     ensureTable(col);
     const value = JSON.stringify(data, BufferJSON.replacer);
-    run(`INSERT OR REPLACE INTO ${tableName} (key, data) VALUES (?, ?)`, key, value);
-  }
+    run(
+      `INSERT OR REPLACE INTO ${tableName} (key, data) VALUES (?, ?)`,
+      key,
+      value,
+    );
+  };
 
   /**
    * @param {string} col - collection name
@@ -68,7 +74,7 @@ export async function useSQLite(dbPath) {
     ensureTable(col);
     const result = get(`SELECT data FROM ${tableName} WHERE key = ?`, key);
     return result ? JSON.parse(result.data, BufferJSON.reviver) : null;
-  }
+  };
 
   /**
    * Remove data from table
@@ -80,46 +86,46 @@ export async function useSQLite(dbPath) {
     const tableName = sanitizeTableName(col);
     ensureTable(col);
     run(`DELETE FROM ${tableName} WHERE key = ?`, key);
-  }
+  };
 
   /** @type {import('baileys').AuthenticationCreds} */
-  const creds = (readData("credentials", "creds")) || initAuthCreds();
+  const creds = readData("credentials", "creds") || initAuthCreds();
 
   return {
     state: {
       creds,
       keys: {
-        /* @ts-ignore */
         get: async (type, ids) => {
-          const data = {}
+          const data = {};
           await Promise.all(
             ids.map(async (id) => {
-              let value = readData(type, id)
+              let value = readData(type, id);
               if (type === "app-state-sync-key" && value) {
-                value = WAProto.Message.AppStateSyncKeyData.fromObject(value)
+                value = WAProto.Message.AppStateSyncKeyData.fromObject(value);
               }
-              /* @ts-ignore */
-              data[id] = value
+              data[id] = value;
             }),
-          )
-          return data
+          );
+          return data;
         },
         set: async (data) => {
-          const tasks = []
+          const tasks = [];
           for (const category in data) {
-            /* @ts-ignore */
             for (const id in data[category]) {
-              /* @ts-ignore */
-              const value = data[category][id]
-              tasks.push(value ? writeData(value, category, id) : removeData(category, id))
+              const value = data[category][id];
+              tasks.push(
+                value
+                  ? writeData(value, category, id)
+                  : removeData(category, id),
+              );
             }
           }
-          await Promise.all(tasks)
+          await Promise.all(tasks);
         },
       },
     },
     saveCreds: async () => {
-      writeData(creds, "credentials", "creds")
+      writeData(creds, "credentials", "creds");
     },
-  }
+  };
 }

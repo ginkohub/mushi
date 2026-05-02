@@ -8,8 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Reason } from './reason.js';
-import { nameToLevel } from './roles.js';
+import { Reason } from "./reason.js";
+import { nameToLevel } from "./roles.js";
 
 /**
  * @typedef {Object} PluginOpts
@@ -48,7 +48,7 @@ export class Plugin {
     this.cmd = opts?.cmd;
 
     /** @type {string|any} */
-    this.prefix = opts?.prefix
+    this.prefix = opts?.prefix;
 
     /** @type {boolean|any} */
     this.noPrefix = opts?.noPrefix;
@@ -60,7 +60,7 @@ export class Plugin {
     this.tags = opts?.tags;
 
     /** @type {string} */
-    this.cat = (opts?.cat && opts?.cat !== '') ? opts?.cat : 'uncategorized';
+    this.cat = opts?.cat && opts?.cat !== "" ? opts?.cat : "uncategorized";
 
     /** @type {boolean|any} */
     this.disabled = opts?.disabled;
@@ -73,8 +73,7 @@ export class Plugin {
 
     /** @type {string[]} */
     this.roles = opts?.roles ?? [];
-    if (!Array.isArray(this.roles))
-      throw new Error('Roles must be an array');
+    if (!Array.isArray(this.roles)) throw new Error("Roles must be an array");
 
     /** @type {number|any} Timeout in second */
     this.timeout = opts?.timeout;
@@ -100,43 +99,54 @@ export class Plugin {
   async check(ctx) {
     const reason = new Reason({
       success: true,
-      code: 'plugin-checker',
+      code: "plugin-checker",
       author: this.location,
-      message: `This plugin is ready to execute`
+      message: `This plugin is ready to execute`,
     });
 
-    if (this.disabled) return reason.setBad()
-      .setCode('plugin-disabled')
-      .setMessage(`This plugin is disabled`);
+    if (this.disabled)
+      return reason
+        .setBad()
+        .setCode("plugin-disabled")
+        .setMessage(`This plugin is disabled`);
 
     if (this.timeout > 0) {
-      const diff = new Date().getTime() - ctx.timestamp;
-      if (diff > (this.timeout * 1000)) return reason.setBad()
-        .setCode('plugin-timeout')
-        .setMessage(`This plugin is timed out`);
+      const diff = Date.now() - ctx.timestamp;
+      if (diff > this.timeout * 1000)
+        return reason
+          .setBad()
+          .setCode("plugin-timeout")
+          .setMessage(`This plugin is timed out`);
     }
 
     if (this.events && !this.events?.includes(ctx.eventName)) {
-      return reason.setBad()
-        .setCode('event-type')
-        .setMessage('Event type not match');
+      return reason
+        .setBad()
+        .setCode("event-type")
+        .setMessage("Event type not match");
     }
 
     if (this.roles?.length > 0) {
       const user = ctx.user();
       if (!user?.roles?.length) {
-        return reason.setBad()
-          .setCode('plugin-user-empty-role')
-          .setMessage('User has no role');
+        return reason
+          .setBad()
+          .setCode("plugin-user-empty-role")
+          .setMessage("User has no role");
       } else {
-        const pluginRoles = this.roles.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
-        const userRoles = user?.roles?.map(r => (typeof r === 'string' ? nameToLevel(r) : r));
+        const pluginRoles = this.roles.map((r) =>
+          typeof r === "string" ? nameToLevel(r) : r,
+        );
+        const userRoles = user?.roles?.map((r) =>
+          typeof r === "string" ? nameToLevel(r) : r,
+        );
         const minLevelPlugin = Math.min(...pluginRoles);
         const maxLevelUser = Math.max(...userRoles);
         if (minLevelPlugin > maxLevelUser) {
-          return reason.setBad()
-            .setCode('plugin-user-role-not-match')
-            .setMessage('User role not match');
+          return reason
+            .setBad()
+            .setCode("plugin-user-role-not-match")
+            .setMessage("User role not match");
         }
       }
     }
@@ -146,5 +156,4 @@ export class Plugin {
     }
     return reason;
   }
-
 }

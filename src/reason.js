@@ -30,10 +30,10 @@ export class Reason {
     this.code = code;
 
     /** @type {string} */
-    this.author = author ?? '';
+    this.author = author ?? "";
 
     /** @type {string} */
-    this.message = message ?? '';
+    this.message = message ?? "";
 
     /** @type {any} */
     this.data = data;
@@ -106,5 +106,3 @@ export class Reason {
     return this;
   }
 }
-
-

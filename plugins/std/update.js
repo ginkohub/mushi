@@ -8,35 +8,37 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import { execSync } from 'node:child_process';
-import { existsSync, unlinkSync } from 'node:fs';
-import { Role } from '../../src/roles.js';
+import { execSync } from "node:child_process";
+import { existsSync, unlinkSync } from "node:fs";
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['update'],
+  cmd: ["update"],
   timeout: 15,
-  cat: 'system',
-  tags: ['system'],
-  desc: 'Execute git fetch and pull command shell command, also removing git lock files before execution.',
+  cat: "system",
+  tags: ["system"],
+  desc: "Execute git fetch and pull command shell command, also removing git lock files before execution.",
   events: [MESSAGES_UPSERT],
   roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
     /* waiting */
-    await c.react('⌛');
-    const src = 'git fetch ; git pull origin main:main';
+    await c.react("⌛");
+    const src = "git fetch ; git pull origin main:main";
     try {
       let isLocked = false;
-      let force = c.argv?.f || c.argv?.force || false;
+      const force = c.argv?.f || c.argv?.force || false;
 
       /* Remove lock files */
-      const branch = execSync('git rev-parse --abbrev-ref HEAD')?.toString().trim();
+      const branch = execSync("git rev-parse --abbrev-ref HEAD")
+        ?.toString()
+        .trim();
       const lockFiles = [
-        '.git/index.lock',
-        '.git/HEAD.lock',
-        `.git/refs/heads/${branch}.lock`
+        ".git/index.lock",
+        ".git/HEAD.lock",
+        `.git/refs/heads/${branch}.lock`,
       ];
       for (const lf of lockFiles) {
         if (existsSync(lf)) {
@@ -46,10 +48,10 @@ export default {
       }
 
       if (isLocked || force) {
-        await c.react('🔒');
+        await c.react("🔒");
 
         /* Stash local changes */
-        execSync('git stash');
+        execSync("git stash");
       }
 
       /* Execute shell command */
@@ -58,18 +60,20 @@ export default {
 
       if (isLocked || force) {
         /* Apply stashed changes */
-        execSync('git stash pop');
+        execSync("git stash pop");
       }
 
       if (stdout && stdout?.length > 0) {
-        return await c.reply({ text: `${stdout.toString()}`.trim() }, { quoted: c.event });
+        return await c.reply(
+          { text: `${stdout.toString()}`.trim() },
+          { quoted: c.event },
+        );
       }
     } catch (e) {
-      await c.react('❌');
+      await c.react("❌");
       await c.reply({ text: `${e}` }, { quoted: c.event });
     } finally {
-      await c.react('');
+      await c.react("");
     }
-  }
+  },
 };
-

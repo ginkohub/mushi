@@ -8,17 +8,16 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { StoreJson, StoreSQLite } from '../src/store.js';
-import { getFile } from '../src/data.js';
-import { Reason } from '../src/reason.js';
+import { getFile } from "../src/data.js";
+import { Reason } from "../src/reason.js";
+import { StoreJson, StoreSQLite } from "../src/store.js";
 
 export const storeMsg = new StoreSQLite({
-  saveName: getFile('store_message.db'),
+  saveName: getFile("store_message.db"),
 });
 
-
 export const settings = new StoreJson({
-  saveName: getFile('settings.json'),
+  saveName: getFile("settings.json"),
   autoSave: true,
   autoLoad: true,
 });
@@ -31,13 +30,13 @@ export const settings = new StoreJson({
 export function fromOwner(c) {
   const res = new Reason({
     success: false,
-    code: 'from-owner',
+    code: "from-owner",
     author: import.meta.url,
-    message: 'No owners configured',
-    data: c.sender
+    message: "No owners configured",
+    data: c.sender,
   });
 
-  const owners = settings.get('owners');
+  const owners = settings.get("owners");
   if (!owners || !Array.isArray(owners)) {
     return res;
   }
@@ -46,6 +45,5 @@ export function fromOwner(c) {
     return res.setSuccess(true);
   }
 
-  return res.setMessage('Sender are not an owner of the bot');
+  return res.setMessage("Sender are not an owner of the bot");
 }
-

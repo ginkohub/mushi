@@ -8,14 +8,14 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from '../../src/const.js';
-import { Role } from '../../src/roles.js';
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: ['rvo', 'readviewonce'],
-  cat: 'whatsapp',
-  desc: 'Read View Once messages',
+  cmd: ["rvo", "readviewonce"],
+  cat: "whatsapp",
+  desc: "Read View Once messages",
   timeout: 15,
   roles: [Role.USER],
   events: [MESSAGES_UPSERT],
@@ -31,15 +31,14 @@ export default {
 
     for (const k of Object.keys(m)) {
       if (!m[k]) continue;
-      if (typeof m[k] === 'object') {
+      if (typeof m[k] === "object") {
         if (m[k].viewOnce) delete m[k].viewOnce;
         if (m[k].scansSidecar) delete m[k].scansSidecar;
       }
 
-      if (k === 'messageContextInfo') delete m[k];
+      if (k === "messageContextInfo") delete m[k];
     }
 
     if (m) await c.replyRelay(m);
-  }
+  },
 };
-

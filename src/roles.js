@@ -13,14 +13,14 @@
  * @enum {string}
  */
 export const Role = Object.freeze({
-  BLOCKED: 'blocked',
-  GUEST: 'guest',
-  USER: 'user',
-  PREMIUM: 'premium',
-  MODERATOR: 'moderator',
-  ADMIN: 'admin',
-  SUPERADMIN: 'superadmin',
-  OWNER: 'owner'
+  BLOCKED: "blocked",
+  GUEST: "guest",
+  USER: "user",
+  PREMIUM: "premium",
+  MODERATOR: "moderator",
+  ADMIN: "admin",
+  SUPERADMIN: "superadmin",
+  OWNER: "owner",
 });
 
 /**
@@ -35,13 +35,12 @@ export const RoleLevel = Object.freeze({
   [Role.MODERATOR]: 1000,
   [Role.ADMIN]: 10000,
   [Role.SUPERADMIN]: 100000,
-  [Role.OWNER]: 1000000
+  [Role.OWNER]: 1000000,
 });
 
 /**
  * @typedef {typeof Role[keyof typeof Role]} RoleName
  */
-
 
 /**
  * Get role name from numeric role level
@@ -50,7 +49,7 @@ export const RoleLevel = Object.freeze({
  */
 export function levelToName(role) {
   const names = Object.entries(RoleLevel).find(([, value]) => value === role);
-  return names ? names[0] : '';
+  return names ? names[0] : "";
 }
 
 /**
@@ -59,7 +58,7 @@ export function levelToName(role) {
  * @returns {number}
  */
 export function nameToLevel(roleName) {
-  return RoleLevel[/** @type {RoleName} */(roleName)];
+  return RoleLevel[/** @type {RoleName} */ (roleName)];
 }
 
 /**
@@ -71,7 +70,9 @@ export function rolesToLevel(roles) {
   if (!roles) return [];
 
   if (Array.isArray(roles)) {
-    return roles.map(role => typeof role === 'string' ? nameToLevel(role) : role);
+    return roles.map((role) =>
+      typeof role === "string" ? nameToLevel(role) : role,
+    );
   }
 
   return [];
@@ -84,13 +85,14 @@ export function rolesToLevel(roles) {
  * @returns {boolean}
  */
 export function isAtLeast(existRole, requiredRole) {
-  const existLevel = typeof existRole === 'string' ? nameToLevel(existRole) : existRole;
-  const requiredLevel = typeof requiredRole === 'string' ? nameToLevel(requiredRole) : requiredRole;
+  const existLevel =
+    typeof existRole === "string" ? nameToLevel(existRole) : existRole;
+  const requiredLevel =
+    typeof requiredRole === "string" ? nameToLevel(requiredRole) : requiredRole;
 
   if (!existLevel || !requiredLevel) return false;
   return existLevel >= requiredLevel;
 }
-
 
 /**
  * Check if the existing roles has required roles

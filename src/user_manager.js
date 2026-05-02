@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { jidNormalizedUser } from 'baileys';
-import { StoreJson } from './store.js';
-import { RoleLevel, Role, nameToLevel, rolesEnough } from './roles.js';
+import { jidNormalizedUser } from "baileys";
+import { nameToLevel, Role, RoleLevel, rolesEnough } from "./roles.js";
+import { StoreJson } from "./store.js";
 
 /**
  * @typedef {Object} User
@@ -27,15 +27,14 @@ import { RoleLevel, Role, nameToLevel, rolesEnough } from './roles.js';
  */
 
 export class UserManager {
-
   /**
    * @param {{saveName?: string, owners?: string[]}} options
    */
-  constructor({ saveName = 'user.json', owners = [] }) {
+  constructor({ saveName = "user.json", owners = [] }) {
     this.storage = new StoreJson({
       saveName: saveName,
       autoSave: true,
-      autoLoad: true
+      autoLoad: true,
     });
 
     /** @type {string[]} */
@@ -50,21 +49,22 @@ export class UserManager {
   }
 
   /**
-   * Add owner id 
+   * Add owner id
    * @param {...string} jids
    */
   addOwners(...jids) {
-    if (jids) jids.forEach(jid => {
-      jid = jidNormalizedUser(jid);
-      if (!this.owners?.includes(jid)) this.owners?.push(jid);
-      const user = this.getUser(jid);
-      if (user) {
-        if (!user.roles.includes(Role.OWNER)) {
-          user.roles.push(Role.OWNER);
-          this.updateUser(jid, user);
+    if (jids)
+      jids.forEach((jid) => {
+        jid = jidNormalizedUser(jid);
+        if (!this.owners?.includes(jid)) this.owners?.push(jid);
+        const user = this.getUser(jid);
+        if (user) {
+          if (!user.roles.includes(Role.OWNER)) {
+            user.roles.push(Role.OWNER);
+            this.updateUser(jid, user);
+          }
         }
-      }
-    });
+      });
   }
 
   /**
@@ -86,7 +86,7 @@ export class UserManager {
    */
   getUser(jid) {
     jid = jidNormalizedUser(jid);
-    if (!jid || jid === '') return;
+    if (!jid || jid === "") return;
     /** @type {User} */
     let user = this.storage.get(jid);
 
@@ -100,7 +100,7 @@ export class UserManager {
         addedAt: Date.now(),
       };
 
-      if (jid?.includes('@lid')) {
+      if (jid?.includes("@lid")) {
         user.lid = jid;
       } else {
         user.jid = jid;
@@ -132,7 +132,7 @@ export class UserManager {
   getHighestRoleLevel(jid) {
     const user = this.getUser(jid);
     if (!user?.roles?.length) return RoleLevel.blocked;
-    const levels = user?.roles.map(r => nameToLevel(r) ?? 0);
+    const levels = user?.roles.map((r) => nameToLevel(r) ?? 0);
     return Math.max(...levels);
   }
 
@@ -150,5 +150,4 @@ export class UserManager {
 
     return rolesEnough(user.roles, requiredRoles);
   }
-
 }
