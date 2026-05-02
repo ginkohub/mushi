@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2025-2025-2026 Ginko
+ * Copyright (C) 2025-2026 Ginko
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,7 +18,7 @@ export default [
     timeout: 15,
     cat: "user",
     tags: ["user", "role"],
-    desc: "Get user info",
+    desc: "Get user info and sync with current data",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
 
@@ -32,23 +32,34 @@ export default [
 
       const texts = ["*📃 User Information*", ""];
       for (const jid of targets) {
-        const user = c.handler().userManager.getUser(jid);
+        const name = c.getName(jid);
+        const updateData = { name, jid };
+
+        const lid = await c.PNToLID(jid).catch(() => null);
+        if (lid) {
+          updateData.lid = lid;
+          const lidName = c.getName(lid);
+          if (lidName) updateData.name = lidName;
+        }
+
+        const user = c.handler().userManager.updateUser(jid, updateData);
         if (!user) continue;
 
         const roles = user.roles.join(", ");
         const added = new Date(user.addedAt).toLocaleString();
 
-        texts.push(`*Name*: ${user.name || c.getName(jid) || "N/A"}`);
-        texts.push(`*JID*: ${jid}`);
         texts.push(
-          `${user.lid ? `*LID*: ${user.lid}\n` : ""}*Roles*: ${roles}`,
+          `*Name*: ${user.name || "N/A"}`,
+          `*JID*: ${jid}`
         );
-        texts.push(`*Level*: ${user.level}`);
-        texts.push(`*XP*: ${user.xp}`);
+        if (user.lid) texts.push(`*LID*: ${user.lid}`);
         texts.push(
+          `*Roles*: ${roles}`,
+          `*Level*: ${user.level}`,
+          `*XP*: ${user.xp}`,
           `*Status*: ${user.banned ? `Banned (at ${new Date(user.bannedAt).toLocaleString()})` : "Active"}`,
+          `*Added*: ${added}`, ""
         );
-        texts.push(`*Added*: ${added}`, "", "");
       }
 
       await c.reply({ text: texts.join("\n").trim() }, { quoted: c.event });
@@ -137,46 +148,6 @@ export default [
       await c.reply({
         text: `Removed role *${role}* from ${jids.length} user(s).`,
       });
-    },
-  },
-  {
-    cmd: ["user?"],
-    timeout: 15,
-    cat: "user",
-    tags: ["user", "role"],
-    desc: "Sync and update user info (name, jid, lid)",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
-
-    exec: async (c) => {
-      const jids = c.parseJIDs();
-      const targets = jids.length > 0 ? jids : [c.senderJid];
-      for (let i = 0; i < targets.length; i++) {
-        if (targets[i].includes("@lid"))
-          targets[i] = await c.LIDToPN(targets[i]);
-      }
-
-      const texts = ["*🔄 Syncing User Information*", ""];
-      for (const jid of targets) {
-        const name = c.getName(jid);
-        const updateData = { name, jid };
-
-        const lid = await c.PNToLID(jid).catch(() => null);
-        if (lid) {
-          updateData.lid = lid;
-
-          const lidName = c.getName(lid);
-          if (lidName) updateData.name = lidName;
-        }
-
-        const user = c.handler().userManager.updateUser(jid, updateData);
-        texts.push(`*Target*: ${jid}`);
-        texts.push(`*Name*: ${user.name || "N/A"}`);
-        texts.push(`*JID*: ${user.jid || "N/A"}`);
-        texts.push(`*LID*: ${user.lid || "N/A"}`, "");
-      }
-
-      await c.reply({ text: texts.join("\n").trim() }, { quoted: c.event });
     },
   },
 ];
