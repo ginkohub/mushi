@@ -846,14 +846,13 @@ export class Handler {
     if (jid.endsWith('@g.us')) {
       let data = this.getGroupMetadata(jid);
       return data?.subject;
-    } else if (jid.endsWith('@s.whatsapp.net')) {
+    } else if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid')) {
       const data = this.getContact(jid);
       return data?.name;
     }
 
     /* TODO: Handle other types of jids
     else if (jid.endsWith('@newsletter')) { } 
-    else if (jid.endsWith('@lid')) { }
     */
 
     return null;
