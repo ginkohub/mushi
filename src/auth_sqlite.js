@@ -134,5 +134,15 @@ export async function useSQLite(dbPath) {
     saveCreds: async () => {
       writeData(creds, "credentials", "creds");
     },
+    clearState: async () => {
+      const tables = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        )
+        .all();
+      for (const table of tables) {
+        db.exec(`DROP TABLE IF EXISTS ${table.name}`);
+      }
+    },
   };
 }

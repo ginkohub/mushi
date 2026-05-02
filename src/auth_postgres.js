@@ -101,5 +101,8 @@ export async function usePostgres(connectionString) {
     saveCreds: async () => {
       await writeData("creds", creds);
     },
+    clearState: async () => {
+      await pool.query(`DELETE FROM ${TABLE_NAME};`);
+    },
   };
 }

@@ -85,5 +85,8 @@ export async function useMongoDB(url) {
     saveCreds: async () => {
       await writeData("creds", creds);
     },
+    clearState: async () => {
+      await collection.deleteMany({});
+    },
   };
 }

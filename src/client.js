@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { rmSync, unlinkSync } from "node:fs";
+import { rmSync } from "node:fs";
 import readline from "node:readline";
 import {
   Browsers,
@@ -42,20 +42,20 @@ function ask(prompt) {
 /**
  *
  * @param {string} sessionStr
- * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: string }|any> }
+ * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void>, type: string }|any> }
  */
 export async function useStore(sessionStr) {
   if (!sessionStr) return null;
 
   if (sessionStr.startsWith("mongodb")) {
-    const { state, saveCreds } = await useMongoDB(sessionStr);
-    return { state, saveCreds, type: "mongodb" };
+    const { state, saveCreds, clearState } = await useMongoDB(sessionStr);
+    return { state, saveCreds, clearState, type: "mongodb" };
   } else if (sessionStr.startsWith("postgres")) {
-    const { state, saveCreds } = await usePostgres(sessionStr);
-    return { state, saveCreds, type: "postgres" };
+    const { state, saveCreds, clearState } = await usePostgres(sessionStr);
+    return { state, saveCreds, clearState, type: "postgres" };
   } else if (sessionStr.includes(".sqlite") || sessionStr.includes(".db")) {
-    const { state, saveCreds } = await useSQLite(sessionStr);
-    return { state, saveCreds, type: "sqlite" };
+    const { state, saveCreds, clearState } = await useSQLite(sessionStr);
+    return { state, saveCreds, clearState, type: "sqlite" };
   } else {
     const { state, saveCreds } = await useMultiFileAuthState(sessionStr);
     return { state, saveCreds, type: "folder" };
@@ -136,8 +136,8 @@ export class Wangsaf {
     if (!this.session) throw new Error("session is required");
     this.dateStarted = Date.now();
 
-    /** @type {{ state:import('baileys').AuthenticationState, saveCreds: Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' | 'postgres'} } */
-    const { state, saveCreds, type } = await useStore(this.session);
+    /** @type {{ state:import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void>, type: 'folder' | 'sqlite' | 'mongodb' | 'postgres'} } */
+    const { state, saveCreds, clearState, type } = await useStore(this.session);
 
     /** @type {import('baileys').UserFacingSocketConfig} */
     const socketOptions = {
@@ -237,19 +237,10 @@ export class Wangsaf {
             "Logged out, closing connection",
           );
           try {
-            switch (type) {
-              case "folder": {
-                /* Destroy session directory */
-                rmSync(this.session, { recursive: true });
-                break;
-              }
-              case "sqlite": {
-                unlinkSync(this.session);
-                break;
-              }
-              case "mongodb": {
-                /* TODO: Implemented clear session for mongodb */
-              }
+            if (clearState) {
+              await clearState();
+            } else if (type === "folder") {
+              rmSync(this.session, { recursive: true });
             }
           } catch (e) {
             this.pen.Error(e);
