@@ -41,7 +41,7 @@ export default [
     exec: async (c) => {
       const levelArg = (c.argv?._?.[0] || "").toLowerCase();
 
-      if (c.cmd === "math?" || levelArg === "?") {
+      if (c.cmd.endsWith('?') || levelArg === "?") {
         const helpText = [
           "🧮 *MATH GAME - CARA BERMAIN*",
           "",
@@ -110,7 +110,7 @@ export default [
         if (sessions.has(c.chat)) {
           sessions.delete(c.chat);
           c.reply(
-            { text: `⌛ *Waktu habis!* Jawabannya adalah *${answer}*` },
+            { text: `⌛ *Waktu habis!*\n\nJawabannya adalah *${answer}*` },
             { quoted: c.event },
           );
         }
