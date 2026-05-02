@@ -293,7 +293,7 @@ export async function watchDir(
         ignoreInitial: true,
         usePolling: shouldUsePolling(dir),
         interval: 1000,
-        ignored: [/(^|[\/\\])\../],
+        ignored: [/(^|[/\\])\../],
       })
       .on("change", onChange)
       .on("add", onAdd)
