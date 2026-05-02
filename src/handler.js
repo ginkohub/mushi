@@ -85,8 +85,8 @@ export class Handler {
     /** @type {Map<string, number>} */
     this.timerCache = timerCache ?? new Map();
 
-    /** @type {string[]} */
-    this.watchID = [];
+    /** @type {Set<string>} */
+    this.watchID = Set();
 
     /** @type {string[]} */
     this.blockList = [];
@@ -445,10 +445,13 @@ export class Handler {
    * @returns {boolean|undefined}
    */
   idExist(ctx) {
-    if (this.watchID.includes(ctx?.id) || !ctx.type) {
+    if (this.watchID.has(ctx?.id) || !ctx.type) {
       return true;
     } else {
-      if (this.watchID.length >= 100) this.watchID.shift();
+      if (this.watchID.size >= 100) {
+        const firstId = this.watchID.values().next().value;
+        this.watchID.delete(firstId);
+      }
       this.watchID.push(ctx.id);
       return false;
     }
