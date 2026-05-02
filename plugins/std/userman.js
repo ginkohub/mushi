@@ -23,7 +23,27 @@ export default [
     roles: [Role.USER],
 
     exec: async (c) => {
-      await c.reply({ text: JSON.stringify(c.user(), null, 2) }, { quoted: c.event });
+      const jids = c.parseJIDs();
+      const targets = jids.length > 0 ? jids : [c.senderJid];
+
+      let texts = ['*📃 User Information*', ''];
+      for (const jid of targets) {
+        const user = c.handler().userManager.getUser(jid);
+        if (!user) continue;
+
+        const roles = user.roles.join(', ');
+        const added = new Date(user.addedAt).toLocaleString();
+
+        texts.push(`*Name*: ${user.name || c.getName(jid) || 'N/A'}`);
+        texts.push(`*JID*: ${jid}`);
+        texts.push(`${user.lid ? `*LID*: ${user.lid}\n` : ''}*Roles*: ${roles}`);
+        texts.push(`*Level*: ${user.level}`);
+        texts.push(`*XP*: ${user.xp}`);
+        texts.push(`*Status*: ${user.banned ? `Banned (at ${new Date(user.bannedAt).toLocaleString()})` : 'Active'}`);
+        texts.push(`*Added*: ${added}`, '', '');
+      }
+
+      await c.reply({ text: texts.join('\n').trim() }, { quoted: c.event });
     }
   },
   {
