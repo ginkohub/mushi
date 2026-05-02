@@ -10,6 +10,46 @@
 
 import { Role } from "../../src/roles.js";
 import { formatElapse } from "../../src/tools.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    no_cmd: "No command found :",
+    detail: "Detail of",
+    cmds: "Cmds",
+    no_prefix: "NoPrefix",
+    hidden: "Hidden",
+    timeout: "Timeout",
+    disabled: "Disabled",
+    cat: "Cat",
+    desc: "Desc",
+    path: "Path",
+    available: "*# Available menu*",
+    uptime: "*Uptime:*",
+    prefix: "*Prefix :*",
+    footer: "{cmd} cmd, {listener} listener & {disabled} disabled",
+    ad_title: "Mushi Bot",
+    ad_body: "Simple a multi porpuses whatsapp bot.",
+  },
+  id: {
+    no_cmd: "Perintah tidak ditemukan :",
+    detail: "Detail dari",
+    cmds: "Perintah",
+    no_prefix: "Tanpa Awalan",
+    hidden: "Tersembunyi",
+    timeout: "Waktu Habis",
+    disabled: "Dinonaktifkan",
+    cat: "Kategori",
+    desc: "Deskripsi",
+    path: "Lokasi",
+    available: "*# Menu yang tersedia*",
+    uptime: "*Waktu Aktif:*",
+    prefix: "*Awalan :*",
+    footer: "{cmd} perintah, {listener} pendengar & {disabled} dinonaktifkan",
+    ad_title: "Mushi Bot",
+    ad_body: "Bot whatsapp sederhana dengan banyak fungsi.",
+  },
+});
 
 const emoMap = {
   info: "ℹ️",
@@ -54,35 +94,34 @@ export default {
           }
         });
       } else {
-        texts.push("No command found :", c.args);
+        texts.push(t("no_cmd"), c.args);
       }
 
       for (const [k, p] of plugins?.entries() ?? []) {
         texts.push(
-          `Detail of \`${k}\``,
-          `- Cmds : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
-          `- NoPrefix : ${p.noPrefix ? "✅" : "❌"}`,
-          `- Hidden : ${p.hidden ? "✅" : "❌"}`,
-          `- Timeout : ${p.timeout ? p.timeout : "∞"}`,
-          `- Disabled : ${p.disabled ? "✅" : "❌"}`,
-          `- Cat  : ${p.cat}`,
-          `- Desc : ${p.desc}`,
-          `- Path : ${p.location}`,
+          `${t("detail")} \`${k}\``,
+          `- ${t("cmds")} : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
+          `- ${t("no_prefix")} : ${p.noPrefix ? "✅" : "❌"}`,
+          `- ${t("hidden")} : ${p.hidden ? "✅" : "❌"}`,
+          `- ${t("timeout")} : ${p.timeout ? p.timeout : "∞"}`,
+          `- ${t("disabled")} : ${p.disabled ? "✅" : "❌"}`,
+          `- ${t("cat")}  : ${p.cat}`,
+          `- ${t("desc")} : ${p.desc}`,
+          `- ${t("path")} : ${p.location}`,
           "",
         );
       }
     } else {
-      texts.push("*# Available menu*");
+      texts.push(t("available"));
 
       const since = Date.now() - c.handler()?.client?.dateCreated;
       texts.push(
         "",
-        `*Uptime:* ${formatElapse(since, " ")}`,
-        "*Prefix :* " +
-          c
-            .handler()
-            ?.prefix?.map((p) => `\`${p}\``)
-            .join(", "),
+        `${t("uptime")} ${formatElapse(since, " ")}`,
+        `${t("prefix")} ` +
+        c.handler()
+          ?.prefix?.map((p) => `\`${p}\``)
+          .join(", "),
       );
 
       const categories = new Map();
@@ -124,7 +163,11 @@ export default {
       }
       texts.push(
         "",
-        `${cmdCount} cmd, ${c.handler()?.listens?.size} listener & ${disabledCount} disabled`,
+        t("footer", {
+          cmd: cmdCount,
+          listener: c.handler()?.listens?.size,
+          disabled: disabledCount,
+        }),
       );
     }
 
@@ -134,8 +177,8 @@ export default {
           text: texts.join("\n"),
           contextInfo: {
             externalAdReply: {
-              title: "Mushi Bot",
-              body: "Simple a multi porpuses whatsapp bot.",
+              title: t("ad_title"),
+              body: t("ad_body"),
               renderLargerThumbnail: true,
               mediaType: 1,
               thumbnailUrl:
