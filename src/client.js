@@ -153,7 +153,7 @@ export class Wangsaf {
       Object.assign(socketOptions, this.socketOptions);
     }
 
-    /** @type {import('baileys').WASocket|any} */
+    /** @type {import('baileys').WASocket|undefined} */
     this.sock = makeWASocket(socketOptions);
     if (this.handler) {
       if (this.handler.attach) {

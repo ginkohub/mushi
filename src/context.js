@@ -185,10 +185,10 @@ export class Ctx {
       /* parse text for command and args */
       this.parseText(ext.text);
 
-      /** @type {import('baileys').WAContextInfo|any} */
+      /** @type {import('baileys').WAContextInfo|undefined} */
       this.contextInfo = ext.contextInfo;
 
-      /** @type {import('baileys').proto.IMessage|any} */
+      /** @type {import('baileys').proto.IMessage|undefined} */
       this.quotedMessage = ext?.contextInfo?.quotedMessage;
       const qext = extractTextContext(this.quotedMessage);
 
