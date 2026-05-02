@@ -55,7 +55,7 @@ export class Handler {
     /** @type {Function} */
     this.filter = filter;
 
-    /** @type {import('./client.js').Wangsaf|any} */
+    /** @type {import('./client.js').Wangsaf|undefined} */
     this.client;
 
     /** @type {import('./pen.js').Pen} */
@@ -358,7 +358,7 @@ export class Handler {
   async loadFile(loc) {
     if (loc.endsWith(".js")) {
       try {
-        /** @type {string|any} */
+        /** @type {string} */
         const filename = loc.split("/").pop();
         if (
           filename &&
@@ -474,7 +474,7 @@ export class Handler {
 
   /**
    * Handle event and passed it to all plugins whether it is a command or a listener
-   * @param {{event: any, eventType: string, eventName: string}} otps
+   * @param {{event: any, eventType: ('notify'|'append'), eventName: import('./const.js').Events}} otps
    */
   async handle({ event, eventType, eventName }) {
     try {
@@ -663,10 +663,7 @@ export class Handler {
       /** @param {import('baileys').BaileysEventMap} events */
       (events) => {
         for (const eventName of Object.keys(events)) {
-          const update =
-            events[
-              /** @type {keyof import('baileys').BaileysEventMap} */ (eventName)
-            ];
+          const update = events[eventName];
           switch (eventName) {
             case Events.CONNECTION_UPDATE: {
               const owner = this.client?.sock?.user;
