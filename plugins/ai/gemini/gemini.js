@@ -176,31 +176,27 @@ export class Gemini {
       const resp = await chat.sendMessage(params);
       return resp;
     } catch (e) {
+      this.chats.delete(id);
       switch (e.status) {
         case 429: {
           if (this.listModels.size > 0) {
-            this.listModels.delete(this.modelName);
-            this.chats.delete(id);
-
             if (this.settings) {
               this.settings.limitedModels[this.modelName] = Date.now();
-
             }
             const prevModel = this.modelName;
             this.switchModel();
             pen.Warn(e.status, `try switching model from ${prevModel} to ${this.modelName}`);
             return await this.chat(id, params);
           } else {
-            pen.Error('gemini-chat', 'All model is limited, please try again later.');
+            pen.Error('gemini-chat', this.modelName, 'All model is limited, please try again later.');
           }
           break;
         }
         case 400: {
-          this.chats.delete(id);
           break;
         }
         default: {
-          pen.Error('gemini-chat', e.message);
+          pen.Error('gemini-chat', this.modelName, e.message);
         }
       }
     }
@@ -209,6 +205,7 @@ export class Gemini {
   switchModel() {
     const limitedModels = this.settings?.limitedModels ?? {};
     const currentModel = this.modelName;
+    this.listModels.delete(currentModel);
 
     for (const key of this.listModels.keys()) {
       if (key === currentModel) continue;
@@ -216,7 +213,6 @@ export class Gemini {
       const aLimited = limitedModels[key];
       if (!aLimited) {
         this.setModelName(key);
-        this.listModels.delete(key);
         break;
       } else {
         continue;
