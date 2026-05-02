@@ -12,6 +12,21 @@ import fs from "node:fs/promises";
 import pen from "./pen.js";
 import { isBun, watchDir } from "./tools.js";
 
+/** @type {Set<StoreJson>} */
+const activeStore = new Set();
+
+async function cleanUp() {
+  pen.Debug('Cleaning up active store store');
+  for (const store of activeStore) {
+    if (store instanceof StoreJson && store.saveTimeout) await store.flush();
+  }
+  process.exit(0);
+}
+
+/* Registering clean up for exist */
+process.on('SIGINT', cleanUp);
+process.on('SIGTERM', cleanUp);
+
 /**
  * Store data in JSON file
  */
@@ -33,6 +48,7 @@ export class StoreJson {
     this.autoLoad = autoLoad ?? false;
 
     this.load().catch((e) => pen.Error("Failed loading data", e));
+    activeStore.add(this);
   }
 
   /**
@@ -86,11 +102,12 @@ export class StoreJson {
 
   saveCheck() {
     if (this.autoSave) {
-      if (this.saveTimeout) clearTimeout(this.saveTimeout);
-      this.saveTimeout = setTimeout(async () => {
-        await this.save();
-        this.saveTimeout = null;
-      }, 2000);
+      if (!this.saveTimeout) {
+        this.saveTimeout = setTimeout(async () => {
+          await this.save();
+          this.saveTimeout = null;
+        }, 2000);
+      }
     }
   }
 
@@ -147,6 +164,14 @@ export class StoreJson {
    */
   has(key) {
     return key in this.data;
+  }
+
+  async flush() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    await this.save();
   }
 }
 
