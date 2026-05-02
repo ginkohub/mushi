@@ -15,8 +15,7 @@ import pen from "./pen.js";
 /**
  * Use MongoDB to store authentication state
  * @param {string} url - MongoDB connection string
- * @param {string} dbName - Database name
- * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void> }>}
+ * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void> }>}
  */
 export async function useMongoDB(url) {
   const client = new MongoClient(url);

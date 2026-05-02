@@ -23,7 +23,7 @@ import { nameToLevel } from "./roles.js";
  * @property {boolean} [disabled]
  * @property {boolean} [hidden]
  * @property {string[]} [events]
- * @property {Role[]} [roles]
+ * @property {import('./roles.js').Role[]} [roles]
  * @property {number} [timeout]
  * @property {boolean} [noPrefix]
  * @property {(ctx: import('./context.js').Ctx) => Promise<Reason> | Reason} [midware]

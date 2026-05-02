@@ -20,7 +20,7 @@ const TABLE_NAME = "baileys_auth_store";
 /**
  * Use PostgreSQL to store authentication state
  * @param {string} connectionString - PostgreSQL connection string
- * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void> }>}
+ * @returns {Promise<{ state: import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void> }>}
  */
 export async function usePostgres(connectionString) {
   const pool = new Pool({ connectionString });

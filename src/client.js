@@ -42,7 +42,7 @@ function ask(prompt) {
 /**
  *
  * @param {string} sessionStr
- * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void>, type: string }|any> }
+ * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void>, type: string }|undefined> }
  */
 export async function useStore(sessionStr) {
   if (!sessionStr) return null;
