@@ -73,11 +73,10 @@ export function extractTextContext(m) {
   }
 
   resp.contextInfo = content.contextInfo || m.contextInfo;
-
   return resp;
 }
+
 /**
- *
  * @class Ctx
  * @description Context parsed from a message
  */
@@ -505,9 +504,9 @@ export class Ctx {
     this.user = () => this.handler().userManager?.getUser(this.senderJid);
   }
 
-  /** 
+  /**
    * Clone the context object
-   * @returns {Ctx} 
+   * @returns {Ctx}
    */
   clone() {
     const cloned = Object.create(Object.getPrototypeOf(this));
