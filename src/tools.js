@@ -173,20 +173,31 @@ export function formatBytes(bytes) {
 
 /**
  * Checks if the current platform should use polling instead of events for file changes.
+ * @param {string} path The path to the file being watched.
  * @returns {boolean} Whether to use polling instead of events for file changes.
  */
-export function shouldUsePolling() {
+export function shouldUsePolling(path) {
   try {
     if (fs.existsSync("/.dockerenv")) return true;
   } catch {
     return true;
+  }
+  if (path) {
+    try {
+      /* check if NTFS filesystem */
+      const out = fs
+        .existsSync(`stat -f -c %T "${path}"`, { encoding: "utf8" })
+        .trim();
+      if (out.includes("ntfs") || out.includes("fuseblk")) return true;
+    } catch {
+      return true;
+    }
   }
   return false;
 }
 
 /**
  * Import module with timestamp
- * @param {string} path The path to the module.
  * @param {ImportMeta} meta
  * @returns {Promise<any>} The imported module.
  */
@@ -243,9 +254,9 @@ export async function watchDir(
   dir,
   {
     recursive = true,
-    onChange = () => { },
-    onAdd = () => { },
-    onRemove = () => { },
+    onChange = () => {},
+    onAdd = () => {},
+    onRemove = () => {},
   },
 ) {
   if (watchers.has(dir)) {
@@ -280,9 +291,9 @@ export async function watchDir(
     const watcher = chokidar
       .watch(dir, {
         ignoreInitial: true,
-        usePolling: shouldUsePolling(),
+        usePolling: shouldUsePolling(dir),
         interval: 1000,
-        recursive: recursive,
+        ignored: [/(^|[\/\\])\../],
       })
       .on("change", onChange)
       .on("add", onAdd)
