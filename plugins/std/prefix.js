@@ -11,7 +11,7 @@
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { settings } from "../settings.js";
+import { getPrefixes, setPrefixes } from "../settings.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default [
@@ -29,8 +29,7 @@ export default [
       if (!newPrefix) newPrefix = [];
       newPrefix = newPrefix.filter((v, i, a) => a.indexOf(v) === i && v);
 
-      const key = `prefix`;
-      let allow = settings.get(key);
+      let allow = getPrefixes();
       if (!allow) allow = [];
 
       let pattern = c.pattern;
@@ -46,7 +45,7 @@ export default [
       }
 
       if (status.length > 0) {
-        settings.set(key, allow);
+        setPrefixes(allow);
         c.handler().setPrefix(allow);
       }
 
@@ -78,9 +77,9 @@ export default [
 
 /** @param {import('../../src/handler.js').Handler} hand */
 export const pre = (hand) => {
-  const prefix = settings.get("prefix");
-  if (prefix && prefix?.length > 0) {
-    pen.Debug("Setting prefix to", prefix, "from", hand.prefix);
-    hand?.setPrefix(prefix);
+  const prefixes = getPrefixes();
+  if (prefixes?.length > 0) {
+    pen.Debug("Setting prefix to", prefixes, "from", hand.prefix);
+    hand?.setPrefix(prefixes);
   }
 };
