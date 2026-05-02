@@ -499,7 +499,7 @@ export class Ctx {
     if (!by || by.length === 0)
       by = [JIDBy.Participant, JIDBy.Mentions, JIDBy.Text];
 
-    let jids = [];
+    const jids = [];
 
     if (by?.includes(JIDBy.Participant)) {
       if (this.participant) jids.push(this.participant);
