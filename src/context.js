@@ -17,6 +17,8 @@ import minimist from "minimist";
 import parseArgsStringToArgv from "string-argv";
 import { Events } from "./const.js";
 
+const PHONE_REGEX = /(?:\+?([\d\s-]{5,16}))/g;
+
 const JIDBy = {
   Participant: 0,
   Mentions: 1,
@@ -25,54 +27,60 @@ const JIDBy = {
 
 const skipMessageTypes = ["messageContextInfo"];
 
+const TextExtractors = {
+  conversation: (m) => m,
+  extendedTextMessage: (m) => m.text,
+  imageMessage: (m) => m.caption,
+  videoMessage: (m) => m.caption,
+  documentMessage: (m) => m.caption,
+  buttonsResponseMessage: (m) => m.selectedButtonId,
+  listResponseMessage: (m) => m.singleSelectReply?.selectedRowId,
+  templateButtonReplyMessage: (m) => m.selectedId,
+  interactiveResponseMessage: (m) => {
+    const body = JSON.parse(m.nativeFlowResponseMessage?.paramsJson || "{}");
+    return body.id || m.nativeFlowResponseMessage?.selectedDisplayText;
+  }
+};
+
 /**
  * Extracts text content and context info from a message
- *
  * @param {Partial<import('baileys').WAMessage>} m - Message object
  * @returns {{text: string, contextInfo: import('baileys').WAContextInfo | undefined, type: string, edited: boolean}}
  */
 export function extractTextContext(m) {
-  let resp = {
-    text: "",
-    contextInfo: undefined,
-    type: "",
-    edited: false,
-  };
+  let resp = { text: "", contextInfo: undefined, type: "", edited: false };
 
   if (typeof m !== "object" || m === null) return resp;
 
-  for (const key in m) {
-    if (key === "protocolMessage") {
-      if (m[key]?.editedMessage) {
-        resp = extractTextContext(m[key].editedMessage);
-        resp.edited = true;
-        break;
-      }
-    }
-
-    if (m[key] === null || m[key] === undefined) {
-      continue;
-    }
-    if (key === "conversation") {
-      if (m[key].length > 0) {
-        resp.text = m[key];
-        if (!skipMessageTypes.includes(key)) resp.type = key;
-        continue;
-      }
-    }
-
-    if (typeof m[key] === "object") {
-      if (!skipMessageTypes.includes(key)) resp.type = key;
-      if (m[key].caption?.length > 0) resp.text = m[key].caption;
-      if (m[key].text?.length > 0) resp.text = m[key].text;
-      if (m[key].selectedId?.length > 0) resp.text = m[key].selectedId;
-      if (m[key].contextInfo) resp.contextInfo = m[key].contextInfo;
-    }
+  if (m.protocolMessage?.editedMessage) {
+    resp = extractTextContext(m.protocolMessage.editedMessage);
+    resp.edited = true;
+    return resp;
   }
+
+  const type = Object.keys(m).find(key => !skipMessageTypes.includes(key));
+  if (!type) return resp;
+
+  resp.type = type;
+  const content = m[type];
+
+  if (typeof content === 'string') {
+    resp.text = content;
+  } else if (TextExtractors[type]) {
+    resp.text = TextExtractors[type](content) || '';
+  } else if (content?.text || content?.caption) {
+    resp.text = content.text || content.caption || '';
+  }
+
+  resp.contextInfo = content.contextInfo || m.contextInfo;
 
   return resp;
 }
-
+/**
+ *
+ * @class Ctx
+ * @description Context parsed from a message
+ */
 export class Ctx {
   /**
    * @param {{handler: import('./handler.js').Handler, eventName: string, eventType: string, event: any}} opts
@@ -478,20 +486,19 @@ export class Ctx {
 
       if (by?.includes(JIDBy.Text)) {
         const uncat = this.argv?._?.join(" ") ?? "";
+        const matches = uncat.matchAll(PHONE_REGEX);
 
-        /* check if uncat contains /\+?\d+\s?[\d-]+/gi */
-        const parsed = [...uncat.matchAll(/\+?\d+\s?[\d-]+/gi)].map(
-          (match) =>
-            match[0]?.replaceAll(/[^\d]/g, "") +
-            (this.addressingMode === "lid" ? "@lid" : S_WHATSAPP_NET),
-        );
-        if (parsed.length > 0) jids.push(...parsed);
+        for (const match of matches) {
+          const cleanNumber = match[1].replace(/[^\d]/g, "");
+          if (cleanNumber.length > 6 && cleanNumber.length < 16) {
+            const suffix = this.addressingMode === "lid" ? "@lid" : S_WHATSAPP_NET;
+            jids.push(`${cleanNumber}${suffix}`);
+          }
+        }
       }
 
       /* remove duplicate in jids */
-      jids = jids.filter((value, index, self) => self.indexOf(value) === index);
-
-      return jids;
+      return [...new Set(jids)];
     };
 
     /** @returns {string} */
