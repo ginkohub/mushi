@@ -15,7 +15,7 @@ import { nameToLevel } from "./roles.js";
  * @typedef {Object} PluginOpts
  * @property {import('./handler.js').Handler} [handler]
  * @property {import('baileys').WASocket} [sock]
- * @property {string|string[]|any} [cmd]
+ * @property {string|string[]|undefined} [cmd]
  * @property {string} [prefix]
  * @property {string} [desc]
  * @property {string[]} [tags]
@@ -44,31 +44,31 @@ export class Plugin {
     /** @type {import('baileys').WASocket|undefined} */
     this.sock = undefined;
 
-    /** @type {string|string[]|any}*/
+    /** @type {string|string[]|undefined}*/
     this.cmd = opts?.cmd;
 
-    /** @type {string|any} */
+    /** @type {string} */
     this.prefix = opts?.prefix;
 
-    /** @type {boolean|any} */
+    /** @type {boolean} */
     this.noPrefix = opts?.noPrefix;
 
-    /** @type {string|any} */
+    /** @type {string|undefined} */
     this.desc = opts?.desc;
 
-    /** @type {string[]|any} */
+    /** @type {string[]|undefined} */
     this.tags = opts?.tags;
 
     /** @type {string} */
-    this.cat = opts?.cat && opts?.cat !== "" ? opts?.cat : "uncategorized";
+    this.cat = opts?.cat || "uncategorized";
 
-    /** @type {boolean|any} */
+    /** @type {boolean} */
     this.disabled = opts?.disabled;
 
-    /** @type {boolean|any} */
+    /** @type {boolean} */
     this.hidden = opts?.hidden;
 
-    /** @type {string[]|any} */
+    /** @type {string[]|undefined} */
     this.events = opts?.events;
 
     /** @type {string[]} */
@@ -78,16 +78,16 @@ export class Plugin {
     /** @type {number|any} Timeout in second */
     this.timeout = opts?.timeout;
 
-    /** @type {((ctx: import('./context.js').Ctx) => Promise<Reason>)| any} */
+    /** @type {((ctx: import('./context.js').Ctx) => Promise<Reason>)|undefined} */
     this.midware = opts?.midware;
 
     /** @type {(ctx: import('./context.js').Ctx) => Promise<void>} */
     this.exec = opts?.exec;
 
-    /** @type {((ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>)|any} */
+    /** @type {((ctx: import('./context.js').Ctx, reason: Reason) => Promise<void>)|undefined} */
     this.final = opts?.final;
 
-    /** @type {string|any} */
+    /** @type {string|undefined} */
     this.location = opts?.location;
   }
 
