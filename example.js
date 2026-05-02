@@ -20,23 +20,23 @@ import { isBun, isDeno } from "./src/tools.js";
 
 /* Load environment variables from .env file */
 try {
-	if (isDeno) {
-		const { load } = await import("jsr:@std/dotenv");
-		await load({ export: true });
-	} else {
-		if (!isBun) {
-			const { loadEnvFile } = await import("node:process");
-			loadEnvFile();
-		}
-	}
+  if (isDeno) {
+    const { load } = await import("jsr:@std/dotenv");
+    await load({ export: true });
+  } else {
+    if (!isBun) {
+      const { loadEnvFile } = await import("node:process");
+      loadEnvFile();
+    }
+  }
 } catch (e) {
-	pen.Debug("loadEnvFile", e.message);
+  pen.Debug("loadEnvFile", e.message);
 }
 
 const wea = new Wangsaf({
   dataDir: "data",
   phone: process.env.PHONE ?? "",
-  method: /** @type {any} */ (process.env.METHOD ?? "otp"),
+  method: process.env.METHOD ?? "otp",
   session: process.env.SESSION ?? "sesi",
   browser: Browsers.macOS(process.env.BROWSER ?? "Safari"),
   handler: new Handler({
