@@ -497,4 +497,14 @@ export class Ctx {
     /** @returns {string} */
     this.user = () => this.handler().userManager?.getUser(this.senderJid);
   }
+
+  /** 
+   * Clone the context object
+   * @returns {Ctx} 
+   */
+  clone() {
+    const cloned = Object.create(Object.getPrototypeOf(this));
+    Object.assign(cloned, this);
+    return cloned;
+  }
 }
