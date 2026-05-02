@@ -35,13 +35,13 @@ try {
 
 const wea = new Wangsaf({
   dataDir: "data",
-  phone: process.env.PHONE ?? "",
-  method: process.env.METHOD ?? "otp",
-  session: process.env.SESSION ?? "sesi",
-  browser: Browsers.macOS(process.env.BROWSER ?? "Safari"),
+  phone: process.env.PHONE || "",
+  method: process.env.METHOD || "otp",
+  session: process.env.SESSION || "sesi",
+  browser: Browsers.macOS(process.env.BROWSER || "Safari"),
   handler: new Handler({
     pluginDir:
-      process.env.PLUGIN_DIR ?? path.resolve(`${process.cwd()}/plugins`),
+      process.env.PLUGIN_DIR || path.resolve(`${process.cwd()}/plugins`),
     groupCache: new StoreJson({
       saveName: getFile("group_metadata.json"),
       autoSave: true,
