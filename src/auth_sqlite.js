@@ -19,6 +19,9 @@ import { createSQLite } from "./store.js";
 export async function useSQLite(dbPath) {
   const db = await createSQLite(dbPath);
 
+  /** @type {Set<string>} */
+  const tableCache = new Set();
+
   db.exec("PRAGMA journal_mode=WAL");
   db.exec("PRAGMA foreign_keys=ON");
 
@@ -43,9 +46,13 @@ export async function useSQLite(dbPath) {
    */
   const ensureTable = (collection) => {
     const tableName = sanitizeTableName(collection);
+    if (tableCache.has(tableName)) return;
+
     run(`CREATE TABLE IF NOT EXISTS ${tableName} (
      key TEXT PRIMARY KEY,
      data TEXT )`);
+
+    tableCache.add(tableName);
   };
 
   /**
