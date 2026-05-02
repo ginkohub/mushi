@@ -9,7 +9,6 @@
  */
 
 import { getFile } from "../src/data.js";
-import { Reason } from "../src/reason.js";
 import { StoreJson, StoreSQLite } from "../src/store.js";
 
 export const storeMsg = new StoreSQLite({
@@ -21,29 +20,3 @@ export const settings = new StoreJson({
   autoSave: true,
   autoLoad: true,
 });
-
-/**
- * Check if the sender is an owner of the bot
- *
- * @param {import('../src/context.js').Ctx} c
- */
-export function fromOwner(c) {
-  const res = new Reason({
-    success: false,
-    code: "from-owner",
-    author: import.meta.url,
-    message: "No owners configured",
-    data: c.sender,
-  });
-
-  const owners = settings.get("owners");
-  if (!owners || !Array.isArray(owners)) {
-    return res;
-  }
-
-  if (c.sender && owners.includes(c.sender)) {
-    return res.setSuccess(true);
-  }
-
-  return res.setMessage("Sender are not an owner of the bot");
-}
