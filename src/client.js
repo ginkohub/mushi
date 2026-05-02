@@ -40,7 +40,7 @@ function ask(prompt) {
 }
 
 /**
- *
+ * Use the appropriate store based on the session string
  * @param {string} sessionStr
  * @returns {Promise<{ state:import('baileys').AuthenticationState, saveCreds: () => Promise<void>, clearState: () => Promise<void>, type: string }|undefined> }
  */
@@ -76,7 +76,8 @@ export async function useStore(sessionStr) {
  */
 
 /**
- * WhatsApp client class
+ * @class Wangsaf
+ * @description WhatsApp client class
  */
 export class Wangsaf {
   /**
@@ -93,7 +94,7 @@ export class Wangsaf {
     retry,
     pen,
   }) {
-    /** @type {import('baileys').WASocket|any} */
+    /** @type {import('baileys').WASocket|undefined} */
     this.sock = null;
 
     /** @type {string} */
