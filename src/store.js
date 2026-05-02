@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import pen from "./pen.js";
 import { isBun, watchDir } from "./tools.js";
 
@@ -51,7 +51,7 @@ export class StoreJson {
             }
           },
         });
-      } catch {}
+      } catch { }
     }
   }
 
@@ -62,9 +62,9 @@ export class StoreJson {
   async load(saveName) {
     /* Read json data local storage */
     try {
-      this.data = JSON.parse(
-        fs.readFileSync(saveName ?? this.saveName, "utf8"),
-      );
+      const targetName = saveName ?? this.saveName;
+      const content = await fs.readFile(targetName, 'utf-8');
+      this.data = JSON.parse(content);
     } catch (e) {
       pen.Error(e.message);
       this.data = {};
@@ -74,8 +74,9 @@ export class StoreJson {
   async save() {
     try {
       const tempPath = `${this.saveName}.tmp`;
-      fs.writeFileSync(tempPath, JSON.stringify(this.data, null, 2), "utf8");
-      fs.renameSync(tempPath, this.saveName);
+      const content = JSON.stringify(this.data, null, 2);
+      await fs.writeFile(tempPath, content, "utf8");
+      await fs.rename(tempPath, this.saveName);
       this.saveState = true;
       if (!this.watcher) await this.watch();
     } catch (e) {
@@ -228,7 +229,7 @@ export class StoreSQLite {
     );
   }
 
-  save() {}
+  save() { }
 
   /**
    * Set data
