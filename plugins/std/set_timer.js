@@ -14,7 +14,7 @@ import pen from "../../src/pen.js";
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["timer"],
-  timeout: 15,
+  
   cat: "system",
   tags: ["system"],
   desc: "Set the chat ephemeral",

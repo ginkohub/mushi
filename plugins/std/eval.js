@@ -13,7 +13,7 @@ import { Role } from "../../src/roles.js";
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: [">"],
-  timeout: 15,
+  
   cat: "system",
   tags: ["system"],
   desc: "Evaluate JavaScript code",

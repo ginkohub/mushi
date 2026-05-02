@@ -17,7 +17,7 @@ import { getPrefixes, setPrefixes } from "../settings.js";
 export default [
   {
     cmd: ["prefix", "prefix+", "prefix-", "pre", "pre+", "pre-"],
-    timeout: 15,
+    
     cat: "system",
     tags: ["system"],
     desc: "Set / remove the prefix (split with space).",

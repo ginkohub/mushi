@@ -15,7 +15,7 @@ import { Role } from "../../src/roles.js";
 export default [
   {
     cmd: ["user"],
-    timeout: 15,
+    
     cat: "user",
     tags: ["user", "role"],
     desc: "Get user info and sync with current data",
@@ -67,7 +67,7 @@ export default [
   },
   {
     cmd: ["role+"],
-    timeout: 15,
+    
     cat: "user",
     tags: ["user", "role"],
     desc: "Add role to quoted or mentioned user",
@@ -112,7 +112,7 @@ export default [
   },
   {
     cmd: ["role-"],
-    timeout: 15,
+    
     cat: "user",
     tags: ["user", "role"],
     desc: "Remove role from quoted or mentioned user",

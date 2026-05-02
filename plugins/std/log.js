@@ -63,7 +63,7 @@ const skipEvents = [
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   desc: "Logs the message to the console",
-
+  timeout: 0,
   midware: (c) => ({
     success: !skipEvents.includes(c.eventName),
   }),

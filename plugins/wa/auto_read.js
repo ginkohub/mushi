@@ -22,7 +22,7 @@ const AUTO_READ_KEY = "auto_read";
 export default [
   {
     desc: "Auto read message",
-    timeout: 15,
+    timeout: 0,
     events: [MESSAGES_UPSERT],
     midware: (c) => ({
       success:
@@ -42,7 +42,6 @@ export default [
     cmd: ["aread", "aread+", "aread-"],
     cat: "whatsapp",
     desc: "Auto read message",
-    timeout: 15,
     events: [MESSAGES_UPSERT],
     roles: [Role.SUPERADMIN],
 

@@ -16,7 +16,7 @@ import { Role } from "../../src/roles.js";
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["update"],
-  timeout: 15,
+  
   cat: "system",
   tags: ["system"],
   desc: "Execute git fetch and pull command shell command, also removing git lock files before execution.",

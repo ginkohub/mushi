@@ -20,7 +20,7 @@ const bestServer = await service.findBestServer();
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["speed"],
-  timeout: 15,
+  
   cat: "net",
   desc: "Speedtest.",
   events: [MESSAGES_UPSERT],

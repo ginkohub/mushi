@@ -73,7 +73,6 @@ loadWords();
 export default [
   {
     cmd: ["tk", "tk?", 'tebakkata', 'tebakkata?'],
-    timeout: 120,
     cat: "games",
     tags: ["game"],
     desc: "Word Scramble game (Tebak Kata)",
@@ -169,7 +168,6 @@ export default [
   },
   {
     cmd: ["tk.update"],
-    timeout: 300,
     cat: "games",
     tags: ["game", "admin"],
     desc: "Sync Indonesian word list for Tebak Kata game",

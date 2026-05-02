@@ -33,7 +33,6 @@ export default [
     cmd: ["smp"],
     cat: "defense",
     desc: "Create and send sample message as json.",
-    timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
 
@@ -49,7 +48,6 @@ export default [
     cmd: ["defense", "defense+", "defense-"],
     cat: "defense",
     desc: "Manage defense status",
-    timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
 
@@ -90,7 +88,6 @@ export default [
     cmd: ["skip", "skip+", "skip-"],
     cat: "defense",
     desc: "Manage skip message type on status.",
-    timeout: 15,
     events: [Events.MESSAGES_UPSERT],
     roles: [Role.ADMIN],
 

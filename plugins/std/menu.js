@@ -67,7 +67,7 @@ const emoMap = {
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: "menu",
-  timeout: 15,
+  
   cat: "info",
   desc: "Show the menu of commands",
   roles: [Role.GUEST],

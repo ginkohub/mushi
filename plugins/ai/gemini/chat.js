@@ -129,7 +129,6 @@ async function processChat(c) {
 export default [
   {
     cmd: ["gm", "gemini"],
-    timeout: 15,
     desc: "Gemini chat plugin",
     cat: "ai",
     events: [MESSAGES_UPSERT],
@@ -137,7 +136,6 @@ export default [
     exec: processChat,
   },
   {
-    timeout: 15,
     desc: "Gemini chat listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.PREMIUM],
@@ -146,7 +144,6 @@ export default [
   },
   {
     cmd: ["gm.models"],
-    timeout: 15,
     desc: "List available models",
     cat: "ai",
     roles: [Role.PREMIUM],
@@ -162,7 +159,6 @@ export default [
   },
   {
     cmd: ["gm.set"],
-    timeout: 15,
     desc: "Set model name",
     cat: "ai",
     roles: [Role.PREMIUM],

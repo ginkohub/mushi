@@ -21,7 +21,7 @@ const AUTO_REJECT_KEY = "auto_reject";
 export default [
   {
     desc: "Auto reject call",
-    timeout: 15,
+    timeout: 0,
     events: [CALL],
 
     midware: midwareAnd(
@@ -44,7 +44,6 @@ export default [
     cmd: ["reject", "reject+", "reject-"],
     cat: "whatsapp",
     desc: "Set auto reject message",
-    timeout: 15,
     events: [MESSAGES_UPSERT],
     roles: [Role.SUPERADMIN],
     exec: async (c) => {

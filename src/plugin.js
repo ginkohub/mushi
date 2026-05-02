@@ -75,8 +75,8 @@ export class Plugin {
     this.roles = opts?.roles ?? [];
     if (!Array.isArray(this.roles)) throw new Error("Roles must be an array");
 
-    /** @type {number|any} Timeout in second */
-    this.timeout = opts?.timeout;
+    /** @type {number|undefined} Timeout in second */
+    this.timeout = opts?.timeout ?? 15;
 
     /** @type {((ctx: import('./context.js').Ctx) => Promise<Reason>)|undefined} */
     this.midware = opts?.midware;

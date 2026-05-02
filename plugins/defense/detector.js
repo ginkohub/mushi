@@ -196,7 +196,7 @@ export default [
     desc: "Defense system",
     events: [Events.MESSAGES_UPSERT],
     midware: (c) => ({ success: settings.get(`defense`) && !c.fromMe }),
-
+    timeout: 0,
     exec: async (c) => {
       let detect = new Result({ suspect: false });
       for (const detector of listDetectors) {
