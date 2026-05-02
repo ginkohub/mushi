@@ -86,7 +86,7 @@ export class Handler {
     this.timerCache = timerCache ?? new Map();
 
     /** @type {Set<string>} */
-    this.watchID = Set();
+    this.watchID = new Set();
 
     /** @type {string[]} */
     this.blockList = [];
@@ -452,7 +452,7 @@ export class Handler {
         const firstId = this.watchID.values().next().value;
         this.watchID.delete(firstId);
       }
-      this.watchID.push(ctx.id);
+      this.watchID.add(ctx.id);
       return false;
     }
   }
