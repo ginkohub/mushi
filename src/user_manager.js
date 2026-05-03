@@ -22,6 +22,7 @@ import { StoreJson } from "./store.js";
  * @property {number} xp
  * @property {number} level
  * @property {Record<string, number>} stats
+ * @property {string} [lang]
  * @property {boolean} [banned]
  * @property {number} [bannedAt]
  * @property {number} addedAt
@@ -97,6 +98,7 @@ export class UserManager {
         xp: 0,
         level: 0,
         stats: {},
+        lang: undefined,
         roles: [Role.GUEST],
         banned: false,
         addedAt: Date.now(),
