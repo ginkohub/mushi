@@ -458,6 +458,42 @@ export class Ctx {
   }
 
   /**
+   * @param {string} jid
+   * @param {string[]} participants
+   * @param {import('baileys').ParticipantAction} action
+   */
+  async groupParticipantsUpdate(jid, participants, action) {
+    return await this.sock()?.groupParticipantsUpdate(
+      jid,
+      participants,
+      action,
+    );
+  }
+
+  /**
+   * @param {string} jid
+   * @param {string} subject
+   */
+  async groupUpdateSubject(jid, subject) {
+    return await this.sock()?.groupUpdateSubject(jid, subject);
+  }
+
+  /**
+   * @param {string} jid
+   * @param {string} description
+   */
+  async groupUpdateDescription(jid, description) {
+    return await this.sock()?.groupUpdateDescription(jid, description);
+  }
+
+  /**
+   * @param {string} jid
+   */
+  async groupInviteCode(jid) {
+    return await this.sock()?.groupInviteCode(jid);
+  }
+
+  /**
    * @param {import('baileys').WAMessage} m
    * @param {'buffer' | 'stream'} output
    * @param {import('baileys').DownloadMediaOptions} options
