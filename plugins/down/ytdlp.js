@@ -14,7 +14,7 @@ import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { storeMsg } from "../settings.js";
+import { storeMsg } from "../../src/settings.js";
 
 const BIN_DIR = resolve("./bin");
 const YTDLP_PATHS = [
