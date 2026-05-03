@@ -22,6 +22,8 @@ const t = translate({
     user_success: "Your personal language set to: *{lang}*",
     invalid: "Invalid language. Available: en, id",
     current: "Current system language: *{lang}*",
+    current_chat: "Current chat language: *{lang}*",
+    current_user: "Your personal language: *{lang}*",
   },
   id: {
     admin_only: "Perintah ini hanya untuk admin grup atau admin bot.",
@@ -31,13 +33,15 @@ const t = translate({
     user_success: "Bahasa kamu telah diatur ke: *{lang}*",
     invalid: "Bahasa tidak valid. Tersedia: en, id",
     current: "Bahasa sistem saat ini: *{lang}*",
+    current_chat: "Bahasa chat saat ini: *{lang}*",
+    current_user: "Bahasa kamu saat ini: *{lang}*",
   },
 });
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
-    cmd: ["lang", "set.lang"],
+    cmd: ["lang", "set.lang", "lang?", "set.lang?"],
     cat: "system",
     tags: ["system", "lang"],
     desc: "Set the global bot language.",
@@ -51,7 +55,7 @@ export default [
 
       if (!lang || !available.includes(lang)) {
         const text = !lang
-          ? `${t("current", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd }, c)}`
+          ? `${t("current", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`
           : t("invalid", {}, c);
 
         return await c.reply({ text }, { quoted: c.event });
@@ -62,24 +66,33 @@ export default [
     },
   },
   {
-    cmd: ["lang.chat", "chatlang"],
+    cmd: ["lang.chat", "chatlang", "lang.chat?", "chatlang?"],
     cat: "system",
     tags: ["admin", "chat", "lang"],
     desc: "Set the default language for this chat.",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
+      const isQuestion = c.cmd.endsWith("?");
+      const lang = c.args?.trim()?.toLowerCase();
+      const available = ["en", "id"];
+      const current = c.chatData()?.lang || getLang();
+
+      if (isQuestion || !lang) {
+        return await c.reply({
+          text: `${t("current_chat", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
+        });
+      }
+
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
         return await c.reply({ text: t("admin_only", {}, c) });
 
-      const lang = c.args?.trim()?.toLowerCase();
-      const available = ["en", "id"];
-      if (!lang || !available.includes(lang)) {
+      if (!available.includes(lang)) {
         return await c.reply({
-          text: t("usage", { cmd: c.prefix + c.cmd }, c),
+          text: t("invalid", {}, c),
         });
       }
 
@@ -88,18 +101,27 @@ export default [
     },
   },
   {
-    cmd: ["lang.user", "mylang"],
+    cmd: ["lang.user", "mylang", "lang.user?", "mylang?"],
     cat: "user",
     tags: ["user", "lang"],
     desc: "Set your personal language preference.",
     events: [MESSAGES_UPSERT],
     roles: [Role.GUEST],
     exec: async (c) => {
+      const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      if (!lang || !available.includes(lang)) {
+      const current = c.user()?.lang || getLang();
+
+      if (isQuestion || !lang) {
         return await c.reply({
-          text: t("usage", { cmd: c.prefix + c.cmd }, c),
+          text: `${t("current_user", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
+        });
+      }
+
+      if (!available.includes(lang)) {
+        return await c.reply({
+          text: t("invalid", {}, c),
         });
       }
 
