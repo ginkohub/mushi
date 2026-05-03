@@ -9,8 +9,9 @@
  */
 
 import { levelToName, Role } from "../../src/roles.js";
+import { getLang } from "../../src/settings.js";
 import { formatElapse } from "../../src/tools.js";
-import { getLang, translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -106,40 +107,40 @@ export default {
       });
 
       if (plugins.size === 0) {
-        texts.push(`${t("no_cmd")} ${c.args}`);
+        texts.push(`${t("no_cmd", {}, c)} ${c.args}`);
       }
     }
 
     if (isDetail && plugins.size > 0) {
       for (const [k, p] of plugins.entries()) {
         texts.push(
-          `${t("detail")} \`${k}\``,
-          `- ${t("cmds")} : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
-          `- ${t("no_prefix")} : ${!p.noPrefix ? "✅" : "❌"}`,
-          `- ${t("hidden")} : ${p.hidden ? "✅" : "❌"}`,
-          `- ${t("disabled")} : ${!p.disabled ? "✅" : "❌"}`,
-          `- ${t("timeout")} : ${p.timeout ? p.timeout : "∞"}`,
-          `- ${t("cat")}  : ${p.cat}`,
-          `- ${t("tags")}  : ${p.tags?.map((t) => t.toLowerCase()).join(", ")}`,
-          `- ${t("roles")} : ${p.roles?.map((r) => (typeof r === "number" ? levelToName(r) : r)).join(", ")}`,
-          `- ${t("desc")} : ${p.desc}`,
-          `- ${t("path")} : ${p.location}`,
+          `${t("detail", {}, c)} \`${k}\``,
+          `- ${t("cmds", {}, c)} : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
+          `- ${t("no_prefix", {}, c)} : ${!p.noPrefix ? "✅" : "❌"}`,
+          `- ${t("hidden", {}, c)} : ${p.hidden ? "✅" : "❌"}`,
+          `- ${t("disabled", {}, c)} : ${!p.disabled ? "✅" : "❌"}`,
+          `- ${t("timeout", {}, c)} : ${p.timeout ? p.timeout : "∞"}`,
+          `- ${t("cat", {}, c)}  : ${p.cat}`,
+          `- ${t("tags", {}, c)}  : ${p.tags?.map((t) => t.toLowerCase()).join(", ")}`,
+          `- ${t("roles", {}, c)} : ${p.roles?.map((r) => (typeof r === "number" ? levelToName(r) : r)).join(", ")}`,
+          `- ${t("desc", {}, c)} : ${p.desc}`,
+          `- ${t("path", {}, c)} : ${p.location}`,
           "",
         );
       }
     } else {
-      texts.push(t("available"));
+      texts.push(t("available", {}, c));
 
       const since = Date.now() - c.handler()?.client?.dateCreated;
       texts.push(
         "",
-        `${t("uptime")} ${formatElapse(since, " ")}`,
-        `${t("prefix")} ` +
+        `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
+        `${t("prefix", {}, c)} ` +
           c
             .handler()
             ?.prefix?.map((p) => `\`${p}\``)
             .join(", "),
-        `${t("lang")} ${getLang()}`,
+        `${t("lang", {}, c)} ${getLang()} (global)${c.chatData()?.lang ? `, ${c.chatData().lang} (this chat)` : ""}`,
       );
 
       const categories = new Map();
@@ -186,11 +187,15 @@ export default {
       }
       texts.push(
         "",
-        t("footer", {
-          cmd: cmdCount,
-          listener: c.handler()?.listens?.size,
-          disabled: disabledCount,
-        }),
+        t(
+          "footer",
+          {
+            cmd: cmdCount,
+            listener: c.handler()?.listens?.size,
+            disabled: disabledCount,
+          },
+          c,
+        ),
       );
     }
 
@@ -200,8 +205,8 @@ export default {
           text: texts.join("\n"),
           contextInfo: {
             externalAdReply: {
-              title: t("ad_title"),
-              body: t("ad_body"),
+              title: t("ad_title", {}, c),
+              body: t("ad_body", {}, c),
               renderLargerThumbnail: true,
               mediaType: 1,
               thumbnailUrl:

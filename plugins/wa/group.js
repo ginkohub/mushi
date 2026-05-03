@@ -10,7 +10,7 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -43,24 +43,25 @@ export default [
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
-      if (!c.isGroup) return await c.reply({ text: t("group_only") });
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
-        return await c.reply({ text: t("admin_only") });
-      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin") });
+        return await c.reply({ text: t("admin_only", {}, c) });
+      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
       const jids = c.parseJIDs();
-      if (jids.length === 0) return await c.reply({ text: t("no_user") });
+      if (jids.length === 0)
+        return await c.reply({ text: t("no_user", {}, c) });
 
       const res = await c.groupParticipantsUpdate(c.chat, jids, "remove");
       if (res) {
         await c.reply({
-          text: t("success", { action: "kick", count: jids.length }),
+          text: t("success", { action: "kick", count: jids.length }, c),
         });
       } else {
-        await c.reply({ text: t("failed", { action: "kick" }) });
+        await c.reply({ text: t("failed", { action: "kick" }, c) });
       }
     },
   },
@@ -72,24 +73,25 @@ export default [
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
-      if (!c.isGroup) return await c.reply({ text: t("group_only") });
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
-        return await c.reply({ text: t("admin_only") });
-      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin") });
+        return await c.reply({ text: t("admin_only", {}, c) });
+      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
       const jids = c.parseJIDs();
-      if (jids.length === 0) return await c.reply({ text: t("no_user") });
+      if (jids.length === 0)
+        return await c.reply({ text: t("no_user", {}, c) });
 
       const res = await c.groupParticipantsUpdate(c.chat, jids, "add");
       if (res) {
         await c.reply({
-          text: t("success", { action: "add", count: jids.length }),
+          text: t("success", { action: "add", count: jids.length }, c),
         });
       } else {
-        await c.reply({ text: t("failed", { action: "add" }) });
+        await c.reply({ text: t("failed", { action: "add" }, c) });
       }
     },
   },
@@ -101,24 +103,25 @@ export default [
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
-      if (!c.isGroup) return await c.reply({ text: t("group_only") });
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
-        return await c.reply({ text: t("admin_only") });
-      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin") });
+        return await c.reply({ text: t("admin_only", {}, c) });
+      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
       const jids = c.parseJIDs();
-      if (jids.length === 0) return await c.reply({ text: t("no_user") });
+      if (jids.length === 0)
+        return await c.reply({ text: t("no_user", {}, c) });
 
       const res = await c.groupParticipantsUpdate(c.chat, jids, "promote");
       if (res) {
         await c.reply({
-          text: t("success", { action: "promote", count: jids.length }),
+          text: t("success", { action: "promote", count: jids.length }, c),
         });
       } else {
-        await c.reply({ text: t("failed", { action: "promote" }) });
+        await c.reply({ text: t("failed", { action: "promote" }, c) });
       }
     },
   },
@@ -130,24 +133,25 @@ export default [
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
-      if (!c.isGroup) return await c.reply({ text: t("group_only") });
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
-        return await c.reply({ text: t("admin_only") });
-      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin") });
+        return await c.reply({ text: t("admin_only", {}, c) });
+      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
       const jids = c.parseJIDs();
-      if (jids.length === 0) return await c.reply({ text: t("no_user") });
+      if (jids.length === 0)
+        return await c.reply({ text: t("no_user", {}, c) });
 
       const res = await c.groupParticipantsUpdate(c.chat, jids, "demote");
       if (res) {
         await c.reply({
-          text: t("success", { action: "demote", count: jids.length }),
+          text: t("success", { action: "demote", count: jids.length }, c),
         });
       } else {
-        await c.reply({ text: t("failed", { action: "demote" }) });
+        await c.reply({ text: t("failed", { action: "demote" }, c) });
       }
     },
   },
@@ -159,18 +163,40 @@ export default [
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
-      if (!c.isGroup) return await c.reply({ text: t("group_only") });
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
         !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
-        return await c.reply({ text: t("admin_only") });
-      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin") });
+        return await c.reply({ text: t("admin_only", {}, c) });
+      if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
       const code = await c.groupInviteCode(c.chat);
       if (code) {
-        await c.reply({ text: t("link", { val: code }) });
+        await c.reply({ text: t("link", { val: code }, c) });
       }
+    },
+  },
+  {
+    cmd: ["hidetag", "ht"],
+    cat: "admin",
+    tags: ["admin", "group"],
+    desc: "Tag all members without showing the tag list.",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+    exec: async (c) => {
+      if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
+      if (
+        !c.isAdmin &&
+        !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+      )
+        return await c.reply({ text: t("admin_only", {}, c) });
+
+      const metadata = await c.handler().getGroupMetadata(c.chat);
+      const jids = metadata.participants.map((p) => p.id);
+      const text = c.args || "Hello everyone!";
+
+      await c.sendMessage(c.chat, { text, mentions: jids });
     },
   },
 ];

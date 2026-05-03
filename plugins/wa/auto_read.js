@@ -11,8 +11,9 @@
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
+import { settings } from "../../src/settings.js";
 import { delay, randomNumber } from "../../src/tools.js";
-import { settings, translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const skipTypes = ["senderKeyDistributionMessage"];
 
@@ -82,13 +83,13 @@ export default [
       let set = settings.get(AUTO_READ_KEY);
       if (!set) set = false;
       const texts = [];
-      texts.push(t("status", { val: set }));
+      texts.push(t("status", { val: set }, c));
 
       texts.push(
         "",
-        t("nb"),
-        t("deactivating", { pattern }),
-        t("activating", { pattern }),
+        t("nb", {}, c),
+        t("deactivating", { pattern }, c),
+        t("activating", { pattern }, c),
       );
       await c.reply({ text: texts.join("\n") }, { quoted: c.event });
     },

@@ -10,7 +10,8 @@
 
 import { Events } from "../../src/const.js";
 import pen from "../../src/pen.js";
-import { settings, translate } from "../settings.js";
+import { settings } from "../../src/settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {

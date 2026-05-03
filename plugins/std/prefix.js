@@ -11,7 +11,8 @@
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { getPrefixes, setPrefixes, translate } from "../settings.js";
+import { getPrefixes, setPrefixes } from "../../src/settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -74,9 +75,9 @@ export default [
 
       let text = "";
       if (status.length > 0 && newPrefix?.length > 0) {
-        text = `${t(status)}\n${newPrefix.map((v) => `${v}`).join(", ")}`;
+        text = `${t(status, {}, c)}\n${newPrefix.map((v) => `${v}`).join(", ")}`;
       } else {
-        text = `${t("current")}\n${allow.map((v) => `\`${v}\``).join(", ")}`;
+        text = `${t("current", {}, c)}\n${allow.map((v) => `\`${v}\``).join(", ")}`;
       }
 
       if (text.length === 0) return await c.react("🤔");
@@ -84,9 +85,9 @@ export default [
         {
           text:
             text +
-            `\n\n${t("nb")}\n  *${t("remove_hint", { pattern })}*\n  *${t("add_hint", { pattern })}*` +
-            `\n\n${t("split_hint")}` +
-            `\n\n${t("example_hint")}\n\`${pattern}+ ' " ! \\ /\``,
+            `\n\n${t("nb", {}, c)}\n  *${t("remove_hint", { pattern }, c)}*\n  *${t("add_hint", { pattern }, c)}*` +
+            `\n\n${t("split_hint", {}, c)}` +
+            `\n\n${t("example_hint", {}, c)}\n\`${pattern}+ ' " ! \\ /\``,
         },
         { quoted: c.event },
       );

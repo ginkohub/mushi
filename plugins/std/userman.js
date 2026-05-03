@@ -10,7 +10,7 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getRoleBadge, Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -72,7 +72,7 @@ export default [
           targets[i] = await c.LIDToPN(targets[i]);
       }
 
-      const texts = [t("header"), ""];
+      const texts = [t("header", {}, c), ""];
       for (const jid of targets) {
         const name = c.getName(jid);
         const updateData = { name, jid };
@@ -93,20 +93,20 @@ export default [
         const added = new Date(user.addedAt).toLocaleString();
 
         texts.push(
-          `*${t("name")}*: ${user.name || "N/A"}`,
-          `*${t("jid")}*: ${jid}`,
+          `*${t("name", {}, c)}*: ${user.name || "N/A"}`,
+          `*${t("jid", {}, c)}*: ${jid}`,
         );
-        if (user.lid) texts.push(`*${t("lid")}*: ${user.lid}`);
+        if (user.lid) texts.push(`*${t("lid", {}, c)}*: ${user.lid}`);
         texts.push(
-          `*${t("roles")}*: ${roles}`,
-          `*${t("level")}*: ${user.level}`,
-          `*${t("xp")}*: ${user.xp}`,
-          `*${t("status")}*: ${user.banned ? t("banned", { val: new Date(user.bannedAt).toLocaleString() }) : t("active")}`,
-          `*${t("added")}*: ${added}`,
+          `*${t("roles", {}, c)}*: ${roles}`,
+          `*${t("level", {}, c)}*: ${user.level}`,
+          `*${t("xp", {}, c)}*: ${user.xp}`,
+          `*${t("status", {}, c)}*: ${user.banned ? t("banned", { val: new Date(user.bannedAt).toLocaleString() }, c) : t("active", {}, c)}`,
+          `*${t("added", {}, c)}*: ${added}`,
         );
 
         if (user.stats && Object.keys(user.stats).length > 0) {
-          texts.push(`\n*📊 ${t("stats")}*`);
+          texts.push(`\n*📊 ${t("stats", {}, c)}*`);
           for (const [type, count] of Object.entries(user.stats)) {
             texts.push(`- ${type.replaceAll("Message", "")}: ${count}`);
           }
@@ -131,7 +131,7 @@ export default [
       const jids = c.parseJIDs();
       if (jids.length === 0)
         return await c.reply({
-          text: t("no_user"),
+          text: t("no_user", {}, c),
         });
 
       for (let i = 0; i < jids.length; i++) {
@@ -141,12 +141,12 @@ export default [
       const role = c.argv?.r ?? c.argv?.role;
       if (!role)
         return await c.reply({
-          text: t("no_role"),
+          text: t("no_role", {}, c),
         });
 
       if (!Object.values(Role).includes(role)) {
         return await c.reply({
-          text: t("invalid_role", { val: Object.values(Role).join(", ") }),
+          text: t("invalid_role", { val: Object.values(Role).join(", ") }, c),
         });
       }
 
@@ -159,7 +159,7 @@ export default [
       }
 
       await c.reply({
-        text: t("added_role", { role, count: jids.length }),
+        text: t("added_role", { role, count: jids.length }, c),
       });
     },
   },
@@ -176,7 +176,7 @@ export default [
       const jids = c.parseJIDs();
       if (jids.length === 0)
         return await c.reply({
-          text: t("no_user"),
+          text: t("no_user", {}, c),
         });
 
       for (let i = 0; i < jids.length; i++) {
@@ -186,7 +186,7 @@ export default [
       const role = c.argv?.r ?? c.argv?.role;
       if (!role)
         return await c.reply({
-          text: t("no_role"),
+          text: t("no_role", {}, c),
         });
 
       for (const jid of jids) {
@@ -199,7 +199,7 @@ export default [
       }
 
       await c.reply({
-        text: t("removed_role", { role, count: jids.length }),
+        text: t("removed_role", { role, count: jids.length }, c),
       });
     },
   },

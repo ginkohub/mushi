@@ -14,7 +14,7 @@ import os from "node:os";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
 import { formatBytes, formatElapse, isBun, isDeno } from "../../src/tools.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -132,27 +132,27 @@ export default {
           };
 
     const infoText = `
-*${t("server_info")}*
+*${t("server_info", {}, c)}*
 
-*${t("os")}*: ${getDistro()}
-*${t("kernel")}*: ${os.release()} ${os.machine()}
-*${t("uptime")}*: ${formatElapse(os.uptime() * 1000, " ")}
-*${t("cpu")}*: ${cpus[0].model}
-*${t("cpu_cores")}*: ${t("cores_val", { val: cpus?.length })}
-*${t("gpu")}*: ${getGpu()}
+*${t("os", {}, c)}*: ${getDistro()}
+*${t("kernel", {}, c)}*: ${os.release()} ${os.machine()}
+*${t("uptime", {}, c)}*: ${formatElapse(os.uptime() * 1000, " ")}
+*${t("cpu", {}, c)}*: ${cpus[0].model}
+*${t("cpu_cores", {}, c)}*: ${t("cores_val", { val: cpus?.length }, c)}
+*${t("gpu", {}, c)}*: ${getGpu()}
 
-*${t("memory")}*
-*${t("used")}*: ${formatBytes(usedMem)}
-*${t("free")}*: ${formatBytes(freeMem)}
-*${t("total")}*: ${formatBytes(totalMem)}
+*${t("memory", {}, c)}*
+*${t("used", {}, c)}*: ${formatBytes(usedMem)}
+*${t("free", {}, c)}*: ${formatBytes(freeMem)}
+*${t("total", {}, c)}*: ${formatBytes(totalMem)}
 
-*${t("runtime_info")}*
-*${t("runtime")}*: ${runtime.name} ${runtime.version}
-*${t("running")}*: ${formatElapse(process.uptime() * 1000, " ")}
-*${t("rss")}*: ${formatBytes(memoryUsage.rss)}
-*${t("heap_total")}*: ${formatBytes(memoryUsage.heapTotal)}
-*${t("heap_used")}*: ${formatBytes(memoryUsage.heapUsed)}
-*${t("external")}*: ${formatBytes(memoryUsage.external)}
+*${t("runtime_info", {}, c)}*
+*${t("runtime", {}, c)}*: ${runtime.name} ${runtime.version}
+*${t("running", {}, c)}*: ${formatElapse(process.uptime() * 1000, " ")}
+*${t("rss", {}, c)}*: ${formatBytes(memoryUsage.rss)}
+*${t("heap_total", {}, c)}*: ${formatBytes(memoryUsage.heapTotal)}
+*${t("heap_used", {}, c)}*: ${formatBytes(memoryUsage.heapUsed)}
+*${t("external", {}, c)}*: ${formatBytes(memoryUsage.external)}
     `;
 
     return await c.reply({ text: infoText.trim() }, { quoted: c.event });

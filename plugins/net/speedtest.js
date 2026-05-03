@@ -12,7 +12,7 @@ import { SpeedTestService } from "@ginkohub/speedtest-js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const service = new SpeedTestService();
 const clientInfo = await service.fetchClientInfo();
@@ -81,16 +81,16 @@ export default {
       })
       .join(".");
     const texts = [
-      `*${t("isp")}*: ${clientInfo.isp}`,
-      `*${t("ip")}*: ${ipCensored}`,
+      `*${t("isp", {}, c)}*: ${clientInfo.isp}`,
+      `*${t("ip", {}, c)}*: ${ipCensored}`,
       "",
-      `*${t("country")}*: ${testServer.country}`,
-      `*${t("server")}*: ${testServer.name}`,
-      `*${t("sponsor")}*: ${testServer.sponsor}`,
-      `*${t("latency")}*: ${testServer.latency}ms`,
-      `*${t("distance")}*: ${testServer.distance} KM`,
+      `*${t("country", {}, c)}*: ${testServer.country}`,
+      `*${t("server", {}, c)}*: ${testServer.name}`,
+      `*${t("sponsor", {}, c)}*: ${testServer.sponsor}`,
+      `*${t("latency", {}, c)}*: ${testServer.latency}ms`,
+      `*${t("distance", {}, c)}*: ${testServer.distance} KM`,
       "",
-      t("testing"),
+      t("testing", {}, c),
     ];
 
     const resp = await c.reply({ text: texts.join("\n") }, { quoted: c.event });
@@ -112,11 +112,11 @@ export default {
 
     texts.push(
       ...[
-        t("result"),
-        `*${t("latency")}*: ${latency}ms`,
+        t("result", {}, c),
+        `*${t("latency", {}, c)}*: ${latency}ms`,
         `*Jitter*: ${jitter}ms`,
-        `*${t("download")}*: ${speedDownload.toFixed(2)} Mbps in ${endDownload}`,
-        `*${t("upload")}*: ${speedUpload.toFixed(2)} Mbps in ${endUpload}`,
+        `*${t("download", {}, c)}*: ${speedDownload.toFixed(2)} Mbps in ${endDownload}`,
+        `*${t("upload", {}, c)}*: ${speedUpload.toFixed(2)} Mbps in ${endUpload}`,
       ],
     );
 

@@ -11,7 +11,8 @@
 import { Events } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { settings, translate } from "../settings.js";
+import { settings } from "../../src/settings.js";
+import { translate } from "../../src/translate.js";
 import { allowed } from "./detector.js";
 
 const KEY_DEFENSE_ALLOW_STATUS = "defense_allow_status";

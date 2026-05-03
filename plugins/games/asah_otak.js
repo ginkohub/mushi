@@ -12,7 +12,7 @@ import fs from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -100,16 +100,16 @@ export default [
     exec: async (c) => {
       if (c.cmd.endsWith("?")) {
         const helpText = [
-          t("help_title"),
+          t("help_title", {}, c),
           "",
-          t("help_desc"),
-          t("help_usage"),
+          t("help_desc", {}, c),
+          t("help_usage", {}, c),
           "",
-          t("help_important"),
-          t("help_reply"),
-          t("help_timeout_hint"),
+          t("help_important", {}, c),
+          t("help_reply", {}, c),
+          t("help_timeout_hint", {}, c),
           "",
-          t("help_admin", { prefix: c.prefix }),
+          t("help_admin", { prefix: c.prefix }, c),
         ];
         return await c.reply(
           { text: helpText.join("\n") },
@@ -119,14 +119,14 @@ export default [
 
       if (sessions.has(c.chat)) {
         return await c.reply(
-          { text: t("session_active") },
+          { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
 
       if (questions.length === 0) {
         return await c.reply(
-          { text: t("no_data", { prefix: c.prefix }) },
+          { text: t("no_data", { prefix: c.prefix }, c) },
           { quoted: c.event },
         );
       }
@@ -136,15 +136,15 @@ export default [
       const xpReward = Math.floor(Math.random() * 21) + 15; // 15-35 XP
 
       const texts = [
-        t("question_header"),
+        t("question_header", {}, c),
         "",
         `"${q.pertanyaan}"`,
         "",
-        t("question_time"),
-        t("question_reward"),
+        t("question_time", {}, c),
+        t("question_reward", {}, c),
         "",
-        t("question_note"),
-        t("question_reply"),
+        t("question_note", {}, c),
+        t("question_reply", {}, c),
       ];
 
       const resp = await c.reply(
@@ -157,7 +157,7 @@ export default [
           sessions.delete(c.chat);
           c.reply(
             {
-              text: t("timeout", { answer: q.jawaban }),
+              text: t("timeout", { answer: q.jawaban }, c),
             },
             { quoted: c.event },
           );
@@ -196,14 +196,14 @@ export default [
         // Refresh local questions
         questions = data;
 
-        const stats = `${t("sync_success")}\n\n ${t("sync_stats", { count: data.length })}`;
+        const stats = `${t("sync_success", {}, c)}\n\n ${t("sync_stats", { count: data.length }, c)}`;
 
         await c.reply({ text: stats }, { quoted: c.event });
         await c.react("✅");
       } catch (e) {
         console.error("Sync failed:", e);
         await c.reply(
-          { text: t("sync_failed", { error: e.message }) },
+          { text: t("sync_failed", { error: e.message }, c) },
           { quoted: c.event },
         );
         await c.react("❌");
@@ -235,11 +235,15 @@ export default [
 
         return await c.reply(
           {
-            text: t("correct", {
-              user: c.senderJid.split("@")[0],
-              answer: session.answer.toUpperCase(),
-              xp,
-            }),
+            text: t(
+              "correct",
+              {
+                user: c.senderJid.split("@")[0],
+                answer: session.answer.toUpperCase(),
+                xp,
+              },
+              c,
+            ),
             mentions: [c.senderJid],
           },
           { quoted: c.event },

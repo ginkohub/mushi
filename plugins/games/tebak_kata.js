@@ -12,7 +12,7 @@ import fs from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -135,23 +135,23 @@ export default [
 
       if (c.cmd.endsWith("?") || levelArg === "?") {
         const helpText = [
-          t("help_title"),
+          t("help_title", {}, c),
           "",
-          t("help_desc"),
-          t("help_usage"),
+          t("help_desc", {}, c),
+          t("help_usage", {}, c),
           "",
-          t("help_levels"),
-          t("help_level_e"),
-          t("help_level_m"),
-          t("help_level_h"),
+          t("help_levels", {}, c),
+          t("help_level_e", {}, c),
+          t("help_level_m", {}, c),
+          t("help_level_h", {}, c),
           "",
-          t("help_example"),
+          t("help_example", {}, c),
           "",
-          t("help_important"),
-          t("help_reply"),
-          t("help_timeout_hint"),
+          t("help_important", {}, c),
+          t("help_reply", {}, c),
+          t("help_timeout_hint", {}, c),
           "",
-          t("help_admin", { prefix: c.prefix }),
+          t("help_admin", { prefix: c.prefix }, c),
         ];
         return await c.reply(
           { text: helpText.join("\n") },
@@ -161,7 +161,7 @@ export default [
 
       if (sessions.has(c.chat)) {
         return await c.reply(
-          { text: t("session_active") },
+          { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
@@ -172,7 +172,7 @@ export default [
 
       if (!words || words.length === 0) {
         return await c.reply(
-          { text: t("no_data", { prefix: c.prefix }) },
+          { text: t("no_data", { prefix: c.prefix }, c) },
           { quoted: c.event },
         );
       }
@@ -186,14 +186,14 @@ export default [
         levelInfo.xp[0];
 
       const texts = [
-        t("question_header", { level: selectedLevel.toUpperCase() }),
-        t("question_query", { clues }),
+        t("question_header", { level: selectedLevel.toUpperCase() }, c),
+        t("question_query", { clues }, c),
         "",
-        t("question_time"),
-        t("question_reward", { min: levelInfo.xp[0], max: levelInfo.xp[1] }),
+        t("question_time", {}, c),
+        t("question_reward", { min: levelInfo.xp[0], max: levelInfo.xp[1] }, c),
         "",
-        t("question_note"),
-        t("question_reply"),
+        t("question_note", {}, c),
+        t("question_reply", {}, c),
       ];
 
       const resp = await c.reply(
@@ -206,7 +206,7 @@ export default [
           sessions.delete(c.chat);
           c.reply(
             {
-              text: t("timeout", { answer }),
+              text: t("timeout", { answer }, c),
             },
             { quoted: c.event },
           );
@@ -254,20 +254,24 @@ export default [
         wordList = newWordList;
 
         const stats =
-          `${t("sync_success")}\n\n` +
-          t("sync_stats", {
-            easy: newWordList.easy.length,
-            medium: newWordList.medium.length,
-            hard: newWordList.hard.length,
-          }) +
-          `\n\n${t("sync_saved")}`;
+          `${t("sync_success", {}, c)}\n\n` +
+          t(
+            "sync_stats",
+            {
+              easy: newWordList.easy.length,
+              medium: newWordList.medium.length,
+              hard: newWordList.hard.length,
+            },
+            c,
+          ) +
+          `\n\n${t("sync_saved", {}, c)}`;
 
         await c.reply({ text: stats }, { quoted: c.event });
         await c.react("✅");
       } catch (e) {
         console.error("Sync failed:", e);
         await c.reply(
-          { text: t("sync_failed", { error: e.message }) },
+          { text: t("sync_failed", { error: e.message }, c) },
           { quoted: c.event },
         );
         await c.react("❌");
@@ -299,11 +303,15 @@ export default [
 
         return await c.reply(
           {
-            text: t("correct", {
-              user: c.senderJid.split("@")[0],
-              answer: session.answer.toUpperCase(),
-              xp,
-            }),
+            text: t(
+              "correct",
+              {
+                user: c.senderJid.split("@")[0],
+                answer: session.answer.toUpperCase(),
+                xp,
+              },
+              c,
+            ),
             mentions: [c.senderJid],
           },
           { quoted: c.event },

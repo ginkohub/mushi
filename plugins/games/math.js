@@ -10,7 +10,7 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
-import { translate } from "../settings.js";
+import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
@@ -85,21 +85,21 @@ export default [
 
       if (c.cmd.endsWith("?") || levelArg === "?") {
         const helpText = [
-          t("help_title"),
+          t("help_title", {}, c),
           "",
-          t("help_usage"),
+          t("help_usage", {}, c),
           "",
-          t("help_levels"),
+          t("help_levels", {}, c),
           "🟢 `e` / `easy` : 5-15 XP",
           "🟡 `m` / `medium` : 15-30 XP",
           "🔴 `h` / `hard` : 30-60 XP",
           "💀 `i` / `impossible` : 100-200 XP",
           "",
-          t("help_example"),
+          t("help_example", {}, c),
           "",
-          t("help_important"),
-          t("help_reply"),
-          t("help_timeout"),
+          t("help_important", {}, c),
+          t("help_reply", {}, c),
+          t("help_timeout", {}, c),
         ];
         return await c.reply(
           { text: helpText.join("\n") },
@@ -109,7 +109,7 @@ export default [
 
       if (sessions.has(c.chat)) {
         return await c.reply(
-          { text: t("session_active") },
+          { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
@@ -136,14 +136,14 @@ export default [
         level.xp[0];
 
       const texts = [
-        t("question_header", { level: selectedLevel.toUpperCase() }),
-        t("question_query", { a, op, b }),
+        t("question_header", { level: selectedLevel.toUpperCase() }, c),
+        t("question_query", { a, op, b }, c),
         "",
-        t("question_time"),
-        t("question_reward", { min: level.xp[0], max: level.xp[1] }),
+        t("question_time", {}, c),
+        t("question_reward", { min: level.xp[0], max: level.xp[1] }, c),
         "",
-        t("question_note"),
-        t("question_reply"),
+        t("question_note", {}, c),
+        t("question_reply", {}, c),
       ];
 
       const resp = await c.reply(
@@ -154,7 +154,7 @@ export default [
       const timeout = setTimeout(() => {
         if (sessions.has(c.chat)) {
           sessions.delete(c.chat);
-          c.reply({ text: t("timeout", { answer }) }, { quoted: c.event });
+          c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event });
         }
       }, 30000);
 
@@ -191,11 +191,15 @@ export default [
 
         return await c.reply(
           {
-            text: t("correct", {
-              user: c.senderJid.split("@")[0],
-              answer: session.answer,
-              xp,
-            }),
+            text: t(
+              "correct",
+              {
+                user: c.senderJid.split("@")[0],
+                answer: session.answer,
+                xp,
+              },
+              c,
+            ),
             mentions: [c.senderJid],
           },
           { quoted: c.event },

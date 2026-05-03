@@ -18,7 +18,7 @@ import { google } from "googleapis";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { storeMsg } from "../settings.js";
+import { storeMsg } from "../../src/settings.js";
 
 const execFileAsync = promisify(execFile);
 const ytdlps = [

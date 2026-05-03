@@ -15,7 +15,7 @@ import pen from "../../../src/pen.js";
 import { Role } from "../../../src/roles.js";
 import { StoreJson } from "../../../src/store.js";
 import { formatMD } from "../../../src/tools.js";
-import { translate } from "../../settings.js";
+import { translate } from "../../../src/translate.js";
 
 /** @type {import('./gemini.js').Gemini} */
 const gemini = await import(`./gemini.js?t=${new Date()}`).then(
