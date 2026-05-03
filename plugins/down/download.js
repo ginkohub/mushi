@@ -9,10 +9,7 @@
  */
 
 import { Buffer } from "node:buffer";
-import { instagramGetUrl } from "instagram-url-direct";
-import rahad from "rahad-all-downloader-v2";
-
-const { alldl } = rahad;
+import browser from "../../src/browser.js";
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
@@ -46,121 +43,37 @@ const t = translate({
 });
 
 /**
- * Formats a video caption with metadata in a professional layout.
- * @param {any} video
+ * Formats a video caption with metadata.
+ * @param {any} result
  * @param {import('../../src/context.js').Ctx} c
- * @param {string} platform
  * @returns {string}
  */
-function formatCaption(video, c, platform) {
+function formatCaption(result, c) {
   const parts = [
-    `✨ *${video.title?.trim() || "Media Content"}*`,
+    `*${result.title?.trim() || "Media Content"}*`,
     "━━━━━━━━━━━━━━━━━━",
-    `*${t("platform", {}, c)}:* ${platform}`,
-    `*${t("author", {}, c)}:* ${video.uploader || video.author || t("unknown", {}, c)}`,
+    `*${t("platform", {}, c)}:* ${result.platform || "Web"}`,
   ];
 
-  if (video.duration_string || video.duration) {
-    parts.push(
-      `*${t("duration", {}, c)}:* ${video.duration_string || video.duration}`,
-    );
+  if (result.metadata?.author) {
+    parts.push(`*${t("author", {}, c)}:* ${result.metadata.author}`);
   }
 
-  if (video.view_count || video.views) {
-    const views = video.view_count || video.views;
-    parts.push(
-      `*${t("views", {}, c)}:* ${views.toLocaleString(c.user()?.lang || "en-US")}`,
-    );
+  if (result.media?.duration) {
+    parts.push(`*${t("duration", {}, c)}:* ${result.media.duration}`);
   }
 
   return parts.join("\n");
 }
 
-/**
- * Downloads media from Instagram using instagram-url-direct
- * @param {string} link
- * @returns {Promise<any[]>}
- */
-async function getInstagramMedia(link) {
-  try {
-    const data = await instagramGetUrl(link);
-    if (data?.url_list && Array.isArray(data.url_list)) {
-      return data.url_list.map((url) => ({
-        url: url,
-        title: "Instagram Post",
-        type: url.includes(".mp4") ? "video" : "image",
-        ext: url.includes(".mp4") ? "mp4" : "jpg",
-        uploader: "Instagram User",
-      }));
-    }
-    return [];
-  } catch (e) {
-    pen.Error("Instagram DL error:", e.message);
-    return [];
-  }
-}
-
-/**
- * Downloads media from various platforms using rahad-all-downloader-v2
- * @param {string} link
- * @returns {Promise<any[]>}
- */
-async function getGenericMedia(link) {
-  try {
-    const data = await alldl(link);
-    if (!data?.data) return [];
-
-    const result = data.data;
-    const entries = [];
-
-    const video = result.video || result.videoUrl;
-    if (video) {
-      entries.push({
-        url: video,
-        title: result.title || "Social Media Video",
-        type: "video",
-        ext: "mp4",
-        uploader: result.author || "User",
-      });
-    }
-
-    if (result.photo && Array.isArray(result.photo)) {
-      result.photo.forEach((p, i) => {
-        entries.push({
-          url: p,
-          title: `${result.title || "Social Media Photo"} (${i + 1})`,
-          type: "image",
-          ext: "jpg",
-          uploader: result.author || "User",
-        });
-      });
-    }
-
-    if (entries.length === 0 && result.low) {
-      entries.push({
-        url: result.high || result.low,
-        title: result.title || "Media Content",
-        type: "video",
-        ext: "mp4",
-        uploader: result.author || "User",
-      });
-    }
-
-    return entries;
-  } catch (e) {
-    pen.Error("Generic DL error:", e.message);
-    return [];
-  }
-}
-
 const REGEX_LINKS =
-  /https?:\/\/(www\.)?(instagram\.com|tiktok\.com|vt\.tiktok\.com|youtube\.com|youtu\.be|threads\.net|facebook\.com|fb\.watch)\/[^\s]+/g;
+  /https?:\/\/(www\.)?(instagram\.com|tiktok\.com|vt\.tiktok\.com|youtube\.com|youtu\.be|threads\.net|facebook\.com|fb\.watch|pin\.it|pinterest\.com|capcut\.com|likee\.video|l\.likee)\/[^\s]+/g;
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["down", "dl"],
   cat: "downloader",
-  desc: "Multi-platform downloader (IG, TikTok, FB, YT, Threads).",
+  desc: "Multi-platform downloader (IG, TikTok, FB, YT, Threads, Pinterest, CapCut, Likee).",
   events: [MESSAGES_UPSERT],
   roles: [Role.USER],
 
@@ -178,39 +91,18 @@ export default {
 
     for (const link of links) {
       try {
-        const isInstagram = link.includes("instagram.com");
-        const platform = isInstagram
-          ? "Instagram"
-          : link.includes("tiktok.com")
-            ? "TikTok"
-            : link.includes("youtube.com") || link.includes("youtu.be")
-              ? "YouTube"
-              : link.includes("threads.net")
-                ? "Threads"
-                : link.includes("facebook.com") || link.includes("fb.watch")
-                  ? "Facebook"
-                  : "Web";
+        await c.react("⌛");
 
-        let entries = [];
+        const result = await browser.download(link);
 
-        if (isInstagram) {
-          entries = await getInstagramMedia(link);
-        }
-
-        if (entries.length === 0) {
-          entries = await getGenericMedia(link);
-        }
-
-        if (entries.length === 0) {
+        if (!result?.media?.urls?.length) {
           await c.react("⚠️");
           c.reply({ text: t("not_retrieved", { val: link }, c) });
           continue;
         }
 
-        await c.react("⌛");
-
-        for (const entry of entries) {
-          const id = entry.id || entry.url;
+        for (const url of result.media.urls) {
+          const id = url;
           const cached = storeMsg.get(id);
           if (cached && !c.argv?.force) {
             await c.replyRelay(cached.message);
@@ -219,25 +111,18 @@ export default {
 
           let buffer;
           try {
-            const res = await fetch(entry.url);
+            const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             buffer = Buffer.from(await res.arrayBuffer());
           } catch (err) {
-            pen.Error(`Fetch failed for ${entry.url}:`, err.message);
+            pen.Error(`Fetch failed for ${url}:`, err.message);
             continue;
           }
 
-          if (!buffer || buffer.length === 0) {
-            pen.Error(`Download failed for: ${entry.title || id}`);
-            c.reply({
-              text: t("failed", { val: entry.title || "Media" }, c),
-            });
-            continue;
-          }
+          if (!buffer || buffer.length === 0) continue;
 
-          const type =
-            entry.type || (entry.url.includes(".mp4") ? "video" : "image");
           const content = {};
+          const type = result.media.type;
 
           if (type === "image") {
             content.image = buffer;
@@ -249,7 +134,7 @@ export default {
             content.mimetype = "video/mp4";
           }
 
-          content.caption = formatCaption(entry, c, platform);
+          content.caption = formatCaption(result, c);
           const resp = await c.reply(content, { quoted: c.event });
 
           if (resp && id) storeMsg.set(id, resp);
