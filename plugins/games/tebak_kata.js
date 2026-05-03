@@ -16,13 +16,13 @@ import { translate } from "../settings.js";
 
 const t = translate({
   en: {
-    help_title: "🧩 *WORD SCRAMBLE (TEBAK KATA)*",
-    help_desc: "Unscramble the letters to form the correct word!",
+    help_title: "🧩 *GUESS THE WORD (TEBAK KATA)*",
+    help_desc: "Guess the word based on the clues provided!",
     help_usage: "Use `.tk [level]` to start.",
     help_levels: "*Levels & Initials:*",
-    help_level_e: "🟢 `e` / `easy` : Short words (5-15 XP)",
-    help_level_m: "🟡 `m` / `medium` : Medium words (15-30 XP)",
-    help_level_h: "🔴 `h` / `hard` : Long words (30-60 XP)",
+    help_level_e: "🟢 `e` / `easy` : 1-6 characters (5-15 XP)",
+    help_level_m: "🟡 `m` / `medium` : 7-9 characters (15-30 XP)",
+    help_level_h: "🔴 `h` / `hard` : 10+ characters (30-60 XP)",
     help_example: "💡 *Example:* `.tk m` or `.tk h`",
     help_important: "⚠️ *Important:*",
     help_reply: "- Must *Reply/Quote* the question to answer.",
@@ -31,7 +31,7 @@ const t = translate({
     session_active: "❌ There is still an unanswered question in this chat!",
     no_data: "❌ Word data not found or empty! Use `{prefix}tk.update` (Admin).",
     question_header: "🧩 [ Level: *{level}* ]",
-    question_query: "Unscramble these letters: *{word}*",
+    question_query: "Clues: *{clues}*",
     question_time: "⏱️ *Time:* 45 seconds",
     question_reward: "🎁 *Reward:* {min}-{max} XP",
     question_note: "📝 *Note:*",
@@ -44,13 +44,13 @@ const t = translate({
     correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
   },
   id: {
-    help_title: "🧩 *TEBAK KATA (SCRAMBLE)*",
-    help_desc: "Susunlah huruf-huruf yang diacak menjadi kata yang benar!",
+    help_title: "🧩 *TEBAK KATA*",
+    help_desc: "Tebaklah kata berdasarkan petunjuk yang diberikan!",
     help_usage: "Gunakan perintah `.tk [level]` untuk memulai.",
     help_levels: "*Daftar Level & Inisial:*",
-    help_level_e: "🟢 `e` / `easy` : Kata pendek (5-15 XP)",
-    help_level_m: "🟡 `m` / `medium` : Kata sedang (15-30 XP)",
-    help_level_h: "🔴 `h` / `hard` : Kata panjang (30-60 XP)",
+    help_level_e: "🟢 `e` / `easy` : 1-6 huruf (5-15 XP)",
+    help_level_m: "🟡 `m` / `medium` : 7-9 huruf (15-30 XP)",
+    help_level_h: "🔴 `h` / `hard` : 10+ huruf (30-60 XP)",
     help_example: "💡 *Contoh:* `.tk m` atau `.tk h`",
     help_important: "⚠️ *Penting:*",
     help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
@@ -59,7 +59,7 @@ const t = translate({
     session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
     no_data: "❌ Data kata tidak ditemukan atau kosong! Gunakan `{prefix}tk.update` (Admin).",
     question_header: "🧩 [ Level: *{level}* ]",
-    question_query: "Susunlah huruf berikut: *{word}*",
+    question_query: "Petunjuk: *{clues}*",
     question_time: "⏱️ *Waktu:* 45 detik",
     question_reward: "🎁 *Hadiah:* {min}-{max} XP",
     question_note: "📝 *Note:*",
@@ -76,7 +76,7 @@ const t = translate({
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
 const sessions = new Map();
 
-/** @type {Record<string, string[]>} */
+/** @type {Record<string, {pertanyaan: string, jawaban: string}[]>} */
 let wordList = {
   easy: [],
   medium: [],
@@ -95,22 +95,7 @@ const LEVEL_ALIAS = {
   h: "hard",
 };
 
-const WORD_URL = "https://ginkohub.github.io/indonesian.txt";
-
-/**
- * Scramble a word
- * @param {string} word
- * @returns {string}
- */
-function scramble(word) {
-  const arr = word.split("");
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  const scrambled = arr.join("-");
-  return scrambled === word.split("").join("-") ? scramble(word) : scrambled;
-}
+const WORD_URL = "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/tebakkata.json";
 
 /**
  * Load word list from JSON file
@@ -135,7 +120,7 @@ export default [
     cmd: ["tk", "tk?", "tebakkata", "tebakkata?"],
     cat: "games",
     tags: ["game"],
-    desc: "Word Scramble game (Tebak Kata)",
+    desc: "Guess the Word game (Tebak Kata)",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {
@@ -182,8 +167,9 @@ export default [
         );
       }
 
-      const answer = words[Math.floor(Math.random() * words.length)];
-      const scrambled = scramble(answer);
+      const item = words[Math.floor(Math.random() * words.length)];
+      const answer = item.jawaban.toUpperCase();
+      const clues = item.pertanyaan;
 
       const xpReward =
         Math.floor(Math.random() * (levelInfo.xp[1] - levelInfo.xp[0] + 1)) +
@@ -191,7 +177,7 @@ export default [
 
       const texts = [
         t("question_header", { level: selectedLevel.toUpperCase() }),
-        t("question_query", { word: scrambled.toUpperCase() }),
+        t("question_query", { clues }),
         "",
         t("question_time"),
         t("question_reward", { min: levelInfo.xp[0], max: levelInfo.xp[1] }),
@@ -210,7 +196,7 @@ export default [
           sessions.delete(c.chat);
           c.reply(
             {
-              text: t("timeout", { answer: answer.toUpperCase() }),
+              text: t("timeout", { answer }),
             },
             { quoted: c.event },
           );
@@ -218,7 +204,7 @@ export default [
       }, 45000);
 
       sessions.set(c.chat, {
-        answer: answer.toLowerCase(),
+        answer: answer.toLowerCase().trim(),
         timeout,
         xp: xpReward,
         questionId: resp.key.id,
@@ -229,7 +215,7 @@ export default [
     cmd: ["tk.update"],
     cat: "games",
     tags: ["game", "admin"],
-    desc: "Sync Indonesian word list for Tebak Kata game",
+    desc: "Sync word list for Tebak Kata game",
     events: [MESSAGES_UPSERT],
     roles: [Role.ADMIN],
     exec: async (c) => {
@@ -238,16 +224,14 @@ export default [
         const response = await fetch(WORD_URL);
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
-        const text = await response.text();
-        const allWords = text
-          .split("\n")
-          .map((w) => w.trim().toLowerCase())
-          .filter((w) => /^[a-z]+$/.test(w));
+        const data = await response.json();
+
+        if (!Array.isArray(data)) throw new Error("Invalid data format: Expected an array");
 
         const newWordList = {
-          easy: allWords.filter((w) => w.length >= 4 && w.length <= 5),
-          medium: allWords.filter((w) => w.length >= 6 && w.length <= 8),
-          hard: allWords.filter((w) => w.length >= 9),
+          easy: data.filter((w) => w.jawaban.length <= 6),
+          medium: data.filter((w) => w.jawaban.length >= 7 && w.jawaban.length <= 9),
+          hard: data.filter((w) => w.jawaban.length >= 10),
         };
 
         const path = getFile("tebak_kata.json");
