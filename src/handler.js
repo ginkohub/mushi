@@ -12,6 +12,7 @@ import { readdirSync, statSync } from "node:fs";
 import { platform } from "node:os";
 import { pathToFileURL } from "node:url";
 import { jidNormalizedUser } from "baileys";
+import { ChatManager } from "./chat_manager.js";
 import { Events } from "./const.js";
 import { Ctx } from "./context.js";
 import { getFile } from "./data.js";
@@ -31,6 +32,7 @@ import { UserManager } from "./user_manager.js";
  * @property {Map<string, import('baileys').Contact>} contactCache
  * @property {Map<string, number>} timerCache
  * @property {import('./user_manager.js').UserManager} userManager
+ * @property {import('./chat_manager.js').ChatManager} chatManager
  */
 
 /**
@@ -49,6 +51,7 @@ export class Handler {
     contactCache,
     timerCache,
     userManager,
+    chatManager,
   }) {
     this.pluginDir = pluginDir ?? "../plugins";
 
@@ -98,6 +101,11 @@ export class Handler {
     this.userManager =
       userManager ??
       new UserManager({ saveName: getFile("user_manager.json") });
+
+    /** @type {import('./chat_manager.js').ChatManager} */
+    this.chatManager =
+      chatManager ??
+      new ChatManager({ saveName: getFile("chat_manager.json") });
 
     /* Scan plugins on start */
     this.scanPlugin(this.pluginDir);
