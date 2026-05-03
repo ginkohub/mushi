@@ -53,7 +53,7 @@ const t = translate({
  */
 function formatCaption(video, c, platform) {
   const parts = [
-    `*${video.title?.trim() || "Media Content"}*`,
+    `✨ *${video.title?.trim() || "Media Content"}*`,
     "━━━━━━━━━━━━━━━━━━",
     `*${t("platform", {}, c)}:* ${platform}`,
     `*${t("author", {}, c)}:* ${video.uploader || video.author || t("unknown", {}, c)}`,
@@ -164,17 +164,15 @@ export default {
   roles: [Role.USER],
 
   exec: async (c) => {
-    let links = [];
-    if (c.isCMD) {
-      links = c.argv?._?.filter((arg) => /^https?:\/\//.test(arg)) || [];
-    } else {
-      const text = c.text || "";
-      links = text.match(REGEX_LINKS) || [];
+    const quotedText = c.quotedText || "";
+    let links = c.argv?._?.filter((arg) => /^https?:\/\//.test(arg)) || [];
+
+    if (links.length === 0) {
+      links = quotedText.match(REGEX_LINKS) || [];
     }
 
     if (!links || links.length === 0) {
-      if (c.isCMD) return c.react("❓");
-      return;
+      return c.react("❓");
     }
 
     for (const link of links) {
@@ -203,10 +201,8 @@ export default {
         }
 
         if (entries.length === 0) {
-          if (c.isCMD) {
-            await c.react("⚠️");
-            c.reply({ text: t("not_retrieved", { val: link }, c) });
-          }
+          await c.react("⚠️");
+          c.reply({ text: t("not_retrieved", { val: link }, c) });
           continue;
         }
 
@@ -232,10 +228,9 @@ export default {
 
           if (!buffer || buffer.length === 0) {
             pen.Error(`Download failed for: ${entry.title || id}`);
-            if (c.isCMD)
-              c.reply({
-                text: t("failed", { val: entry.title || "Media" }, c),
-              });
+            c.reply({
+              text: t("failed", { val: entry.title || "Media" }, c),
+            });
             continue;
           }
 
@@ -262,7 +257,7 @@ export default {
       } catch (err) {
         pen.Error(`Downloader error [${link}]:`, err.message);
         await c.react("❌");
-        if (c.isCMD) c.reply({ text: t("failed", { val: link }, c) });
+        c.reply({ text: t("failed", { val: link }, c) });
       }
     }
   },
