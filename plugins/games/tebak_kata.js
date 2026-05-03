@@ -12,6 +12,66 @@ import fs from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    help_title: "🧩 *WORD SCRAMBLE (TEBAK KATA)*",
+    help_desc: "Unscramble the letters to form the correct word!",
+    help_usage: "Use `.tk [level]` to start.",
+    help_levels: "*Levels & Initials:*",
+    help_level_e: "🟢 `e` / `easy` : Short words (5-15 XP)",
+    help_level_m: "🟡 `m` / `medium` : Medium words (15-30 XP)",
+    help_level_h: "🔴 `h` / `hard` : Long words (30-60 XP)",
+    help_example: "💡 *Example:* `.tk m` or `.tk h`",
+    help_important: "⚠️ *Important:*",
+    help_reply: "- Must *Reply/Quote* the question to answer.",
+    help_timeout_hint: "- Time limit is 45 seconds.",
+    help_admin: "⚙️ *Admin:* `{prefix}tk.update` to sync word list.",
+    session_active: "❌ There is still an unanswered question in this chat!",
+    no_data: "❌ Word data not found or empty! Use `{prefix}tk.update` (Admin).",
+    question_header: "🧩 [ Level: *{level}* ]",
+    question_query: "Unscramble these letters: *{word}*",
+    question_time: "⏱️ *Time:* 45 seconds",
+    question_reward: "🎁 *Reward:* {min}-{max} XP",
+    question_note: "📝 *Note:*",
+    question_reply: "_Reply to this message to answer!_",
+    timeout: "⌛ *Time's up!*\nThe answer was *{answer}*",
+    sync_success: "✅ *Sync Success!*",
+    sync_stats: "🟢 *Easy:* {easy} words\n🟡 *Medium:* {medium} words\n🔴 *Hard:* {hard} words",
+    sync_saved: "Data saved and reloaded!",
+    sync_failed: "❌ *Sync Failed:* {error}",
+    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+  },
+  id: {
+    help_title: "🧩 *TEBAK KATA (SCRAMBLE)*",
+    help_desc: "Susunlah huruf-huruf yang diacak menjadi kata yang benar!",
+    help_usage: "Gunakan perintah `.tk [level]` untuk memulai.",
+    help_levels: "*Daftar Level & Inisial:*",
+    help_level_e: "🟢 `e` / `easy` : Kata pendek (5-15 XP)",
+    help_level_m: "🟡 `m` / `medium` : Kata sedang (15-30 XP)",
+    help_level_h: "🔴 `h` / `hard` : Kata panjang (30-60 XP)",
+    help_example: "💡 *Contoh:* `.tk m` atau `.tk h`",
+    help_important: "⚠️ *Penting:*",
+    help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
+    help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
+    help_admin: "⚙️ *Admin:* `{prefix}tk.update` untuk sinkronisasi kata.",
+    session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
+    no_data: "❌ Data kata tidak ditemukan atau kosong! Gunakan `{prefix}tk.update` (Admin).",
+    question_header: "🧩 [ Level: *{level}* ]",
+    question_query: "Susunlah huruf berikut: *{word}*",
+    question_time: "⏱️ *Waktu:* 45 detik",
+    question_reward: "🎁 *Hadiah:* {min}-{max} XP",
+    question_note: "📝 *Note:*",
+    question_reply: "_Reply chat ini untuk menjawab!_",
+    timeout: "⌛ *Waktu habis!*\nJawabannya adalah *{answer}*",
+    sync_success: "✅ *Sinkronisasi Berhasil!*",
+    sync_stats: "🟢 *Mudah:* {easy} kata\n🟡 *Sedang:* {medium} kata\n🔴 *Sulit:* {hard} kata",
+    sync_saved: "Data disimpan dan dimuat ulang!",
+    sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
+    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+  },
+});
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
 const sessions = new Map();
@@ -72,7 +132,7 @@ loadWords();
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
-    cmd: ["tk", "tk?", 'tebakkata', 'tebakkata?'],
+    cmd: ["tk", "tk?", "tebakkata", "tebakkata?"],
     cat: "games",
     tags: ["game"],
     desc: "Word Scramble game (Tebak Kata)",
@@ -81,32 +141,32 @@ export default [
     exec: async (c) => {
       const levelArg = (c.argv?._?.[0] || "").toLowerCase();
 
-      if (c.cmd === "tk?" || levelArg === "?") {
+      if (c.cmd.endsWith("?") || levelArg === "?") {
         const helpText = [
-          "🧩 *TEBAK KATA (SCRAMBLE)*",
+          t("help_title"),
           "",
-          "Susunlah huruf-huruf yang diacak menjadi kata yang benar!",
-          "Gunakan perintah `.tk [level]` untuk memulai.",
+          t("help_desc"),
+          t("help_usage"),
           "",
-          "*Daftar Level & Inisial:*",
-          "🟢 `e` / `easy` : Kata pendek (5-15 XP)",
-          "🟡 `m` / `medium` : Kata sedang (15-30 XP)",
-          "🔴 `h` / `hard` : Kata panjang (30-60 XP)",
+          t("help_levels"),
+          t("help_level_e"),
+          t("help_level_m"),
+          t("help_level_h"),
           "",
-          "💡 *Contoh:* `.tk m` atau `.tk h`",
+          t("help_example"),
           "",
-          "⚠️ *Penting:*",
-          "- Harus *Reply/Quote* pesan soal untuk menjawab.",
-          "- Waktu menjawab adalah 45 detik.",
+          t("help_important"),
+          t("help_reply"),
+          t("help_timeout_hint"),
           "",
-          `⚙️ *Admin:* \`${c.prefix}tk.update\` untuk sinkronisasi kata.`,
+          t("help_admin", { prefix: c.prefix }),
         ];
         return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
       }
 
       if (sessions.has(c.chat)) {
         return await c.reply(
-          { text: "❌ Masih ada soal yang belum terjawab di grup ini!" },
+          { text: t("session_active") },
           { quoted: c.event },
         );
       }
@@ -117,7 +177,7 @@ export default [
 
       if (!words || words.length === 0) {
         return await c.reply(
-          { text: `❌ Data kata tidak ditemukan atau kosong! Gunakan \`${c.prefix}tk.update\` (Admin).` },
+          { text: t("no_data", { prefix: c.prefix }) },
           { quoted: c.event },
         );
       }
@@ -126,19 +186,18 @@ export default [
       const scrambled = scramble(answer);
 
       const xpReward =
-        Math.floor(
-          Math.random() * (levelInfo.xp[1] - levelInfo.xp[0] + 1),
-        ) + levelInfo.xp[0];
+        Math.floor(Math.random() * (levelInfo.xp[1] - levelInfo.xp[0] + 1)) +
+        levelInfo.xp[0];
 
       const texts = [
-        `🧩 [ Level: *${selectedLevel.toUpperCase()}* ]`,
-        `Susunlah huruf berikut: *${scrambled.toUpperCase()}*`,
+        t("question_header", { level: selectedLevel.toUpperCase() }),
+        t("question_query", { word: scrambled.toUpperCase() }),
         "",
-        `⏱️ *Waktu:* 45 detik`,
-        `🎁 *Hadiah:* ${levelInfo.xp[0]}-${levelInfo.xp[1]} XP`,
+        t("question_time"),
+        t("question_reward", { min: levelInfo.xp[0], max: levelInfo.xp[1] }),
         "",
-        "📝 *Note:*",
-        "_Reply chat ini untuk menjawab!_",
+        t("question_note"),
+        t("question_reply"),
       ];
 
       const resp = await c.reply(
@@ -151,7 +210,7 @@ export default [
           sessions.delete(c.chat);
           c.reply(
             {
-              text: `⌛ *Waktu habis!*\nJawabannya adalah *${answer.toUpperCase()}*`,
+              text: t("timeout", { answer: answer.toUpperCase() }),
             },
             { quoted: c.event },
           );
@@ -177,7 +236,8 @@ export default [
       await c.react("⌛");
       try {
         const response = await fetch(WORD_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         const text = await response.text();
         const allWords = text
           .split("\n")
@@ -196,17 +256,23 @@ export default [
         // Refresh local wordList
         wordList = newWordList;
 
-        const stats = `✅ *Sync Success!*\n\n` +
-          `🟢 *Easy:* ${newWordList.easy.length} words\n` +
-          `🟡 *Medium:* ${newWordList.medium.length} words\n` +
-          `🔴 *Hard:* ${newWordList.hard.length} words\n\n` +
-          `Data saved and reloaded!`;
+        const stats =
+          `${t("sync_success")}\n\n` +
+          t("sync_stats", {
+            easy: newWordList.easy.length,
+            medium: newWordList.medium.length,
+            hard: newWordList.hard.length,
+          }) +
+          `\n\n${t("sync_saved")}`;
 
         await c.reply({ text: stats }, { quoted: c.event });
         await c.react("✅");
       } catch (e) {
         console.error("Sync failed:", e);
-        await c.reply({ text: `❌ *Sync Failed:* ${e.message}` }, { quoted: c.event });
+        await c.reply(
+          { text: t("sync_failed", { error: e.message }) },
+          { quoted: c.event },
+        );
         await c.react("❌");
       }
     },
@@ -236,7 +302,11 @@ export default [
 
         return await c.reply(
           {
-            text: `🎉 *Selamat* @${c.senderJid.split("@")[0]}!\nJawaban kamu benar: *${session.answer.toUpperCase()}*\n\n🌟 *+${xp} XP*`,
+            text: t("correct", {
+              user: c.senderJid.split("@")[0],
+              answer: session.answer.toUpperCase(),
+              xp,
+            }),
             mentions: [c.senderJid],
           },
           { quoted: c.event },

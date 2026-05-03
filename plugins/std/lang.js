@@ -44,7 +44,7 @@ export default {
 
     if (!lang) {
       return await c.reply(
-        { text: t("current", { lang: current }) + "\n\n" + t("usage", { cmd: c.pattern }) },
+        { text: `${t("current", { lang: current })}\n\n${t("usage", { cmd: c.pattern })}` },
         { quoted: c.event },
       );
     }

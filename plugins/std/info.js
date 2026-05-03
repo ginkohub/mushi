@@ -14,6 +14,52 @@ import os from "node:os";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
 import { formatBytes, formatElapse, isBun, isDeno } from "../../src/tools.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    server_info: "Server Information",
+    os: "OS",
+    kernel: "Kernel",
+    uptime: "Uptime",
+    cpu: "CPU",
+    cpu_cores: "CPU Cores",
+    gpu: "GPU",
+    memory: "Memory",
+    used: "Used",
+    free: "Free",
+    total: "Total",
+    runtime_info: "Runtime Information",
+    runtime: "Runtime",
+    running: "Running",
+    rss: "RSS",
+    heap_total: "Heap Total",
+    heap_used: "Heap Used",
+    external: "External",
+    cores_val: "{val} core(s)",
+  },
+  id: {
+    server_info: "Informasi Server",
+    os: "OS",
+    kernel: "Kernel",
+    uptime: "Waktu Aktif",
+    cpu: "CPU",
+    cpu_cores: "Inti CPU",
+    gpu: "GPU",
+    memory: "Memori",
+    used: "Digunakan",
+    free: "Tersedia",
+    total: "Total",
+    runtime_info: "Informasi Runtime",
+    runtime: "Runtime",
+    running: "Berjalan",
+    rss: "RSS",
+    heap_total: "Total Heap",
+    heap_used: "Heap Terpakai",
+    external: "Eksternal",
+    cores_val: "{val} inti",
+  },
+});
 
 function getDistro() {
   const platform = os.platform();
@@ -86,27 +132,27 @@ export default {
           };
 
     const infoText = `
-*Server Information*
+*${t("server_info")}*
 
-*OS*: ${getDistro()}
-*Kernel*: ${os.release()} ${os.machine()}
-*Uptime*: ${formatElapse(os.uptime() * 1000, " ")}
-*CPU*: ${cpus[0].model}
-*CPU Cores*: ${cpus?.length} core(s) 
-*GPU*: ${getGpu()}
+*${t("os")}*: ${getDistro()}
+*${t("kernel")}*: ${os.release()} ${os.machine()}
+*${t("uptime")}*: ${formatElapse(os.uptime() * 1000, " ")}
+*${t("cpu")}*: ${cpus[0].model}
+*${t("cpu_cores")}*: ${t("cores_val", { val: cpus?.length })}
+*${t("gpu")}*: ${getGpu()}
 
-*Memory*
-*Used*: ${formatBytes(usedMem)}
-*Free*: ${formatBytes(freeMem)}
-*Total*: ${formatBytes(totalMem)}
+*${t("memory")}*
+*${t("used")}*: ${formatBytes(usedMem)}
+*${t("free")}*: ${formatBytes(freeMem)}
+*${t("total")}*: ${formatBytes(totalMem)}
 
-*Runtime Information*
-*Runtime*: ${runtime.name} ${runtime.version}
-*Running*: ${formatElapse(process.uptime() * 1000, " ")}
-*RSS*: ${formatBytes(memoryUsage.rss)}
-*Heap Total*: ${formatBytes(memoryUsage.heapTotal)}
-*Heap Used*: ${formatBytes(memoryUsage.heapUsed)}
-*External*: ${formatBytes(memoryUsage.external)}
+*${t("runtime_info")}*
+*${t("runtime")}*: ${runtime.name} ${runtime.version}
+*${t("running")}*: ${formatElapse(process.uptime() * 1000, " ")}
+*${t("rss")}*: ${formatBytes(memoryUsage.rss)}
+*${t("heap_total")}*: ${formatBytes(memoryUsage.heapTotal)}
+*${t("heap_used")}*: ${formatBytes(memoryUsage.heapUsed)}
+*${t("external")}*: ${formatBytes(memoryUsage.external)}
     `;
 
     return await c.reply({ text: infoText.trim() }, { quoted: c.event });

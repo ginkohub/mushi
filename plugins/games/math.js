@@ -10,6 +10,46 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    help_title: "🧮 *MATH GAME - HOW TO PLAY*",
+    help_usage: "Use `.math [level]` to start.",
+    help_levels: "*Levels & Initials:*",
+    help_example: "💡 *Example:* `.math m` or `.math h`",
+    help_important: "⚠️ *Important:*",
+    help_reply: "- Must *Reply/Quote* the question to answer.",
+    help_timeout: "- Time limit is 30 seconds.",
+    session_active: "❌ There is still an unanswered question in this chat!",
+    question_header: "🧮 [ Level: *{level}* ]",
+    question_query: "What is the result of *{a} {op} {b}*?",
+    question_time: "⏱️ *Time:* 30 seconds",
+    question_reward: "🎁 *Reward:* {min}-{max} XP",
+    question_note: "📝 *Note:*",
+    question_reply: "_Reply to this message to answer!_",
+    timeout: "⌛ *Time's up!*\n\nThe answer was *{answer}*",
+    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+  },
+  id: {
+    help_title: "🧮 *MATH GAME - CARA BERMAIN*",
+    help_usage: "Gunakan perintah `.math [level]` untuk memulai.",
+    help_levels: "*Daftar Level & Inisial:*",
+    help_example: "💡 *Contoh:* `.math m` atau `.math h`",
+    help_important: "⚠️ *Penting:*",
+    help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
+    help_timeout: "- Waktu menjawab adalah 30 detik.",
+    session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
+    question_header: "🧮 [ Level: *{level}* ]",
+    question_query: "Berapakah hasil dari *{a} {op} {b}*?",
+    question_time: "⏱️ *Waktu:* 30 detik",
+    question_reward: "🎁 *Hadiah:* {min}-{max} XP",
+    question_note: "📝 *Note:*",
+    question_reply: "_Reply chat ini untuk menjawab!_",
+    timeout: "⌛ *Waktu habis!*\n\nJawabannya adalah *{answer}*",
+    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+  },
+});
 
 /** @type {Map<string, { answer: number, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
 const sessions = new Map();
@@ -41,30 +81,30 @@ export default [
     exec: async (c) => {
       const levelArg = (c.argv?._?.[0] || "").toLowerCase();
 
-      if (c.cmd.endsWith('?') || levelArg === "?") {
+      if (c.cmd.endsWith("?") || levelArg === "?") {
         const helpText = [
-          "🧮 *MATH GAME - CARA BERMAIN*",
+          t("help_title"),
           "",
-          "Gunakan perintah `.math [level]` untuk memulai.",
+          t("help_usage"),
           "",
-          "*Daftar Level & Inisial:*",
+          t("help_levels"),
           "🟢 `e` / `easy` : 5-15 XP",
           "🟡 `m` / `medium` : 15-30 XP",
           "🔴 `h` / `hard` : 30-60 XP",
           "💀 `i` / `impossible` : 100-200 XP",
           "",
-          "💡 *Contoh:* `.math m` atau `.math h`",
+          t("help_example"),
           "",
-          "⚠️ *Penting:*",
-          "- Harus *Reply/Quote* pesan soal untuk menjawab.",
-          "- Waktu menjawab adalah 30 detik.",
+          t("help_important"),
+          t("help_reply"),
+          t("help_timeout"),
         ];
         return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
       }
 
       if (sessions.has(c.chat)) {
         return await c.reply(
-          { text: "❌ Masih ada soal yang belum terjawab di grup ini!" },
+          { text: t("session_active") },
           { quoted: c.event },
         );
       }
@@ -91,14 +131,14 @@ export default [
         level.xp[0];
 
       const texts = [
-        `🧮 [ Level: *${selectedLevel.toUpperCase()}* ]`,
-        `Berapakah hasil dari *${a} ${op} ${b}*?`,
+        t("question_header", { level: selectedLevel.toUpperCase() }),
+        t("question_query", { a, op, b }),
         "",
-        `⏱️ *Waktu:* 30 detik`,
-        `🎁 *Hadiah:* ${level.xp[0]}-${level.xp[1]} XP`,
+        t("question_time"),
+        t("question_reward", { min: level.xp[0], max: level.xp[1] }),
         "",
-        "📝 *Note:*",
-        "_Reply chat ini untuk menjawab!_",
+        t("question_note"),
+        t("question_reply"),
       ];
 
       const resp = await c.reply(
@@ -110,7 +150,7 @@ export default [
         if (sessions.has(c.chat)) {
           sessions.delete(c.chat);
           c.reply(
-            { text: `⌛ *Waktu habis!*\n\nJawabannya adalah *${answer}*` },
+            { text: t("timeout", { answer }) },
             { quoted: c.event },
           );
         }
@@ -134,7 +174,7 @@ export default [
 
       if (c.stanzaId !== session.questionId) return;
 
-      const userAnswer = parseInt(c.text);
+      const userAnswer = parseInt(c.text, 10);
 
       if (userAnswer === session.answer) {
         clearTimeout(session.timeout);
@@ -149,7 +189,11 @@ export default [
 
         return await c.reply(
           {
-            text: `🎉 *Selamat* @${c.senderJid.split("@")[0]}!\nJawaban kamu benar: *${session.answer}*\n\n🌟 *+${xp} XP*`,
+            text: t("correct", {
+              user: c.senderJid.split("@")[0],
+              answer: session.answer,
+              xp,
+            }),
             mentions: [c.senderJid],
           },
           { quoted: c.event },
@@ -157,7 +201,6 @@ export default [
       } else {
         return await c.react("❌");
       }
-
     },
   },
 ];

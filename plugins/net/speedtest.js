@@ -12,15 +12,45 @@ import { SpeedTestService } from "@ginkohub/speedtest-js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
+import { translate } from "../settings.js";
 
 const service = new SpeedTestService();
 const clientInfo = await service.fetchClientInfo();
 const bestServer = await service.findBestServer();
 
+const t = translate({
+  en: {
+    isp: "ISP",
+    ip: "IP",
+    country: "Country",
+    server: "Server",
+    sponsor: "Sponsor",
+    latency: "Latency",
+    distance: "Distance",
+    testing: "wait for testing...",
+    result: "# Result",
+    download: "Download",
+    upload: "Upload",
+  },
+  id: {
+    isp: "Penyedia Internet",
+    ip: "IP",
+    country: "Negara",
+    server: "Server",
+    sponsor: "Sponsor",
+    latency: "Laten",
+    distance: "Jarak",
+    testing: "tunggu sedang mengetes...",
+    result: "# Hasil",
+    download: "Unduh",
+    upload: "Unggah",
+  },
+});
+
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["speed"],
-  
+
   cat: "net",
   desc: "Speedtest.",
   events: [MESSAGES_UPSERT],
@@ -51,16 +81,16 @@ export default {
       })
       .join(".");
     const texts = [
-      `*ISP*: ${clientInfo.isp}`,
-      `*IP*: ${ipCensored}`,
+      `*${t("isp")}*: ${clientInfo.isp}`,
+      `*${t("ip")}*: ${ipCensored}`,
       "",
-      `*Country*: ${testServer.country}`,
-      `*Server*: ${testServer.name}`,
-      `*Sponsor*: ${testServer.sponsor}`,
-      `*Latency*: ${testServer.latency}ms`,
-      `*Distance*: ${testServer.distance} KM`,
+      `*${t("country")}*: ${testServer.country}`,
+      `*${t("server")}*: ${testServer.name}`,
+      `*${t("sponsor")}*: ${testServer.sponsor}`,
+      `*${t("latency")}*: ${testServer.latency}ms`,
+      `*${t("distance")}*: ${testServer.distance} KM`,
       "",
-      "wait for testing...",
+      t("testing"),
     ];
 
     const resp = await c.reply({ text: texts.join("\n") }, { quoted: c.event });
@@ -82,11 +112,11 @@ export default {
 
     texts.push(
       ...[
-        "# Result",
-        `*Latency*: ${latency}ms`,
+        t("result"),
+        `*${t("latency")}*: ${latency}ms`,
         `*Jitter*: ${jitter}ms`,
-        `*Download*: ${speedDownload.toFixed(2)} Mbps in ${endDownload}`,
-        `*Upload*: ${speedUpload.toFixed(2)} Mbps in ${endUpload}`,
+        `*${t("download")}*: ${speedDownload.toFixed(2)} Mbps in ${endDownload}`,
+        `*${t("upload")}*: ${speedUpload.toFixed(2)} Mbps in ${endUpload}`,
       ],
     );
 

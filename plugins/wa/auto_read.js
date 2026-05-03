@@ -12,11 +12,26 @@ import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { delay, randomNumber } from "../../src/tools.js";
-import { settings } from "../settings.js";
+import { settings, translate } from "../settings.js";
 
 const skipTypes = ["senderKeyDistributionMessage"];
 
 const AUTO_READ_KEY = "auto_read";
+
+const t = translate({
+  en: {
+    status: "📖 *Auto read status* : *{val}*",
+    nb: "NB :",
+    deactivating: " `{pattern}-` _to deactivating_",
+    activating: " `{pattern}+` _to activating_",
+  },
+  id: {
+    status: "📖 *Status baca otomatis* : *{val}*",
+    nb: "Catatan :",
+    deactivating: " `{pattern}-` _untuk menonaktifkan_",
+    activating: " `{pattern}+` _untuk mengaktifkan_",
+  },
+});
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
@@ -67,13 +82,13 @@ export default [
       let set = settings.get(AUTO_READ_KEY);
       if (!set) set = false;
       const texts = [];
-      texts.push(`📖 *Auto read status* : *${set}*`);
+      texts.push(t("status", { val: set }));
 
       texts.push(
         "",
-        "NB :",
-        ` \`${pattern}-\` _to deactivating_`,
-        ` \`${pattern}+\` _to activating_`,
+        t("nb"),
+        t("deactivating", { pattern }),
+        t("activating", { pattern }),
       );
       await c.reply({ text: texts.join("\n") }, { quoted: c.event });
     },

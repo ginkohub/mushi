@@ -10,12 +10,52 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    header: "*📃 User Information*",
+    name: "Name",
+    jid: "JID",
+    lid: "LID",
+    roles: "Roles",
+    level: "Level",
+    xp: "XP",
+    status: "Status",
+    banned: "Banned (at {val})",
+    active: "Active",
+    added: "Added",
+    no_user: "No user specified. Tag or quote someone.",
+    no_role: "Please specify a role using -r or --role",
+    invalid_role: "Invalid role. Available roles: {val}",
+    added_role: "Added role *{role}* to {count} user(s).",
+    removed_role: "Removed role *{role}* from {count} user(s).",
+  },
+  id: {
+    header: "*📃 Informasi User*",
+    name: "Nama",
+    jid: "JID",
+    lid: "LID",
+    roles: "Peran",
+    level: "Level",
+    xp: "XP",
+    status: "Status",
+    banned: "Diblokir (pada {val})",
+    active: "Aktif",
+    added: "Ditambahkan",
+    no_user: "Tidak ada user yang ditentukan. Tag atau quote seseorang.",
+    no_role: "Silakan tentukan peran menggunakan -r atau --role",
+    invalid_role: "Peran tidak valid. Peran tersedia: {val}",
+    added_role: "Menambahkan peran *{role}* ke {count} user.",
+    removed_role: "Menghapus peran *{role}* dari {count} user.",
+  },
+});
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
     cmd: ["user"],
-    
+
     cat: "user",
     tags: ["user", "role"],
     desc: "Get user info and sync with current data",
@@ -30,7 +70,7 @@ export default [
           targets[i] = await c.LIDToPN(targets[i]);
       }
 
-      const texts = ["*📃 User Information*", ""];
+      const texts = [t("header"), ""];
       for (const jid of targets) {
         const name = c.getName(jid);
         const updateData = { name, jid };
@@ -49,16 +89,17 @@ export default [
         const added = new Date(user.addedAt).toLocaleString();
 
         texts.push(
-          `*Name*: ${user.name || "N/A"}`,
-          `*JID*: ${jid}`
+          `*${t("name")}*: ${user.name || "N/A"}`,
+          `*${t("jid")}*: ${jid}`,
         );
-        if (user.lid) texts.push(`*LID*: ${user.lid}`);
+        if (user.lid) texts.push(`*${t("lid")}*: ${user.lid}`);
         texts.push(
-          `*Roles*: ${roles}`,
-          `*Level*: ${user.level}`,
-          `*XP*: ${user.xp}`,
-          `*Status*: ${user.banned ? `Banned (at ${new Date(user.bannedAt).toLocaleString()})` : "Active"}`,
-          `*Added*: ${added}`, ""
+          `*${t("roles")}*: ${roles}`,
+          `*${t("level")}*: ${user.level}`,
+          `*${t("xp")}*: ${user.xp}`,
+          `*${t("status")}*: ${user.banned ? t("banned", { val: new Date(user.bannedAt).toLocaleString() }) : t("active")}`,
+          `*${t("added")}*: ${added}`,
+          "",
         );
       }
 
@@ -67,7 +108,7 @@ export default [
   },
   {
     cmd: ["role+"],
-    
+
     cat: "user",
     tags: ["user", "role"],
     desc: "Add role to quoted or mentioned user",
@@ -78,7 +119,7 @@ export default [
       const jids = c.parseJIDs();
       if (jids.length === 0)
         return await c.reply({
-          text: "No user specified. Tag or quote someone.",
+          text: t("no_user"),
         });
 
       for (let i = 0; i < jids.length; i++) {
@@ -88,12 +129,12 @@ export default [
       const role = c.argv?.r ?? c.argv?.role;
       if (!role)
         return await c.reply({
-          text: "Please specify a role using -r or --role",
+          text: t("no_role"),
         });
 
       if (!Object.values(Role).includes(role)) {
         return await c.reply({
-          text: `Invalid role. Available roles: ${Object.values(Role).join(", ")}`,
+          text: t("invalid_role", { val: Object.values(Role).join(", ") }),
         });
       }
 
@@ -106,13 +147,13 @@ export default [
       }
 
       await c.reply({
-        text: `Added role *${role}* to ${jids.length} user(s).`,
+        text: t("added_role", { role, count: jids.length }),
       });
     },
   },
   {
     cmd: ["role-"],
-    
+
     cat: "user",
     tags: ["user", "role"],
     desc: "Remove role from quoted or mentioned user",
@@ -123,7 +164,7 @@ export default [
       const jids = c.parseJIDs();
       if (jids.length === 0)
         return await c.reply({
-          text: "No user specified. Tag or quote someone.",
+          text: t("no_user"),
         });
 
       for (let i = 0; i < jids.length; i++) {
@@ -133,7 +174,7 @@ export default [
       const role = c.argv?.r ?? c.argv?.role;
       if (!role)
         return await c.reply({
-          text: "Please specify a role using -r or --role",
+          text: t("no_role"),
         });
 
       for (const jid of jids) {
@@ -146,7 +187,7 @@ export default [
       }
 
       await c.reply({
-        text: `Removed role *${role}* from ${jids.length} user(s).`,
+        text: t("removed_role", { role, count: jids.length }),
       });
     },
   },

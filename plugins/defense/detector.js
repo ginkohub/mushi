@@ -10,7 +10,38 @@
 
 import { Events } from "../../src/const.js";
 import pen from "../../src/pen.js";
-import { settings } from "../settings.js";
+import { settings, translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    log_msg: "Log : {user} in {chat}, Reason : {reason}",
+    block_try: "Try to block : {user}",
+    block_msg: "Block : {user} in {chat}, Reason : {reason}",
+    delete_try: "Try to delete for all : {id} from {user} in {chat}, Reason : {reason}",
+    delete_not_possible: "Not possible to delete : {possible} {id}",
+    delete_for_me: "Delete for me : {id} from {user} in {chat}, Reason : {reason}",
+    kick_try: "Try to kick : {user} from {chat}, Reason : {reason}",
+    kick_not_possible: "Not possible to kick : {possible} {user}",
+    defense_log: "Defense : {event} {suspect} {reason}",
+    reason_status: "Status message with not allowed type",
+    reason_mentions: "Too many mentioned jids",
+    reason_overload: "Overloaded text",
+  },
+  id: {
+    log_msg: "Log : {user} di {chat}, Alasan : {reason}",
+    block_try: "Mencoba memblokir : {user}",
+    block_msg: "Blokir : {user} di {chat}, Alasan : {reason}",
+    delete_try: "Mencoba menghapus untuk semua : {id} dari {user} di {chat}, Alasan : {reason}",
+    delete_not_possible: "Tidak mungkin menghapus : {possible} {id}",
+    delete_for_me: "Hapus untuk saya : {id} dari {user} di {chat}, Alasan : {reason}",
+    kick_try: "Mencoba mengeluarkan : {user} dari {chat}, Alasan : {reason}",
+    kick_not_possible: "Tidak mungkin mengeluarkan : {possible} {user}",
+    defense_log: "Pertahanan : {event} {suspect} {reason}",
+    reason_status: "Pesan status dengan tipe yang tidak diizinkan",
+    reason_mentions: "Terlalu banyak penyebutan JID",
+    reason_overload: "Teks berlebihan (overload)",
+  },
+});
 
 export const allowed = [
   "extendedTextMessage",
@@ -42,7 +73,11 @@ export const ActionMap = {
     const doActionLog = DO_ALL ?? settings.get(Actions.LOG);
     if (typeof doActionLog === "undefined" || doActionLog)
       pen.Warn(
-        `Log : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `,
+        t("log_msg", {
+          user: `${c.senderName} (${c.sender})`,
+          chat: c.chatName,
+          reason: r.reason,
+        }),
       );
 
     const doAction = DO_ALL ?? settings.get(Actions.SEND_SAMPLE);
@@ -59,10 +94,14 @@ export const ActionMap = {
   block: async (c, r) => {
     const doAction = DO_ALL ?? settings.get(Actions.BLOCK);
     if (doAction) {
-      pen.Warn(`Try to block : ${c.senderName} (${c.sender})`);
+      pen.Warn(t("block_try", { user: `${c.senderName} (${c.sender})` }));
       if (!c.handler().isBlocked(c.sender)) {
         pen.Warn(
-          `Block : ${c.senderName} (${c.sender}) in ${c.chatName}, Reason : ${r.reason} `,
+          t("block_msg", {
+            user: `${c.senderName} (${c.sender})`,
+            chat: c.chatName,
+            reason: r.reason,
+          }),
         );
         return await c.handler().updateBlock(c.sender, "block");
       }
@@ -74,7 +113,12 @@ export const ActionMap = {
     if (doAction) {
       try {
         pen.Warn(
-          `Try to delete for all : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `,
+          t("delete_try", {
+            id: c.id,
+            user: c.senderName,
+            chat: c.chatName,
+            reason: r.reason,
+          }),
         );
         let possible = false;
         if (c.isGroup) {
@@ -88,7 +132,7 @@ export const ActionMap = {
             ) ?? false;
         }
         if (possible) return await c.reply({ delete: c.key });
-        pen.Warn(`Not possible to delete : ${possible} ${c.id} `);
+        pen.Warn(t("delete_not_possible", { possible, id: c.id }));
       } catch (e) {
         pen.Error(e);
       }
@@ -99,7 +143,12 @@ export const ActionMap = {
     const doAction = DO_ALL ?? settings.get(Actions.DELETE_FOR_ME);
     if (doAction) {
       pen.Warn(
-        `Delete for me : ${c.id} from ${c.senderName} in ${c.chatName}, Reason : ${r.reason} `,
+        t("delete_for_me", {
+          id: c.id,
+          user: c.senderName,
+          chat: c.chatName,
+          reason: r.reason,
+        }),
       );
       return await c?.chatModify(
         {
@@ -118,7 +167,7 @@ export const ActionMap = {
     const doAction = DO_ALL ?? settings.get(Actions.KICK_FROM_GROUP);
     if (doAction) {
       pen.Warn(
-        `Try to kick : ${c.senderName} (${c.sender}) from ${c.chatName}, Reason : ${r.reason} `,
+        t("kick_try", { user: `${c.senderName} (${c.sender})`, chat: c.chatName, reason: r.reason }),
       );
       try {
         let possible = false;
@@ -137,7 +186,7 @@ export const ActionMap = {
             .sock()
             .groupParticipantsUpdate(c.chat, [c.sender], "remove");
         pen.Warn(
-          `Not possible to kick : ${possible} ${c.senderName} (${c.sender}) `,
+          t("kick_not_possible", { possible, user: `${c.senderName} (${c.sender})` }),
         );
       } catch (e) {
         pen.Error(e);
@@ -195,7 +244,7 @@ export default [
   {
     desc: "Defense system",
     events: [Events.MESSAGES_UPSERT],
-    midware: (c) => ({ success: settings.get(`defense`) && !c.fromMe }),
+    midware: (c) => ({ success: settings.get("defense") && !c.fromMe }),
     timeout: 0,
     exec: async (c) => {
       let detect = new Result({ suspect: false });
@@ -209,7 +258,7 @@ export default [
       if (!detect.suspect) {
         return;
       }
-      pen.Warn("Defense :", c.eventName, detect.suspect, detect.reason);
+      pen.Warn(t("defense_log", { event: c.eventName, suspect: detect.suspect, reason: detect.reason }));
       try {
         await detect.process(c);
       } catch (e) {
@@ -236,7 +285,7 @@ const listDetectors = [
 
     return {
       suspect: c.isStatus && !allow?.includes(c.type) && c.type,
-      reason: "Status message with not allowed type",
+      reason: t("reason_status"),
       data: c,
       actions: [Actions.LOG, Actions.BLOCK],
     };
@@ -245,7 +294,7 @@ const listDetectors = [
   (c) => {
     return {
       suspect: c.mentionedJid?.length > 1024,
-      reason: "Too many mentioned jids",
+      reason: t("reason_mentions"),
       data: c,
       actions: [
         Actions.LOG,
@@ -275,7 +324,7 @@ const listDetectors = [
     }
     return {
       suspect: suspect,
-      reason: "Overloaded text",
+      reason: t("reason_overload"),
       data: c,
       actions: [
         Actions.LOG,

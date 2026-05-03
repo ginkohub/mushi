@@ -11,6 +11,18 @@
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
 import { formatElapse } from "../../src/tools.js";
+import { translate } from "../settings.js";
+
+const t = translate({
+  en: {
+    late: "*⏱️ Latency:* {val}",
+    resp: "*⏱️ Response:* {val}",
+  },
+  id: {
+    late: "*⏱️ Laten:* {val}",
+    resp: "*⏱️ Respon:* {val}",
+  },
+});
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -25,14 +37,14 @@ export default {
     const current = Date.now();
     let latency = current - c.timestamp;
 
-    let text = `*⏱️ Late:* ${formatElapse(latency)}`;
+    let text = t("late", { val: formatElapse(latency) });
 
     const beforeSend = Date.now();
     const resp = await c.reply({ text }, { quoted: c.event });
     const afterSend = Date.now();
 
     latency = afterSend - beforeSend;
-    text += `\n*⏱️ Resp:* ${formatElapse(latency)}`;
+    text += `\n${t("resp", { val: formatElapse(latency) })}`;
     return await c.reply({
       text: text,
       edit: resp.key,
