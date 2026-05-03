@@ -8,25 +8,28 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Role } from "../../src/roles.js";
+import { levelToName, Role } from "../../src/roles.js";
 import { formatElapse } from "../../src/tools.js";
-import { translate } from "../settings.js";
+import { getLang, translate } from "../settings.js";
 
 const t = translate({
   en: {
     no_cmd: "No command found :",
     detail: "Detail of",
     cmds: "Cmds",
-    no_prefix: "NoPrefix",
+    no_prefix: "Prefix",
     hidden: "Hidden",
     timeout: "Timeout",
-    disabled: "Disabled",
+    disabled: "Active",
     cat: "Cat",
+    tags: "Tags",
     desc: "Desc",
     path: "Path",
+    roles: "Permissions",
     available: "*# Available menu*",
     uptime: "*Uptime:*",
     prefix: "*Prefix :*",
+    lang: "*Lang :*",
     footer: "{cmd} cmd, {listener} listener & {disabled} disabled",
     ad_title: "Mushi Bot",
     ad_body: "Simple a multi porpuses whatsapp bot.",
@@ -35,16 +38,19 @@ const t = translate({
     no_cmd: "Perintah tidak ditemukan :",
     detail: "Detail dari",
     cmds: "Perintah",
-    no_prefix: "Tanpa Awalan",
+    no_prefix: "Awalan",
     hidden: "Tersembunyi",
     timeout: "Waktu Habis",
-    disabled: "Dinonaktifkan",
+    disabled: "Aktif",
     cat: "Kategori",
+    tags: "Penanda",
     desc: "Deskripsi",
     path: "Lokasi",
+    roles: "Izin",
     available: "*# Menu yang tersedia*",
     uptime: "*Waktu Aktif:*",
     prefix: "*Awalan :*",
+    lang: "*Bahasa :*",
     footer: "{cmd} perintah, {listener} pendengar & {disabled} dinonaktifkan",
     ad_title: "Mushi Bot",
     ad_body: "Bot whatsapp sederhana dengan banyak fungsi.",
@@ -66,46 +72,56 @@ const emoMap = {
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
-  cmd: "menu",
-  
+  cmd: ["menu", "menu?"],
   cat: "info",
   desc: "Show the menu of commands",
   roles: [Role.GUEST],
   exec: async (c) => {
     const prefix = c.pattern[0];
+    const isDetail = c.pattern.endsWith("?");
     const texts = [];
     const withDesc = c.argv?.desc || c.argv?.d;
+    const userKeys = c.args?.toLowerCase().split(/\s+/).filter(Boolean);
 
-    if (c.args?.length > 0 && !withDesc) {
-      /** @type {Map<string, import('../../src/plugin.js').Plugin>} */
-      const plugins = new Map();
-      const userKeys = c.args?.toLowerCase().split(" ");
+    /** @type {Map<string, import('../../src/plugin.js').Plugin>} */
+    const plugins = new Map();
 
-      if (userKeys) {
-        c.handler()?.plugins?.forEach((p, k) => {
-          if (!p?.cmd) return;
+    if (userKeys?.length > 0) {
+      c.handler()?.plugins?.forEach((p, k) => {
+        if (!p?.cmd) return;
 
-          if (Array.isArray(p?.cmd)) {
-            p.cmd.forEach((x) => {
-              if (userKeys.includes(x.toLowerCase())) plugins.set(k, p);
-            });
-          } else if (typeof p.cmd === "string") {
-            if (userKeys.includes(p?.cmd?.toLowerCase())) plugins.set(k, p);
-          }
-        });
-      } else {
-        texts.push(t("no_cmd"), c.args);
+        const searchable = [
+          ...(Array.isArray(p.cmd) ? p.cmd : [p.cmd]),
+          ...(Array.isArray(p.tags) ? p.tags : []),
+          p.cat,
+        ]
+          .filter(Boolean)
+          .map((v) => v.toLowerCase());
+
+        const matched = userKeys.some((key) =>
+          searchable.some((s) => s.includes(key)),
+        );
+
+        if (matched) plugins.set(k, p);
+      });
+
+      if (plugins.size === 0) {
+        texts.push(`${t("no_cmd")} ${c.args}`);
       }
+    }
 
-      for (const [k, p] of plugins?.entries() ?? []) {
+    if (isDetail && plugins.size > 0) {
+      for (const [k, p] of plugins.entries()) {
         texts.push(
           `${t("detail")} \`${k}\``,
           `- ${t("cmds")} : ${Array.isArray(p.cmd) ? p.cmd?.map((c) => `\`${prefix + c}\``).join(", ") : `\`${prefix + p.cmd}\``}`,
-          `- ${t("no_prefix")} : ${p.noPrefix ? "✅" : "❌"}`,
+          `- ${t("no_prefix")} : ${!p.noPrefix ? "✅" : "❌"}`,
           `- ${t("hidden")} : ${p.hidden ? "✅" : "❌"}`,
+          `- ${t("disabled")} : ${!p.disabled ? "✅" : "❌"}`,
           `- ${t("timeout")} : ${p.timeout ? p.timeout : "∞"}`,
-          `- ${t("disabled")} : ${p.disabled ? "✅" : "❌"}`,
           `- ${t("cat")}  : ${p.cat}`,
+          `- ${t("tags")}  : ${p.tags?.map((t) => t.toLowerCase()).join(", ")}`,
+          `- ${t("roles")} : ${p.roles?.map((r) => (typeof r === "number" ? levelToName(r) : r)).join(", ")}`,
           `- ${t("desc")} : ${p.desc}`,
           `- ${t("path")} : ${p.location}`,
           "",
@@ -119,16 +135,23 @@ export default {
         "",
         `${t("uptime")} ${formatElapse(since, " ")}`,
         `${t("prefix")} ` +
-        c.handler()
-          ?.prefix?.map((p) => `\`${p}\``)
-          .join(", "),
+          c
+            .handler()
+            ?.prefix?.map((p) => `\`${p}\``)
+            .join(", "),
+        `${t("lang")} ${getLang()}`,
       );
 
       const categories = new Map();
       let cmdCount = 0;
+
       for (const dataCMD of c.handler()?.cmds?.values() ?? []) {
         const p = c.handler()?.plugins?.get(dataCMD?.id);
         if (!p || p?.hidden) continue;
+
+        // If searching, filter the full list
+        if (userKeys?.length > 0 && !plugins.has(dataCMD.id)) continue;
+
         if (!categories.has(p.cat)) categories.set(p.cat, new Map());
 
         const cat = categories.get(p.cat);
