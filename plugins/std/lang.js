@@ -42,23 +42,23 @@ export default {
     const available = ["en", "id"];
     const current = getLang();
 
-    if (!lang) {
-      return await c.reply(
-        { text: `${t("current", { lang: current })}\n\n${t("usage", { cmd: c.pattern })}` },
-        { quoted: c.event },
-      );
-    }
+    if (!lang || !available.includes(lang)) {
+      const text = !lang
+        ? `${t("current", { lang: current })}\n\n${t("usage", { cmd: c.pattern })}`
+        : t("invalid");
 
-    if (!available.includes(lang)) {
       return await c.reply(
-        { text: t("invalid") },
+        { text },
         { quoted: c.event },
       );
     }
 
     setLang(lang);
+
+    const successText = t("success", { lang });
+
     await c.reply(
-      { text: t("success", { lang }) },
+      { text: successText },
       { quoted: c.event },
     );
   },
