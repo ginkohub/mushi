@@ -9,7 +9,7 @@
  */
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
+import { getRoleBadge, Role } from "../../src/roles.js";
 import { translate } from "../settings.js";
 
 const t = translate({
@@ -25,6 +25,7 @@ const t = translate({
     banned: "Banned (at {val})",
     active: "Active",
     added: "Added",
+    stats: "Statistics",
     no_user: "No user specified. Tag or quote someone.",
     no_role: "Please specify a role using -r or --role",
     invalid_role: "Invalid role. Available roles: {val}",
@@ -43,6 +44,7 @@ const t = translate({
     banned: "Diblokir (pada {val})",
     active: "Aktif",
     added: "Ditambahkan",
+    stats: "Statistik",
     no_user: "Tidak ada user yang ditentukan. Tag atau quote seseorang.",
     no_role: "Silakan tentukan peran menggunakan -r atau --role",
     invalid_role: "Peran tidak valid. Peran tersedia: {val}",
@@ -85,7 +87,9 @@ export default [
         const user = c.handler().userManager.updateUser(jid, updateData);
         if (!user) continue;
 
-        const roles = user.roles.join(", ");
+        const roles = user.roles
+          .map((r) => `${getRoleBadge(r)} ${r}`)
+          .join(", ");
         const added = new Date(user.addedAt).toLocaleString();
 
         texts.push(
@@ -99,8 +103,16 @@ export default [
           `*${t("xp")}*: ${user.xp}`,
           `*${t("status")}*: ${user.banned ? t("banned", { val: new Date(user.bannedAt).toLocaleString() }) : t("active")}`,
           `*${t("added")}*: ${added}`,
-          "",
         );
+
+        if (user.stats && Object.keys(user.stats).length > 0) {
+          texts.push(`\n*📊 ${t("stats")}*`);
+          for (const [type, count] of Object.entries(user.stats)) {
+            texts.push(`- ${type.replaceAll("Message", "")}: ${count}`);
+          }
+        }
+
+        texts.push("");
       }
 
       await c.reply({ text: texts.join("\n").trim() }, { quoted: c.event });
