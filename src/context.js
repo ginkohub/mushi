@@ -305,6 +305,9 @@ export class Ctx {
 
     /** @returns {string} */
     this.user = () => this.handler().userManager?.getUser(this.senderJid);
+
+    /** @returns {import('./chat_manager.js').Chat} */
+    this.chatData = () => this.handler().chatManager?.getChat(this.chat);
   }
 
   /**
