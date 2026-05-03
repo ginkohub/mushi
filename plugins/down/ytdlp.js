@@ -15,6 +15,28 @@ import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { storeMsg } from "../../src/settings.js";
+import { translate } from "../../src/translate.js";
+
+const t = translate({
+  en: {
+    author: "Author",
+    duration: "Duration",
+    views: "Views",
+    unknown: "Unknown",
+    na: "N/A",
+    not_retrieved: "Could not retrieve info for: {val}",
+    failed: "Download failed for: {val}",
+  },
+  id: {
+    author: "Penulis",
+    duration: "Durasi",
+    views: "Dilihat",
+    unknown: "Tidak diketahui",
+    na: "N/A",
+    not_retrieved: "Tidak dapat mengambil info untuk: {val}",
+    failed: "Gagal mengunduh: {val}",
+  },
+});
 
 const BIN_DIR = resolve("./bin");
 const YTDLP_PATHS = [
@@ -66,15 +88,16 @@ getYT().catch((e) => pen.Error("yt-dlp pre-initialization failed:", e));
 /**
  * Formats a video caption with metadata.
  * @param {any} video
+ * @param {import('../../src/context.js').Ctx} c
  * @returns {string}
  */
-function formatCaption(video) {
+function formatCaption(video, c) {
   const parts = [
     `*${video.title}*`,
     "",
-    `*Author:* ${video.uploader || "Unknown"}`,
-    `*Duration:* ${video.duration_string || "N/A"}`,
-    `*Views:* ${video.view_count?.toLocaleString("en-US") ?? "N/A"}`,
+    `*${t("author", {}, c)}:* ${video.uploader || t("unknown", {}, c)}`,
+    `*${t("duration", {}, c)}:* ${video.duration_string || t("na", {}, c)}`,
+    `*${t("views", {}, c)}:* ${video.view_count?.toLocaleString(c.user()?.lang || "en-US") ?? t("na", {}, c)}`,
   ];
   return parts.join("\n");
 }
@@ -112,6 +135,7 @@ export default {
           const video = await ytDlp.getVideoInfo(link);
           if (!video?.id) {
             pen.Warn(`Could not retrieve info for: ${link}`);
+            c.reply({ text: t("not_retrieved", { val: link }, c) });
             continue;
           }
 
@@ -124,6 +148,7 @@ export default {
           const buffer = await downloadVideo(ytDlp, link);
           if (!buffer || buffer.length === 0) {
             pen.Error(`Download failed for: ${video.title}`);
+            c.reply({ text: t("failed", { val: video.title }, c) });
             continue;
           }
 
@@ -132,7 +157,7 @@ export default {
               video: buffer,
               mimetype: "video/mp4",
               fileName: `${video.title}.mp4`,
-              caption: formatCaption(video),
+              caption: formatCaption(video, c),
             },
             { quoted: c.event },
           );
