@@ -192,7 +192,7 @@ export default [
       )
         return await c.reply({ text: t("admin_only", {}, c) });
 
-      const metadata = await c.handler().getGroupMetadata(c.chat);
+      const metadata = c.handler().getGroupMetadata(c.chat);
       const jids = metadata.participants.map((p) => p.id);
       const text = c.args || "Hello everyone!";
 
