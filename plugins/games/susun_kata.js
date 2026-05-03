@@ -34,7 +34,8 @@ const t = translate({
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} riddles.",
     sync_failed: "❌ *Sync Failed:* {error}",
-    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
   },
   id: {
     help_title: "🧩 *SUSUN KATA*",
@@ -45,7 +46,8 @@ const t = translate({
     help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
     help_admin: "⚙️ *Admin:* `{prefix}sk.update` untuk sinkronisasi soal.",
     session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
-    no_data: "❌ Data soal tidak ditemukan! Gunakan `{prefix}sk.update` (Admin).",
+    no_data:
+      "❌ Data soal tidak ditemukan! Gunakan `{prefix}sk.update` (Admin).",
     question_header: "🧩 *SUSUN KATA*",
     question_time: "⏱️ *Waktu:* 45 detik",
     question_reward: "🎁 *Hadiah:* 10-30 XP",
@@ -55,11 +57,13 @@ const t = translate({
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} soal.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
-    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
   },
 });
 
-const JSON_URL = "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/susunkata.json";
+const JSON_URL =
+  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/susunkata.json";
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
 const sessions = new Map();
@@ -107,7 +111,10 @@ export default [
           "",
           t("help_admin", { prefix: c.prefix }),
         ];
-        return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
+        return await c.reply(
+          { text: helpText.join("\n") },
+          { quoted: c.event },
+        );
       }
 
       if (sessions.has(c.chat)) {

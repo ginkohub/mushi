@@ -30,7 +30,6 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["lang", "set.lang"],
-
   cat: "system",
   tags: ["system"],
   desc: "Set the bot language.",
@@ -47,19 +46,13 @@ export default {
         ? `${t("current", { lang: current })}\n\n${t("usage", { cmd: c.pattern })}`
         : t("invalid");
 
-      return await c.reply(
-        { text },
-        { quoted: c.event },
-      );
+      return await c.reply({ text }, { quoted: c.event });
     }
 
     setLang(lang);
 
     const successText = t("success", { lang });
 
-    await c.reply(
-      { text: successText },
-      { quoted: c.event },
-    );
+    await c.reply({ text: successText }, { quoted: c.event });
   },
 };

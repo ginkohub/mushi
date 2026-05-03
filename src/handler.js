@@ -493,41 +493,40 @@ export class Handler {
       await ctx.init();
       await this.updateData(ctx);
 
-      const allTasks = Array.from(this.listens.values()).map(
-        async (lsid) => {
-          /** @type {import('./plugin.js').Plugin|undefined} */
-          const listen = this.plugins.get(lsid);
-          if (!listen) return;
-          const ctxClone = ctx.clone();
+      const allTasks = Array.from(this.listens.values()).map(async (lsid) => {
+        /** @type {import('./plugin.js').Plugin|undefined} */
+        const listen = this.plugins.get(lsid);
+        if (!listen) return;
+        const ctxClone = ctx.clone();
 
-          try {
-            ctxClone.plugin = () => listen;
+        try {
+          ctxClone.plugin = () => listen;
 
-            /* Check rules and midware before exec */
-            const reason = await listen.check(ctxClone);
-            if (!reason?.success) {
-              if (listen?.final) await listen.final(ctxClone, reason);
-              return;
-            }
-
-            /* Execute */
-            if (listen.exec) await listen.exec(ctxClone);
-          } catch (e) {
-            this.pen.Error("handle-listen", e);
-            if (listen?.final)
-              await listen.final(
-                ctxClone,
-                new Reason({
-                  success: false,
-                  code: "handle-listen-error",
-                  author: import.meta.url,
-                  message: e.message,
-                }),
-              );
-          } finally {
-            ctxClone.plugin = null;
+          /* Check rules and midware before exec */
+          const reason = await listen.check(ctxClone);
+          if (!reason?.success) {
+            if (listen?.final) await listen.final(ctxClone, reason);
+            return;
           }
-        });
+
+          /* Execute */
+          if (listen.exec) await listen.exec(ctxClone);
+        } catch (e) {
+          this.pen.Error("handle-listen", e);
+          if (listen?.final)
+            await listen.final(
+              ctxClone,
+              new Reason({
+                success: false,
+                code: "handle-listen-error",
+                author: import.meta.url,
+                message: e.message,
+              }),
+            );
+        } finally {
+          ctxClone.plugin = null;
+        }
+      });
 
       /* Handle commands */
       let cmdTask = null;
@@ -544,7 +543,8 @@ export class Handler {
               /* Check rules and midware before exec */
               const reason = await data?.plugin?.check(ctxClone);
               if (!reason?.success) {
-                if (data?.plugin?.final) await data?.plugin.final(ctxClone, reason);
+                if (data?.plugin?.final)
+                  await data?.plugin.final(ctxClone, reason);
                 return;
               }
 

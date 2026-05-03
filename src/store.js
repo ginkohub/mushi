@@ -8,8 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import fs from "node:fs/promises";
 import pen from "./pen.js";
 import { isBun, watchDir } from "./tools.js";
 
@@ -17,7 +17,7 @@ import { isBun, watchDir } from "./tools.js";
 const activeStore = new Set();
 
 async function cleanUp() {
-  pen.Debug('Cleaning up active store store');
+  pen.Debug("Cleaning up active store store");
   for (const store of activeStore) {
     if (store instanceof StoreJson && store.saveTimeout) await store.flush();
   }
@@ -25,8 +25,8 @@ async function cleanUp() {
 }
 
 /* Registering clean up for exist */
-process.on('SIGINT', cleanUp);
-process.on('SIGTERM', cleanUp);
+process.on("SIGINT", cleanUp);
+process.on("SIGTERM", cleanUp);
 
 /**
  * @class StoreJson
@@ -271,7 +271,7 @@ export class StoreSQLite {
     );
   }
 
-  save() { }
+  save() {}
 
   /**
    * Set data

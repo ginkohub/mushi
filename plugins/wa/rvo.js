@@ -16,7 +16,6 @@ export default {
   cmd: ["rvo", "readviewonce"],
   cat: "whatsapp",
   desc: "Read View Once messages",
-  
   roles: [Role.USER],
   events: [MESSAGES_UPSERT],
 

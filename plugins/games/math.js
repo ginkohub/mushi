@@ -29,7 +29,8 @@ const t = translate({
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\n\nThe answer was *{answer}*",
-    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
   },
   id: {
     help_title: "🧮 *MATH GAME - CARA BERMAIN*",
@@ -47,7 +48,8 @@ const t = translate({
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\n\nJawabannya adalah *{answer}*",
-    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
   },
 });
 
@@ -99,7 +101,10 @@ export default [
           t("help_reply"),
           t("help_timeout"),
         ];
-        return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
+        return await c.reply(
+          { text: helpText.join("\n") },
+          { quoted: c.event },
+        );
       }
 
       if (sessions.has(c.chat)) {
@@ -149,10 +154,7 @@ export default [
       const timeout = setTimeout(() => {
         if (sessions.has(c.chat)) {
           sessions.delete(c.chat);
-          c.reply(
-            { text: t("timeout", { answer }) },
-            { quoted: c.event },
-          );
+          c.reply({ text: t("timeout", { answer }) }, { quoted: c.event });
         }
       }, 30000);
 

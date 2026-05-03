@@ -39,7 +39,7 @@ const TextExtractors = {
   interactiveResponseMessage: (m) => {
     const body = JSON.parse(m.nativeFlowResponseMessage?.paramsJson || "{}");
     return body.id || m.nativeFlowResponseMessage?.selectedDisplayText;
-  }
+  },
 };
 
 /**
@@ -58,18 +58,18 @@ export function extractTextContext(m) {
     return resp;
   }
 
-  const type = Object.keys(m).find(key => !skipMessageTypes.includes(key));
+  const type = Object.keys(m).find((key) => !skipMessageTypes.includes(key));
   if (!type) return resp;
 
   resp.type = type;
   const content = m[type];
 
-  if (typeof content === 'string') {
+  if (typeof content === "string") {
     resp.text = content;
   } else if (TextExtractors[type]) {
-    resp.text = TextExtractors[type](content) || '';
+    resp.text = TextExtractors[type](content) || "";
   } else if (content?.text || content?.caption) {
-    resp.text = content.text || content.caption || '';
+    resp.text = content.text || content.caption || "";
   }
 
   resp.contextInfo = content.contextInfo || m.contextInfo;
@@ -106,7 +106,7 @@ export class Ctx {
     this.plugin = () => null;
 
     /** @type {string} */
-    this.prefix = '';
+    this.prefix = "";
 
     /** @type {number} */
     this.timestamp = this.event?.messageTimestamp
@@ -515,7 +515,8 @@ export class Ctx {
       for (const match of matches) {
         const cleanNumber = match[1].replace(/[^\d]/g, "");
         if (cleanNumber.length > 6 && cleanNumber.length < 16) {
-          const suffix = this.addressingMode === "lid" ? "@lid" : S_WHATSAPP_NET;
+          const suffix =
+            this.addressingMode === "lid" ? "@lid" : S_WHATSAPP_NET;
           jids.push(`${cleanNumber}${suffix}`);
         }
       }
@@ -524,6 +525,4 @@ export class Ctx {
     /* remove duplicate in jids */
     return [...new Set(jids)];
   }
-
-
 }

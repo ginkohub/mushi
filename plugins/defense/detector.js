@@ -17,9 +17,11 @@ const t = translate({
     log_msg: "Log : {user} in {chat}, Reason : {reason}",
     block_try: "Try to block : {user}",
     block_msg: "Block : {user} in {chat}, Reason : {reason}",
-    delete_try: "Try to delete for all : {id} from {user} in {chat}, Reason : {reason}",
+    delete_try:
+      "Try to delete for all : {id} from {user} in {chat}, Reason : {reason}",
     delete_not_possible: "Not possible to delete : {possible} {id}",
-    delete_for_me: "Delete for me : {id} from {user} in {chat}, Reason : {reason}",
+    delete_for_me:
+      "Delete for me : {id} from {user} in {chat}, Reason : {reason}",
     kick_try: "Try to kick : {user} from {chat}, Reason : {reason}",
     kick_not_possible: "Not possible to kick : {possible} {user}",
     defense_log: "Defense : {event} {suspect} {reason}",
@@ -31,9 +33,11 @@ const t = translate({
     log_msg: "Log : {user} di {chat}, Alasan : {reason}",
     block_try: "Mencoba memblokir : {user}",
     block_msg: "Blokir : {user} di {chat}, Alasan : {reason}",
-    delete_try: "Mencoba menghapus untuk semua : {id} dari {user} di {chat}, Alasan : {reason}",
+    delete_try:
+      "Mencoba menghapus untuk semua : {id} dari {user} di {chat}, Alasan : {reason}",
     delete_not_possible: "Tidak mungkin menghapus : {possible} {id}",
-    delete_for_me: "Hapus untuk saya : {id} dari {user} di {chat}, Alasan : {reason}",
+    delete_for_me:
+      "Hapus untuk saya : {id} dari {user} di {chat}, Alasan : {reason}",
     kick_try: "Mencoba mengeluarkan : {user} dari {chat}, Alasan : {reason}",
     kick_not_possible: "Tidak mungkin mengeluarkan : {possible} {user}",
     defense_log: "Pertahanan : {event} {suspect} {reason}",
@@ -167,7 +171,11 @@ export const ActionMap = {
     const doAction = DO_ALL ?? settings.get(Actions.KICK_FROM_GROUP);
     if (doAction) {
       pen.Warn(
-        t("kick_try", { user: `${c.senderName} (${c.sender})`, chat: c.chatName, reason: r.reason }),
+        t("kick_try", {
+          user: `${c.senderName} (${c.sender})`,
+          chat: c.chatName,
+          reason: r.reason,
+        }),
       );
       try {
         let possible = false;
@@ -186,7 +194,10 @@ export const ActionMap = {
             .sock()
             .groupParticipantsUpdate(c.chat, [c.sender], "remove");
         pen.Warn(
-          t("kick_not_possible", { possible, user: `${c.senderName} (${c.sender})` }),
+          t("kick_not_possible", {
+            possible,
+            user: `${c.senderName} (${c.sender})`,
+          }),
         );
       } catch (e) {
         pen.Error(e);
@@ -258,7 +269,13 @@ export default [
       if (!detect.suspect) {
         return;
       }
-      pen.Warn(t("defense_log", { event: c.eventName, suspect: detect.suspect, reason: detect.reason }));
+      pen.Warn(
+        t("defense_log", {
+          event: c.eventName,
+          suspect: detect.suspect,
+          reason: detect.reason,
+        }),
+      );
       try {
         await detect.process(c);
       } catch (e) {

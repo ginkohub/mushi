@@ -15,7 +15,6 @@ import { Role } from "../../src/roles.js";
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
   cmd: ["!"],
-  
   cat: "system",
   tags: ["system"],
   desc: "Execute command shell command.",

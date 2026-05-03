@@ -34,7 +34,8 @@ const t = translate({
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} riddles.",
     sync_failed: "❌ *Sync Failed:* {error}",
-    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
   },
   id: {
     help_title: "🧠 *ASAH OTAK*",
@@ -45,7 +46,8 @@ const t = translate({
     help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
     help_admin: "⚙️ *Admin:* `{prefix}ao.update` untuk sinkronisasi soal.",
     session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
-    no_data: "❌ Data soal tidak ditemukan! Gunakan `{prefix}ao.update` (Admin).",
+    no_data:
+      "❌ Data soal tidak ditemukan! Gunakan `{prefix}ao.update` (Admin).",
     question_header: "🧠 *ASAH OTAK*",
     question_time: "⏱️ *Waktu:* 45 detik",
     question_reward: "🎁 *Hadiah:* 15-35 XP",
@@ -55,11 +57,13 @@ const t = translate({
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} soal.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
-    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
   },
 });
 
-const JSON_URL = "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/asahotak.json";
+const JSON_URL =
+  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/asahotak.json";
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
 const sessions = new Map();
@@ -107,7 +111,10 @@ export default [
           "",
           t("help_admin", { prefix: c.prefix }),
         ];
-        return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
+        return await c.reply(
+          { text: helpText.join("\n") },
+          { quoted: c.event },
+        );
       }
 
       if (sessions.has(c.chat)) {
@@ -180,7 +187,8 @@ export default [
           throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
-        if (!Array.isArray(data)) throw new Error("Invalid data format: Expected an array");
+        if (!Array.isArray(data))
+          throw new Error("Invalid data format: Expected an array");
 
         const path = getFile("asah_otak.json");
         fs.writeFileSync(path, JSON.stringify(data, null, 2));
@@ -188,9 +196,7 @@ export default [
         // Refresh local questions
         questions = data;
 
-        const stats =
-          `${t("sync_success")}\n\n` +
-          t("sync_stats", { count: data.length });
+        const stats = `${t("sync_success")}\n\n ${t("sync_stats", { count: data.length })}`;
 
         await c.reply({ text: stats }, { quoted: c.event });
         await c.react("✅");

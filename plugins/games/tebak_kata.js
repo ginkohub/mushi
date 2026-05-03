@@ -29,7 +29,8 @@ const t = translate({
     help_timeout_hint: "- Time limit is 45 seconds.",
     help_admin: "⚙️ *Admin:* `{prefix}tk.update` to sync word list.",
     session_active: "❌ There is still an unanswered question in this chat!",
-    no_data: "❌ Word data not found or empty! Use `{prefix}tk.update` (Admin).",
+    no_data:
+      "❌ Word data not found or empty! Use `{prefix}tk.update` (Admin).",
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Clues: *{clues}*",
     question_time: "⏱️ *Time:* 45 seconds",
@@ -38,10 +39,12 @@ const t = translate({
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was *{answer}*",
     sync_success: "✅ *Sync Success!*",
-    sync_stats: "🟢 *Easy:* {easy} words\n🟡 *Medium:* {medium} words\n🔴 *Hard:* {hard} words",
+    sync_stats:
+      "🟢 *Easy:* {easy} words\n🟡 *Medium:* {medium} words\n🔴 *Hard:* {hard} words",
     sync_saved: "Data saved and reloaded!",
     sync_failed: "❌ *Sync Failed:* {error}",
-    correct: "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
   },
   id: {
     help_title: "🧩 *TEBAK KATA*",
@@ -57,7 +60,8 @@ const t = translate({
     help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
     help_admin: "⚙️ *Admin:* `{prefix}tk.update` untuk sinkronisasi kata.",
     session_active: "❌ Masih ada soal yang belum terjawab di grup ini!",
-    no_data: "❌ Data kata tidak ditemukan atau kosong! Gunakan `{prefix}tk.update` (Admin).",
+    no_data:
+      "❌ Data kata tidak ditemukan atau kosong! Gunakan `{prefix}tk.update` (Admin).",
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Petunjuk: *{clues}*",
     question_time: "⏱️ *Waktu:* 45 detik",
@@ -66,10 +70,12 @@ const t = translate({
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah *{answer}*",
     sync_success: "✅ *Sinkronisasi Berhasil!*",
-    sync_stats: "🟢 *Mudah:* {easy} kata\n🟡 *Sedang:* {medium} kata\n🔴 *Sulit:* {hard} kata",
+    sync_stats:
+      "🟢 *Mudah:* {easy} kata\n🟡 *Sedang:* {medium} kata\n🔴 *Sulit:* {hard} kata",
     sync_saved: "Data disimpan dan dimuat ulang!",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
-    correct: "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+    correct:
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
   },
 });
 
@@ -95,7 +101,8 @@ const LEVEL_ALIAS = {
   h: "hard",
 };
 
-const WORD_URL = "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/tebakkata.json";
+const WORD_URL =
+  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/tebakkata.json";
 
 /**
  * Load word list from JSON file
@@ -146,7 +153,10 @@ export default [
           "",
           t("help_admin", { prefix: c.prefix }),
         ];
-        return await c.reply({ text: helpText.join("\n") }, { quoted: c.event });
+        return await c.reply(
+          { text: helpText.join("\n") },
+          { quoted: c.event },
+        );
       }
 
       if (sessions.has(c.chat)) {
@@ -226,11 +236,14 @@ export default [
           throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
-        if (!Array.isArray(data)) throw new Error("Invalid data format: Expected an array");
+        if (!Array.isArray(data))
+          throw new Error("Invalid data format: Expected an array");
 
         const newWordList = {
           easy: data.filter((w) => w.jawaban.length <= 6),
-          medium: data.filter((w) => w.jawaban.length >= 7 && w.jawaban.length <= 9),
+          medium: data.filter(
+            (w) => w.jawaban.length >= 7 && w.jawaban.length <= 9,
+          ),
           hard: data.filter((w) => w.jawaban.length >= 10),
         };
 

@@ -160,7 +160,10 @@ export default [
 
       if (status?.length > 0) {
         settings.set(KEY_DEFENSE_ALLOW_STATUS, setAllows);
-        texts.push(status === "add" ? t("success_add") : t("success_remove"), "");
+        texts.push(
+          status === "add" ? t("success_add") : t("success_remove"),
+          "",
+        );
       }
 
       texts.push(
