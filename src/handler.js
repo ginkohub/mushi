@@ -288,19 +288,21 @@ export class Handler {
    */
   async removeOn(hash) {
     try {
+      const idsToRemove = [];
       for (const id of this.plugins.keys()) {
-        if (id.startsWith(hash)) {
-          this.plugins.delete(id);
-          for (const [id_ls, val] of this.listens) {
-            if (val === id) {
-              this.listens.delete(id_ls);
-            }
-          }
-          for (const [id_cmd, val] of this.cmds) {
-            if (val?.id?.startsWith(hash)) {
-              this.cmds.delete(id_cmd);
-            }
-          }
+        if (id.startsWith(hash)) idsToRemove.push(id);
+      }
+
+      if (idsToRemove.length === 0) return;
+
+      for (const id of idsToRemove) {
+        this.plugins.delete(id);
+        this.listens.delete(id);
+      }
+
+      for (const [cmd_key, val] of this.cmds) {
+        if (val?.id?.startsWith(hash)) {
+          this.cmds.delete(cmd_key);
         }
       }
     } catch (e) {
@@ -358,6 +360,9 @@ export class Handler {
   async loadFile(loc) {
     if (loc.endsWith(".js")) {
       try {
+        const hash = hashCRC32(loc);
+        await this.removeOn(hash);
+
         /** @type {string} */
         const filename = loc.split("/").pop();
         if (
