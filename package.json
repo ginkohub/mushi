@@ -32,11 +32,13 @@
     "better-sqlite3": "^11.10.0",
     "chokidar": "^4.0.3",
     "googleapis": "^153.0.0",
+    "instagram-url-direct": "^2.0.7",
     "minimist": "^1.2.8",
     "mongodb": "^6.17.0",
     "pg": "^8.16.3",
     "pino": "^9.7.0",
     "qrcode": "^1.5.4",
+    "rahad-all-downloader-v2": "^2.0.3",
     "string-argv": "^0.3.2",
     "yt-dlp-wrap": "github:ginkohub/yt-dlp-wrap"
   },
