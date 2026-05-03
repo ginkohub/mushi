@@ -9,6 +9,7 @@
  */
 
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import pen from "./pen.js";
 import { isBun, watchDir } from "./tools.js";
 
@@ -28,7 +29,8 @@ process.on('SIGINT', cleanUp);
 process.on('SIGTERM', cleanUp);
 
 /**
- * Store data in JSON file
+ * @class StoreJson
+ * @description Store data in JSON file
  */
 export class StoreJson {
   /**
@@ -37,18 +39,30 @@ export class StoreJson {
   constructor({ saveName, autoSave, autoLoad, expiration }) {
     if (!saveName) throw Error("saveName required");
 
-    /** @type {Record<string, any>} */
-    this.data = {};
-
     this.autoSave = autoSave ?? false;
     this.saveName = saveName;
     this.expiration = expiration ?? 0;
-    this.saveState = true;
-    this.saveTimeout = null;
     this.autoLoad = autoLoad ?? false;
 
-    this.load().catch((e) => pen.Error("Failed loading data", e));
+    this.saveTimeout = null;
+    this._lastSave = 0;
+    this._saving = false;
+
+    /** @type {Record<string, any>} */
+    this.data = this._initialLoad();
+
+    if (this.autoLoad) this.watch();
     activeStore.add(this);
+  }
+
+  _initialLoad() {
+    try {
+      const content = readFileSync(this.saveName, "utf8");
+      return JSON.parse(content);
+    } catch (e) {
+      if (e.code !== "ENOENT") pen.Error("Failed initial loading data", e);
+      return {};
+    }
   }
 
   /**
@@ -57,17 +71,17 @@ export class StoreJson {
   async watch() {
     if (!this.watcher && this.autoLoad) {
       try {
-        this.watcher = watchDir(this.saveName, {
-          onChange: (loc) => {
-            if (!this.saveState) {
-              pen.Debug("Reload", loc);
-              this.load();
-            } else {
-              this.saveState = false;
-            }
+        this.watcher = await watchDir(this.saveName, {
+          onChange: async (loc) => {
+            if (Date.now() - this._lastSave < 2000 || this._saving) return;
+
+            pen.Debug("Reloading store due to external change:", loc);
+            await this.load();
           },
         });
-      } catch { }
+      } catch (e) {
+        pen.Error("Failed to start watcher", e);
+      }
     }
   }
 
@@ -76,38 +90,40 @@ export class StoreJson {
    * @param {string} [saveName]
    */
   async load(saveName) {
-    /* Read json data local storage */
     try {
       const targetName = saveName ?? this.saveName;
-      const content = await fs.readFile(targetName, 'utf-8');
-      this.data = JSON.parse(content);
+      const content = await fs.readFile(targetName, "utf-8");
+      const newData = JSON.parse(content);
+
+      this.data = newData;
     } catch (e) {
-      pen.Error(e.message);
-      this.data = {};
+      if (e.code !== "ENOENT") pen.Error("Failed loading data", e);
     }
   }
 
   async save() {
+    if (this._saving) return;
+    this._saving = true;
     try {
       const tempPath = `${this.saveName}.tmp`;
       const content = JSON.stringify(this.data, null, 2);
       await fs.writeFile(tempPath, content, "utf8");
       await fs.rename(tempPath, this.saveName);
-      this.saveState = true;
-      if (!this.watcher) await this.watch();
+      this._lastSave = Date.now();
     } catch (e) {
       pen.Error("Failed saving data", e);
+    } finally {
+      this._saving = false;
     }
   }
 
   saveCheck() {
     if (this.autoSave) {
-      if (!this.saveTimeout) {
-        this.saveTimeout = setTimeout(async () => {
-          await this.save();
-          this.saveTimeout = null;
-        }, 2000);
-      }
+      if (this.saveTimeout) clearTimeout(this.saveTimeout);
+      this.saveTimeout = setTimeout(async () => {
+        await this.save();
+        this.saveTimeout = null;
+      }, 1000);
     }
   }
 
@@ -194,7 +210,8 @@ export async function createSQLite(saveName) {
 export const connectionList = {};
 
 /**
- * Store data in SQLite database
+ * @class StoreSQLite
+ * @description Store data in SQLite database
  */
 export class StoreSQLite {
   /**
