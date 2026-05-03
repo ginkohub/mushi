@@ -41,7 +41,7 @@ export function translate(sets, altLang = "en") {
     const lang = getLang();
     let text = sets[lang]?.[key] || sets[altLang]?.[key] || key;
     for (const [k, v] of Object.entries(replaces)) {
-      text = text.replace(`{${k}}`, v);
+      text = text.replaceAll(`{${k}}`, v);
     }
     return text;
   };
