@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Buffer } from "node:buffer";
 import browser from "../../src/browser.js";
-
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
@@ -49,18 +47,26 @@ const t = translate({
  * @returns {string}
  */
 function formatCaption(result, c) {
-  const parts = [
-    `*${result.title?.trim() || "Media Content"}*`,
-    "━━━━━━━━━━━━━━━━━━",
-    `*${t("platform", {}, c)}:* ${result.platform || "Web"}`,
-  ];
+  const parts = [`*${t("platform", {}, c)}:* ${result.platform || "Web"}`];
 
-  if (result.metadata?.author) {
-    parts.push(`*${t("author", {}, c)}:* ${result.metadata.author}`);
+  const author = result.metadata?.author;
+  if (author) {
+    parts.push(`*${t("author", {}, c)}:* ${author}`);
   }
 
-  if (result.media?.duration) {
-    parts.push(`*${t("duration", {}, c)}:* ${result.media.duration}`);
+  const duration = result.media?.duration;
+  if (duration) {
+    parts.push(`*${t("duration", {}, c)}:* ${duration}`);
+  }
+
+  const title = result.title?.trim() || "Media Content";
+  if (title) {
+    parts.push(`*${title}*`);
+  }
+
+  const description = result.metadata?.description?.trim();
+  if (description && description !== title) {
+    parts.push("", description);
   }
 
   return parts.join("\n");
@@ -109,32 +115,15 @@ export default {
             continue;
           }
 
-          let buffer;
-          try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            buffer = Buffer.from(await res.arrayBuffer());
-          } catch (err) {
-            pen.Error(`Fetch failed for ${url}:`, err.message);
-            continue;
-          }
-
-          if (!buffer || buffer.length === 0) continue;
-
+          /** @type {import('baileys').AnyMessageContent} */
           const content = {};
-          const type = result.media.type;
-
-          if (type === "image") {
-            content.image = buffer;
-          } else if (type === "audio") {
-            content.audio = buffer;
-            content.mimetype = "audio/mp4";
-          } else {
-            content.video = buffer;
-            content.mimetype = "video/mp4";
+          content.caption = formatCaption(result, c);
+          if (result.media.type === "video") {
+            content.video = { url };
+          } else if (result.media.type === "image") {
+            content.image = { url };
           }
 
-          content.caption = formatCaption(result, c);
           const resp = await c.reply(content, { quoted: c.event });
 
           if (resp && id) storeMsg.set(id, resp);
