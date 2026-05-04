@@ -364,7 +364,7 @@ export async function downloadThreads(url) {
       },
     });
 
-    // Try multiple patterns for video URL
+    /* Try multiple patterns for video URL */
     const patterns = [
       /"video_url"\s*:\s*"([^"]+)"/,
       /"video_versions"\s*:\s*\[.*?"url"\s*:\s*"([^"]+)"/,
@@ -382,7 +382,7 @@ export async function downloadThreads(url) {
       }
     }
 
-    // Fallback: find any mp4 in CDN
+    /* Fallback: find any mp4 in CDN */
     if (!videoUrl) {
       const cdnMatch = html.match(/https:\/\/[^"'\s]*\.mp4[^"'\s]*/);
       if (cdnMatch) {
@@ -394,7 +394,7 @@ export async function downloadThreads(url) {
       throw new Error("Threads: No video found. Post may not contain a video.");
     }
 
-    // Extract description
+    /* Extract description */
     const descPatterns = [
       /<meta\s+property="og:description"\s+content="([^"]+)"/,
       /"text"\s*:\s*"([^"]+)".*?"video_url"/,
@@ -436,7 +436,7 @@ export async function downloadPinterest(url) {
       },
     });
 
-    // Extract Video
+    /* Extract Video */
     const videoMatch =
       html.match(
         /"url":"(https:\/\/v1\.pinimg\.com\/videos\/mc\/[^"]+\.m3u8)"/,
@@ -446,7 +446,7 @@ export async function downloadPinterest(url) {
       ) ||
       html.match(/video_list":.*?"url":"([^"]+)"/);
 
-    // Extract Image (Try original first, then og:image)
+    /* Extract Image (Try original first, then og:image) */
     const imageMatch =
       html.match(/"images_orig":\{"url":"([^"]+)"\}/) ||
       html.match(/"originals":\{"url":"([^"]+)"\}/) ||
@@ -566,7 +566,7 @@ async function downloadCapCut(url) {
               };
             }
           }
-        } catch { }
+        } catch {}
       }
     }
 
@@ -681,7 +681,7 @@ export async function download(url) {
     platform = "Instagram";
     result = await downloadInstagram(url);
     mediaUrl = result.data?.media?.url || result.data?.downloadUrl;
-    mediaType = result.data?.media_type === "image" ? "image" : "video";
+    mediaType = result.data?.media?.type === "image" ? "image" : "video";
   } else if (/likee\.video|l\.likee/.test(url)) {
     platform = "Likee";
     result = await downloadLikee(url);
@@ -702,8 +702,8 @@ export async function download(url) {
     const urlLower = (mediaUrl || "").toLowerCase();
     mediaType =
       urlLower.includes(".mp4") ||
-        urlLower.includes("/video/") ||
-        urlLower.includes(".m3u8")
+      urlLower.includes("/video/") ||
+      urlLower.includes(".m3u8")
         ? "video"
         : "image";
   } else if (/capcut\.com/.test(url)) {
