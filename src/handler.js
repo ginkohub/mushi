@@ -383,6 +383,7 @@ export class Handler {
           return;
         }
 
+        const originalLoc = loc;
         if (platform() === "win32") {
           loc = pathToFileURL(loc).href;
         }
@@ -403,10 +404,10 @@ export class Handler {
 
         if (loaded.default) {
           if (Array.isArray(loaded.default)) {
-            await this.on(loc, ...loaded.default);
+            await this.on(originalLoc, ...loaded.default);
             def = loaded.default.length;
           } else {
-            await this.on(loc, loaded.default);
+            await this.on(originalLoc, loaded.default);
             def = 1;
           }
         }
