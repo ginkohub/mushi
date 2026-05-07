@@ -166,11 +166,12 @@ export class Ctx {
       this.fromMe = this.event?.key.fromMe;
       this.chat = this.event?.key.remoteJid;
       this.sender =
-        this.event?.key.participant || this.fromMe
+        this.event?.key.participant ||
+        (this.fromMe
           ? this.meLID
           : this.chat?.endsWith("@g.us")
             ? this.remoteJid
-            : this.chat;
+            : this.chat);
     }
 
     if (this.event?.message) {
