@@ -8,6 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
@@ -185,9 +186,9 @@ export function shouldUsePolling(path) {
   if (path) {
     try {
       /* check if NTFS filesystem */
-      const out = fs
-        .existsSync(`stat -f -c %T "${path}"`, { encoding: "utf8" })
-        .trim();
+      const out = execSync(`stat -f -c %T "${path}"`, {
+        encoding: "utf8",
+      }).trim();
       if (out.includes("ntfs") || out.includes("fuseblk")) return true;
     } catch {
       return true;
@@ -254,9 +255,9 @@ export async function watchDir(
   dir,
   {
     recursive = true,
-    onChange = () => {},
-    onAdd = () => {},
-    onRemove = () => {},
+    onChange = () => { },
+    onAdd = () => { },
+    onRemove = () => { },
   },
 ) {
   if (watchers.has(dir)) {
