@@ -91,6 +91,7 @@ loadQuestions();
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "games-asahotak",
     cmd: ["asahotak", "ao", "asahotak?"],
     cat: "games",
     tags: ["game"],
@@ -173,6 +174,7 @@ export default [
     },
   },
   {
+    name: "games-asahotak-updater",
     cmd: ["ao.update", "asahotak.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -211,6 +213,7 @@ export default [
     },
   },
   {
+    name: "games-asahotak-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {

@@ -41,6 +41,7 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "std-lang",
     cmd: ["lang", "set.lang", "lang?", "set.lang?"],
     cat: "system",
     tags: ["system", "lang"],
@@ -66,6 +67,7 @@ export default [
     },
   },
   {
+    name: "std-lang-chat",
     cmd: ["lang.chat", "chatlang", "lang.chat?", "chatlang?"],
     cat: "system",
     tags: ["admin", "chat", "lang"],
@@ -101,6 +103,7 @@ export default [
     },
   },
   {
+    name: "std-lang-user",
     cmd: ["lang.user", "mylang", "lang.user?", "mylang?"],
     cat: "user",
     tags: ["user", "lang"],

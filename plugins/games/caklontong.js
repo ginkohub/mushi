@@ -91,6 +91,7 @@ loadQuestions();
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "games-caklontong",
     cmd: ["caklontong", "cl", "caklontong?"],
     cat: "games",
     tags: ["game"],
@@ -174,6 +175,7 @@ export default [
     },
   },
   {
+    name: "games-caklontong-updater",
     cmd: ["cl.update", "caklontong.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -212,6 +214,7 @@ export default [
     },
   },
   {
+    name: "games-caklontong-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {

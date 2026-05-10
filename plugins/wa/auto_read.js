@@ -37,6 +37,7 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "wa-auto-read-listener",
     desc: "Auto read message",
     timeout: 0,
     events: [MESSAGES_UPSERT],
@@ -55,6 +56,7 @@ export default [
   },
 
   {
+    name: "wa-auto-read",
     cmd: ["aread", "aread+", "aread-"],
     cat: "whatsapp",
     desc: "Auto read message",

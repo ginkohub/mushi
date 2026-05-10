@@ -73,6 +73,7 @@ const emoMap = {
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-menu",
   cmd: ["menu", "menu?"],
   cat: "info",
   desc: "Show the menu of commands",
@@ -136,10 +137,10 @@ export default {
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
         `${t("prefix", {}, c)} ` +
-          c
-            .handler()
-            ?.prefix?.map((p) => `\`${p}\``)
-            .join(", "),
+        c
+          .handler()
+          ?.prefix?.map((p) => `\`${p}\``)
+          .join(", "),
         `${t("lang", {}, c)} ${getLang()} (global)${c.chatData()?.lang ? `, ${c.chatData().lang} (this chat)` : ""}`,
       );
 

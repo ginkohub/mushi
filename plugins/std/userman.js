@@ -15,7 +15,7 @@ import { translate } from "../../src/translate.js";
 const t = translate({
   en: {
     header: "*📃 User Information*",
-    name: "Name",
+    name: "std-Name",
     jid: "JID",
     lid: "LID",
     roles: "Roles",
@@ -34,7 +34,7 @@ const t = translate({
   },
   id: {
     header: "*📃 Informasi User*",
-    name: "Nama",
+    name: "std-Nama",
     jid: "JID",
     lid: "LID",
     roles: "Peran",
@@ -56,8 +56,8 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "std-userman-user",
     cmd: ["user"],
-
     cat: "user",
     tags: ["user", "role"],
     desc: "Get user info and sync with current data",
@@ -119,8 +119,8 @@ export default [
     },
   },
   {
+    name: "std-userman-role-add",
     cmd: ["role+"],
-
     cat: "user",
     tags: ["user", "role"],
     desc: "Add role to quoted or mentioned user",
@@ -164,8 +164,8 @@ export default [
     },
   },
   {
+    name: "std-userman-role-remove",
     cmd: ["role-"],
-
     cat: "user",
     tags: ["user", "role"],
     desc: "Remove role from quoted or mentioned user",

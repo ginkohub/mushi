@@ -77,6 +77,7 @@ const REGEX_LINKS =
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "down-main",
   cmd: ["down", "dl"],
   cat: "downloader",
   desc: "Multi-platform downloader (IG, TikTok, FB, YT, Threads, Pinterest, CapCut, Likee).",

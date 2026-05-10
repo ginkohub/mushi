@@ -138,6 +138,7 @@ async function processChat(c) {
 /** @type {import('../../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "ai-gemini",
     cmd: ["gm", "gemini"],
     desc: "Gemini chat plugin",
     cat: "ai",
@@ -146,6 +147,7 @@ export default [
     exec: processChat,
   },
   {
+    name: "ai-gemini-listener",
     desc: "Gemini chat listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.PREMIUM],
@@ -153,6 +155,7 @@ export default [
     exec: processChat,
   },
   {
+    name: "ai-gemini-models",
     cmd: ["gm.models"],
     desc: "List available models",
     cat: "ai",
@@ -168,6 +171,7 @@ export default [
     },
   },
   {
+    name: "ai-gemini-set",
     cmd: ["gm.set"],
     desc: "Set model name",
     cat: "ai",

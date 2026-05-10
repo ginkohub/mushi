@@ -103,6 +103,7 @@ function getGpu() {
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-info",
   cmd: ["info", "i"],
   cat: "system",
   tags: ["system"],
@@ -118,18 +119,18 @@ export default {
 
     const runtime = isBun
       ? {
-          name: "Bun",
-          version: Bun.version,
-        }
+        name: "Bun",
+        version: Bun.version,
+      }
       : isDeno
         ? {
-            name: "Deno",
-            version: Deno.version.deno,
-          }
+          name: "Deno",
+          version: Deno.version.deno,
+        }
         : {
-            name: "NodeJS",
-            version: process.version,
-          };
+          name: "NodeJS",
+          version: process.version,
+        };
 
     const infoText = `
 *${t("server_info", {}, c)}*

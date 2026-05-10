@@ -15,7 +15,8 @@ import { nameToLevel } from "./roles.js";
  * @typedef {Object} PluginOpts
  * @property {import('./handler.js').Handler} [handler]
  * @property {import('baileys').WASocket} [sock]
- * @property {string|string[]|undefined} [cmd]
+ * @property {string} name
+ * @property {string|string[]} [cmd]
  * @property {string} [prefix]
  * @property {string} [desc]
  * @property {string[]} [tags]
@@ -43,6 +44,9 @@ export class Plugin {
 
     /** @type {import('baileys').WASocket|undefined} */
     this.sock = undefined;
+
+    /** @type {string} */
+    this.name = opts.name;
 
     /** @type {string|string[]|undefined}*/
     this.cmd = opts?.cmd;

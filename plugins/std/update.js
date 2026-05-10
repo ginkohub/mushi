@@ -15,6 +15,7 @@ import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-update",
   cmd: ["update"],
   cat: "system",
   tags: ["system"],

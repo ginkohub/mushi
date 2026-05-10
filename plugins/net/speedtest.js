@@ -49,8 +49,8 @@ const t = translate({
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "net-speedtest",
   cmd: ["speed"],
-
   cat: "net",
   desc: "Speedtest.",
   events: [MESSAGES_UPSERT],

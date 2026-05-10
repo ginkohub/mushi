@@ -36,6 +36,7 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "wa-auto-reject-listener",
     desc: "Auto reject call",
     timeout: 0,
     events: [CALL],
@@ -57,6 +58,7 @@ export default [
   },
 
   {
+    name: "wa-auto-reject",
     cmd: ["reject", "reject+", "reject-"],
     cat: "whatsapp",
     desc: "Set auto reject message",

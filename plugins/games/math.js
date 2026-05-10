@@ -73,6 +73,7 @@ const LEVEL_ALIAS = {
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "games-math",
     cmd: ["math", "math?"],
     timeout: 120,
     cat: "games",
@@ -167,6 +168,7 @@ export default [
     },
   },
   {
+    name: "games-math-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {

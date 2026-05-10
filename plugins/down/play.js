@@ -31,6 +31,7 @@ const youtube = google.youtube("v3");
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "down-play",
   cmd: ["play"],
   cat: "downloader",
   tags: ["youtube", "downloader", "mp3", "yt-dlp"],

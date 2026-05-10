@@ -13,6 +13,7 @@ import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "wa-rvo",
   cmd: ["rvo", "readviewonce"],
   cat: "whatsapp",
   desc: "Read View Once messages",

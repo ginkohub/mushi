@@ -91,6 +91,7 @@ loadWords();
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "games-susunkata",
     cmd: ["susunkata", "sk", "susunkata?"],
     cat: "games",
     tags: ["game"],
@@ -173,6 +174,7 @@ export default [
     },
   },
   {
+    name: "games-susunkata-updater",
     cmd: ["sk.update", "susunkata.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -211,6 +213,7 @@ export default [
     },
   },
   {
+    name: "games-susunkata-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {

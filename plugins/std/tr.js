@@ -31,6 +31,7 @@ const t = translate({
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-tr",
   cmd: ["tr", "tr?", "translate"],
   cat: "tool",
   tags: ["tool", "translate"],

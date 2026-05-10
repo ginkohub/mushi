@@ -36,6 +36,7 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "wa-group-kick",
     cmd: ["kick", "k"],
     cat: "admin",
     tags: ["admin", "group"],
@@ -66,6 +67,7 @@ export default [
     },
   },
   {
+    name: "wa-group-add",
     cmd: ["add", "a"],
     cat: "admin",
     tags: ["admin", "group"],
@@ -96,6 +98,7 @@ export default [
     },
   },
   {
+    name: "wa-group-promote",
     cmd: ["promote"],
     cat: "admin",
     tags: ["admin", "group"],
@@ -126,6 +129,7 @@ export default [
     },
   },
   {
+    name: "wa-group-demote",
     cmd: ["demote"],
     cat: "admin",
     tags: ["admin", "group"],
@@ -156,6 +160,7 @@ export default [
     },
   },
   {
+    name: "wa-group-link",
     cmd: ["linkgc", "link"],
     cat: "admin",
     tags: ["admin", "group"],
@@ -178,6 +183,7 @@ export default [
     },
   },
   {
+    name: "wa-group-hidetag",
     cmd: ["hidetag", "ht"],
     cat: "admin",
     tags: ["admin", "group"],

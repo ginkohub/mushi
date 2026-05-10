@@ -124,6 +124,7 @@ loadWords();
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "games-tebakkata",
     cmd: ["tk", "tk?", "tebakkata", "tebakkata?"],
     cat: "games",
     tags: ["game"],
@@ -222,6 +223,7 @@ export default [
     },
   },
   {
+    name: "games-tebakkata-updater",
     cmd: ["tk.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -279,6 +281,7 @@ export default [
     },
   },
   {
+    name: "games-tebakkata-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
     exec: async (c) => {

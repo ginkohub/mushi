@@ -114,6 +114,7 @@ async function downloadVideo(ytDlp, link) {
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "down-ytdlp",
   cmd: ["ytdlp"],
   cat: "downloader",
   tags: ["youtube", "downloader", "video", "yt-dlp"],

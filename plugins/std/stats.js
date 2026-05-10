@@ -12,6 +12,7 @@ import { MESSAGES_UPSERT } from "../../src/const.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-stats-listener",
   desc: "Track message statistics for users",
   events: [MESSAGES_UPSERT],
   exec: async (c) => {

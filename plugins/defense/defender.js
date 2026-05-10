@@ -64,6 +64,7 @@ try {
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "defense-sample",
     cmd: ["smp"],
     cat: "defense",
     desc: "Create and send sample message as json.",
@@ -79,6 +80,7 @@ export default [
     },
   },
   {
+    name: "defense-status",
     cmd: ["defense", "defense+", "defense-"],
     cat: "defense",
     desc: "Manage defense status",
@@ -119,6 +121,7 @@ export default [
     },
   },
   {
+    name: "defense-skip",
     cmd: ["skip", "skip+", "skip-"],
     cat: "defense",
     desc: "Manage skip message type on status.",

@@ -12,6 +12,7 @@ import { Role } from "../../src/roles.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-eval",
   cmd: [">"],
   cat: "system",
   tags: ["system"],

@@ -40,6 +40,7 @@ const t = translate({
 /** @type {import('../../src/plugin.js').Plugin} */
 export default [
   {
+    name: "std-prefix",
     cmd: ["prefix", "prefix+", "prefix-", "pre", "pre+", "pre-"],
     timeout: 15,
     cat: "system",

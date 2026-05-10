@@ -254,6 +254,7 @@ class Result {
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
+    name: "defense-listener",
     desc: "Defense system",
     events: [Events.MESSAGES_UPSERT],
     midware: (c) => ({ success: settings.get("defense") && !c.fromMe }),

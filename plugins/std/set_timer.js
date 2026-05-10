@@ -13,6 +13,7 @@ import pen from "../../src/pen.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-timer",
   cmd: ["timer"],
   cat: "system",
   tags: ["system"],

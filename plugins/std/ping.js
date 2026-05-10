@@ -26,6 +26,7 @@ const t = translate({
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
+  name: "std-ping",
   cmd: ["ping", "p"],
   timeout: 120,
   cat: "system",
