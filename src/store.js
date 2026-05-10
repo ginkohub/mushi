@@ -11,22 +11,32 @@
 import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import pen from "./pen.js";
-import { isBun, watchDir } from "./tools.js";
+import { isBun, isDeno, watchDir } from "./tools.js";
 
 /** @type {Set<StoreJson>} */
 const activeStore = new Set();
 
-async function cleanUp() {
+export async function cleanUp() {
   pen.Debug("Cleaning up active store store");
-  for (const store of activeStore) {
-    if (store instanceof StoreJson && store.saveTimeout) await store.flush();
+  for (const store of Array.from(activeStore)) {
+    if (store.saveTimeout) {
+      await store.flush();
+    }
+    await store.close();
+    activeStore.delete(store);
   }
-  process.exit(0);
 }
 
+const signalHandler = async () => {
+  await cleanUp();
+  process.exit(0);
+};
 /* Registering clean up for exist */
-process.on("SIGINT", cleanUp);
-process.on("SIGTERM", cleanUp);
+process.on("SIGINT", signalHandler);
+process.on("SIGTERM", signalHandler);
+process.on("beforeExit", async () => {
+  await cleanUp();
+});
 
 /**
  * @class StoreJson
@@ -47,6 +57,7 @@ export class StoreJson {
     this.saveTimeout = null;
     this._lastSave = 0;
     this._saving = false;
+    this.watcher = null;
 
     /** @type {Record<string, any>} */
     this.data = this._initialLoad();
@@ -124,6 +135,19 @@ export class StoreJson {
         await this.save();
         this.saveTimeout = null;
       }, 1000);
+    }
+  }
+
+  async close() {
+    if (this.watcher) {
+      try {
+        const instance = await this.watcher;
+        if (instance && typeof instance.close === "function") {
+          if (!isDeno) await instance.close();
+        }
+      } catch (e) {
+        pen.Error("Failed to close", e);
+      }
     }
   }
 
@@ -271,7 +295,7 @@ export class StoreSQLite {
     );
   }
 
-  save() {}
+  save() { }
 
   /**
    * Set data
