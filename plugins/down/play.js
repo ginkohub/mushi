@@ -8,26 +8,57 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
-import fs from "node:fs/promises";
-import os from "node:os";
-import path, { resolve } from "node:path";
-import { promisify } from "node:util";
-import { google } from "googleapis";
+import { existsSync, mkdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { storeMsg } from "../../src/settings.js";
 
-const execFileAsync = promisify(execFile);
-const ytdlps = [
+const BIN_DIR = resolve("./bin");
+const YTDLP_PATHS = [
+  join(BIN_DIR, process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp"),
   resolve("./node_modules/.bin/yt-dlp"),
   resolve("~/bin/yt-dlp"),
   resolve("bin/yt-dlp"),
 ];
 
-const youtube = google.youtube("v3");
+/** @type {Promise<YtDlpWrap> | null} */
+let ytDlpPromise = null;
+
+/**
+ * Resolves the yt-dlp binary path or downloads it if missing.
+ * @returns {Promise<string>}
+ */
+async function resolveBinary() {
+  for (const path of YTDLP_PATHS) {
+    if (existsSync(path)) return path;
+  }
+
+  try {
+    if (!existsSync(BIN_DIR)) mkdirSync(BIN_DIR, { recursive: true });
+    pen.Info("yt-dlp binary not found. Downloading to ./bin...");
+    return await YtDlpWrap.downloadBinary(BIN_DIR);
+  } catch (e) {
+    pen.Error(
+      "Failed to download yt-dlp binary, falling back to system PATH:",
+      e,
+    );
+    return "yt-dlp";
+  }
+}
+
+/**
+ * Returns a singleton instance of YtDlpWrap.
+ * @returns {Promise<YtDlpWrap>}
+ */
+async function getYT() {
+  if (!ytDlpPromise) {
+    ytDlpPromise = resolveBinary().then((bin) => new YtDlpWrap(bin));
+  }
+  return ytDlpPromise;
+}
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -46,34 +77,19 @@ export default {
       return c.react("❓");
     }
 
-    /** @type {string} - os temp dir */
-    const tempDir = os.tmpdir();
-    let audioFilePath = "";
-
     try {
+      const ytDlp = await getYT();
+
       /** Search the video */
-      const apiKey =
-        process.env.GOOGLE_API_KEY ??
-        process.env.YOUTUBE_API_KEY ??
-        process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return c.react("🔑");
+      const video = await ytDlp.getVideoInfo(`ytsearch1:${query}`);
+
+      if (!video?.id) {
+        return await c.react("❓");
       }
-
-      const searchRes = await youtube.search.list({
-        auth: apiKey,
-        part: "snippet",
-        q: query,
-        maxResults: 1,
-        type: "video",
-      });
-
-      if (!searchRes?.data?.items?.length === 0) return await c.react("❓");
-      const videoYT = searchRes?.data?.items[0];
 
       /* Check on database */
       /** @type {import('baileys').proto.IWebMessageInfo }*/
-      const msg = storeMsg.get(videoYT?.id?.videoId);
+      const msg = storeMsg.get(video.id);
       if (msg && !c.argv.force) {
         try {
           const ephemeral = c.handler().getTimer(c.chat);
@@ -83,67 +99,20 @@ export default {
         }
         return c.replyRelay(msg.message);
       } else {
-        /** Check the binary */
-        let ytdlpBin = "yt-dlp";
-        for (const yp of ytdlps) {
-          if (existsSync(yp)) {
-            ytdlpBin = yp;
-            break;
-          }
-        }
-
-        pen.Debug(`Using yt-dlp binary: ${ytdlpBin}`);
-
-        try {
-          await execFileAsync(ytdlpBin, ["--version"]);
-        } catch (e) {
-          pen.Error("yt-dlp is not installed or not in PATH.", e);
-          return c.reply(
-            "`yt-dlp` is not installed. Please install it to use this command.",
-          );
-        }
-
-        const { stdout: searchStdout } = await execFileAsync(ytdlpBin, [
-          "--dump-json",
-          `https://www.youtube.com/watch?v=${videoYT?.id?.videoId}`,
-        ]);
-
-        if (!searchStdout) {
-          return await c.react("❓");
-        }
-
-        const video = JSON.parse(searchStdout);
-
-        /** @type {import('baileys').proto.IWebMessageInfo} */
-        const msg = storeMsg.get(video.id);
-        if (msg && !c.argv.force) {
-          return c.replyRelay(msg.message);
-        }
-
         const videoUrl = video.webpage_url;
         const thumbUrl = video.thumbnail;
 
-        const outputTemplate = path.join(tempDir, `${video.id}.%(ext)s`);
-
-        await execFileAsync(ytdlpBin, [
+        const audioBuffer = await ytDlp.getBuffer(video.id, [
           "-f",
           "bestaudio[ext=m4a]/bestaudio",
-          "-o",
-          outputTemplate,
-          video.id,
         ]);
 
-        const files = await fs.readdir(tempDir);
-        const downloadedFile = files.find((f) => f.startsWith(video.id));
-        if (!downloadedFile) {
-          pen.Error("Downloaded file not found for video ID:", video.id);
+        if (!audioBuffer || audioBuffer.length === 0) {
+          pen.Error("Downloaded buffer is empty for video ID:", video.id);
           return c.react("🔥");
         }
-        audioFilePath = path.join(tempDir, downloadedFile);
-        const fileExtension = path.extname(downloadedFile).slice(1);
 
-        const audioBuffer = await fs.readFile(audioFilePath);
-
+        const fileExtension = video.ext || "m4a";
         let mimetype = "audio/mp4"; /* default for m4a */
         if (fileExtension === "mp3") mimetype = "audio/mpeg";
         else if (fileExtension === "ogg") mimetype = "audio/ogg";
@@ -178,13 +147,6 @@ export default {
       pen.Error(e);
       await c.react("❌");
     } finally {
-      if (audioFilePath) {
-        try {
-          await fs.unlink(audioFilePath);
-        } catch (unlinkErr) {
-          pen.Error("Failed to delete temp audio file:", unlinkErr);
-        }
-      }
       await c.react("");
     }
   },
