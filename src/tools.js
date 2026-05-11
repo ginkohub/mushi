@@ -304,3 +304,24 @@ export async function watchDir(
     return watcher;
   }
 }
+
+/**
+ * Close all watchers
+ * @param {...string} dirs
+ * @returns {Promise<void>}
+ */
+export async function closeWatchers(...dirs) {
+  for (const [dir, watcher] of watchers.entries()) {
+    try {
+      if (dirs?.length > 0 && !dirs?.includes(dir)) {
+        continue;
+      }
+      if (typeof watcher.close === "function") {
+        await watcher.close();
+        watchers.delete(dir);
+      }
+    } catch (e) {
+      pen.Error(e);
+    }
+  }
+}
