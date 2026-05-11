@@ -104,7 +104,10 @@ export default {
 
         const audioBuffer = await ytDlp.getBuffer(video.id, [
           "-f",
-          "bestaudio[ext=m4a]/bestaudio",
+          "bestaudio",
+          "-x",
+          "--audio-format",
+          "mp3",
         ]);
 
         if (!audioBuffer || audioBuffer.length === 0) {
@@ -112,11 +115,8 @@ export default {
           return c.react("🔥");
         }
 
-        const fileExtension = video.ext || "m4a";
-        let mimetype = "audio/mp4"; /* default for m4a */
-        if (fileExtension === "mp3") mimetype = "audio/mpeg";
-        else if (fileExtension === "ogg") mimetype = "audio/ogg";
-        else if (fileExtension === "webm") mimetype = "audio/webm";
+        const fileExtension = "mp3";
+        const mimetype = "audio/mpeg";
 
         const caption =
           `*${video.title}*\n\n` +
