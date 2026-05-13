@@ -33,8 +33,8 @@ import pen from "../../../src/pen.js";
  * @enum {string}
  */
 export const Model = Object.freeze({
-  GEMINI_3_1_PRO: "gemini-3.1-pro",
-  GEMINI_3_FLASH: "gemini-3-flash",
+  GEMINI_3_1_PRO: "gemini-3.1-pro-preview",
+  GEMINI_3_FLASH: "gemini-3-flash-preview",
   GEMINI_3_1_FLASH_LITE: "gemini-3.1-flash-lite",
   GEMINI_2_5_PRO: "gemini-2.5-pro",
   GEMINI_2_5_FLASH: "gemini-2.5-flash",
@@ -61,7 +61,7 @@ export class Gemini {
     this.apiKey = apiKey;
 
     /** @type {string} */
-    this.modelName = modelName ?? Model.GEMINI_3_FLASH;
+    this.modelName = modelName ?? Model.GEMINI_3_1_FLASH_LITE;
 
     /** @type {string} */
     this.systemInstruction =
