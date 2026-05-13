@@ -16,7 +16,7 @@ import { Role } from "../../../src/roles.js";
 import { StoreJson } from "../../../src/store.js";
 import { formatMD } from "../../../src/tools.js";
 import { translate } from "../../../src/translate.js";
-import { Gemini, Model } from "./gemini.js";
+import { DEFAULT_SYSTEM_INSTRUCTION, Gemini, Model } from "./gemini.js";
 
 /** @type {import('./gemini.js').Gemini} */
 export const gemini = new Gemini({
