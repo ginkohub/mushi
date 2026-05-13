@@ -16,13 +16,15 @@ import { Role } from "../../../src/roles.js";
 import { StoreJson } from "../../../src/store.js";
 import { formatMD } from "../../../src/tools.js";
 import { translate } from "../../../src/translate.js";
-import { Gemini, Model } from "./gemini.js";
+
+import { Gemini } from "./gemini.js";
 
 /** @type {import('./gemini.js').Gemini} */
 export const gemini = new Gemini({
   apiKey: process.env.GEMINI_API_KEY,
-  modelName: process.env.GEMINI_MODEL ?? Model.GEMINI_3_FLASH,
   settingName: getFile("gemini_settings.json"),
+  systemInstruction:
+    "Nama kamu adalah Ginko, humble, kalem, gk banyak ngomong, gk suka pamer. Sebisa mungkin persingkat kalimat, seperti sedang chat di WhatsApp.",
 });
 
 const chatWatch = new StoreJson({
@@ -182,6 +184,20 @@ export default [
     exec: async (c) => {
       const modelName = c.args?.trim();
       if (modelName && modelName.length > 0) gemini.setModelName(modelName);
+    },
+  },
+  {
+    name: "ai-gemini-prompt",
+    cmd: ["gm.prompt"],
+    desc: "Set system instruction",
+    cat: "ai",
+    roles: [Role.PREMIUM],
+    exec: async (c) => {
+      const prompt = c.args?.trim();
+      if (prompt && prompt.length > 0) {
+        gemini.systemInstruction = prompt;
+        await c.reply({ text: "_Prompt updated successfully_" });
+      }
     },
   },
 ];
