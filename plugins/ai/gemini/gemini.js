@@ -10,7 +10,6 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { GoogleGenAI } from "@google/genai";
-import { getFile } from "../../../src/data.js";
 import pen from "../../../src/pen.js";
 
 /**
@@ -287,11 +286,3 @@ export class Gemini {
     this.modelName = name;
   }
 }
-
-/** @type {Gemini} */
-export const gemini = new Gemini({
-  apiKey: process.env.GEMINI_API_KEY,
-  modelName: process.env.GEMINI_MODEL ?? Model.GEMINI_3_FLASH,
-  systemInstruction: DEFAULT_SYSTEM_INSTRUCTION.join(" "),
-  settingName: getFile("gemini_settings.json"),
-});
