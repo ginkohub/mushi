@@ -28,6 +28,19 @@ import pen from "../../../src/pen.js";
  * @property {string} settingName - Name of the configuration to use for the gemini
  */
 
+/**
+ * Available model names
+ * @constant
+ * @enum {string}
+ */
+export const Model = Object.freeze({
+  GEMINI_3_1_PRO: "gemini-3.1-pro",
+  GEMINI_3_FLASH: "gemini-3-flash",
+  GEMINI_3_1_FLASH_LITE: "gemini-3.1-flash-lite",
+  GEMINI_2_5_PRO: "gemini-2.5-pro",
+  GEMINI_2_5_FLASH: "gemini-2.5-flash",
+});
+
 const DEFAULT_SYSTEM_INSTRUCTION = [
   "Nama lu Ginko, humble, expert ngoding bahasa apa aja, kalem, gk banyak ngomong, gk suka pamer.",
   'Bicara pake bahasa sehari-hari "lu" "gw".',
@@ -49,7 +62,7 @@ export class Gemini {
     this.apiKey = apiKey;
 
     /** @type {string} */
-    this.modelName = modelName ?? "gemini-2.0-flash";
+    this.modelName = modelName ?? Model.GEMINI_3_FLASH;
 
     /** @type {string} */
     this.systemInstruction =
@@ -254,10 +267,11 @@ export class Gemini {
   async fetchModels() {
     const pager = await this.genAI?.models.list();
     if (pager) {
+      const allowedModels = Object.values(Model);
       for (const model of pager.page) {
         if (!model?.name.includes("tts") && model?.name?.includes("gemini")) {
           const keyName = model.name.split("/")?.pop();
-          if (keyName) {
+          if (keyName && allowedModels.includes(keyName)) {
             this.listModels.set(keyName, model);
           }
         }
@@ -277,7 +291,7 @@ export class Gemini {
 /** @type {Gemini} */
 export const gemini = new Gemini({
   apiKey: process.env.GEMINI_API_KEY,
-  modelName: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
+  modelName: process.env.GEMINI_MODEL ?? Model.GEMINI_3_FLASH,
   systemInstruction: DEFAULT_SYSTEM_INSTRUCTION.join(" "),
   settingName: getFile("gemini_settings.json"),
 });
