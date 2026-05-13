@@ -16,11 +16,15 @@ import { Role } from "../../../src/roles.js";
 import { StoreJson } from "../../../src/store.js";
 import { formatMD } from "../../../src/tools.js";
 import { translate } from "../../../src/translate.js";
+import { Gemini } from "./gemini.js";
 
 /** @type {import('./gemini.js').Gemini} */
-const gemini = await import(`./gemini.js?t=${new Date()}`).then(
-  (m) => m.gemini,
-);
+export const gemini = new Gemini({
+  apiKey: process.env.GEMINI_API_KEY,
+  modelName: process.env.GEMINI_MODEL ?? Model.GEMINI_3_FLASH,
+  systemInstruction: DEFAULT_SYSTEM_INSTRUCTION.join(" "),
+  settingName: getFile("gemini_settings.json"),
+});
 
 const chatWatch = new StoreJson({
   autoSave: true,
