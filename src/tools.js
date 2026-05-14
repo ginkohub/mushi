@@ -10,6 +10,7 @@
 
 import { execSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
 
@@ -18,6 +19,26 @@ export const isDeno = typeof Deno !== "undefined";
 
 /** @type {boolean} True if the current runtime are Bun */
 export const isBun = typeof Bun !== "undefined";
+
+/**
+ * @enum {string}  System platform
+ */
+export const Platforms = Object.freeze({
+  AIX: "aix",
+  ANDROID: "android",
+  DARWIN: "darwin",
+  FREEBSD: "freebsd",
+  HAIKU: "haiku",
+  LINUX: "linux",
+  OPENBSD: "openbsd",
+  SUNOS: "sunos",
+  WIN32: "win32",
+  CYGWIN: "cygwin",
+  NETBSD: "netbsd",
+});
+
+/** @type {string} System platform  */
+export const PLATFORM = os.platform();
 
 /**
  * Generates a random hexadecimal string of a given length.
@@ -178,21 +199,34 @@ export function formatBytes(bytes) {
  * @returns {boolean} Whether to use polling instead of events for file changes.
  */
 export function shouldUsePolling(path) {
+  /* Detect docker */
   try {
     if (fs.existsSync("/.dockerenv")) return true;
-  } catch {
-    return true;
+  } catch {}
+
+  /* Detect WSL */
+  if (PLATFORM === Platforms.LINUX) {
+    try {
+      const release = os.release().toLowerCase();
+      if (release.includes("microsoft")) return true;
+    } catch {}
   }
-  if (path) {
+
+  /* Detect Network shared drive Linux */
+  if (path && PLATFORM === Platforms.LINUX) {
     try {
       /* check if NTFS filesystem */
       const out = execSync(`stat -f -c %T "${path}"`, {
         encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
       }).trim();
-      if (out.includes("ntfs") || out.includes("fuseblk")) return true;
-    } catch {
-      return true;
-    }
+      if (
+        out.includes("ntfs") ||
+        out.includes("fuseblk") ||
+        out.includes("nfs")
+      )
+        return true;
+    } catch {}
   }
   return false;
 }
@@ -255,9 +289,9 @@ export async function watchDir(
   dir,
   {
     recursive = true,
-    onChange = () => { },
-    onAdd = () => { },
-    onRemove = () => { },
+    onChange = () => {},
+    onAdd = () => {},
+    onRemove = () => {},
   },
 ) {
   if (watchers.has(dir)) {
