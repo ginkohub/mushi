@@ -13,6 +13,15 @@ import fs from "node:fs/promises";
 import pen from "./pen.js";
 import { isBun, isDeno, watchDir } from "./tools.js";
 
+/**
+ * @typedef {Object} StoreOpts
+ * @property {string} saveName
+ * @property {string} [tableName]
+ * @property {boolean} autoSave
+ * @property {boolean} autoLoad
+ * @property {number} expiration
+ */
+
 /** @type {Set<StoreJson>} */
 const activeStore = new Set();
 
@@ -44,15 +53,15 @@ process.on("beforeExit", async () => {
  */
 export class StoreJson {
   /**
-   * @param {{saveName?: string, autoSave?: boolean, autoLoad?: boolean, expiration?: number}} opts
+   * @param {StoreOpts} opts
    */
-  constructor({ saveName, autoSave, autoLoad, expiration }) {
-    if (!saveName) throw Error("saveName required");
+  constructor(opts) {
+    if (!opts?.saveName) throw Error("saveName required");
 
-    this.autoSave = autoSave ?? false;
-    this.saveName = saveName;
-    this.expiration = expiration ?? 0;
-    this.autoLoad = autoLoad ?? false;
+    this.autoSave = opts?.autoSave ?? false;
+    this.saveName = opts?.saveName;
+    this.expiration = opts?.expiration ?? 0;
+    this.autoLoad = opts?.autoLoad ?? false;
 
     this.saveTimeout = null;
     this._lastSave = 0;
@@ -239,15 +248,15 @@ export const connectionList = {};
  */
 export class StoreSQLite {
   /**
-   * @param {{saveName: string, autoSave: boolean, expiration: number, tableName: string}} opts
+   * @param {StoreOpts} opts
    */
-  constructor({ saveName, autoSave, expiration, tableName }) {
-    if (!saveName) throw Error("saveName required");
+  constructor(opts) {
+    if (!opts?.saveName) throw Error("saveName required");
 
-    this.autoSave = autoSave ?? false;
-    this.saveName = saveName;
-    this.expiration = expiration ?? 0;
-    this.tableName = tableName ?? "data";
+    this.autoSave = opts?.autoSave ?? false;
+    this.saveName = opts?.saveName;
+    this.expiration = opts?.expiration ?? 0;
+    this.tableName = opts?.tableName ?? "data";
     this.ready = this._init();
   }
 
