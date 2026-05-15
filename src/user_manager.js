@@ -28,19 +28,28 @@ import { StoreJson } from "./store.js";
  * @property {number} addedAt
  */
 
+/**
+ * @typedef {Object} UserManagerOpts
+ * @property {string} [saveName]
+ * @property {Store} store
+ * @property {string[]} owners
+ */
+
 export class UserManager {
   /**
-   * @param {{saveName?: string, owners?: string[]}} options
+   * @param {UserManagerOpts} opts
    */
-  constructor({ saveName = "user.json", owners = [] }) {
-    this.storage = new StoreJson({
-      saveName: saveName,
-      autoSave: true,
-      autoLoad: true,
-    });
+  constructor(opts) {
+    this.storage =
+      opts?.store ||
+      new StoreJson({
+        saveName: opts?.saveName,
+        autoSave: true,
+        autoLoad: true,
+      });
 
     /** @type {string[]} */
-    this.owners = owners;
+    this.owners = opts?.owners || [];
   }
 
   /**
