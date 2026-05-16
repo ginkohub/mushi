@@ -46,7 +46,7 @@ export class Plugin {
     this.sock = undefined;
 
     /** @type {string} */
-    this.name = opts.name;
+    this.name = opts.name.trim().toLowerCase();
 
     /** @type {string|string[]|undefined}*/
     this.cmd = opts?.cmd;
