@@ -59,7 +59,11 @@ export class Handler {
     /** @type {boolean} */
     this.isReady = false;
 
+    /** @type {import('./pen.js').Pen}  */
     this.pen = new Pen({ prefix: "hand" });
+
+    /** @type {Set<string>} */
+    this.watchIDs = new Set();
   }
 
   /**
@@ -164,6 +168,38 @@ export class Handler {
     /* this.pen.Info(includeNames.join(", ")); */
   }
 
+  /* INFO: Events handlers */
+
+  /**
+   * @param {import('./context.js').Ctx} c
+   * @returns {boolean}
+   */
+  isIDExist(c) {
+    if (this.watchIDs.has(c.id)) {
+      return true;
+    } else {
+      if (this.watchIDs.size >= 500) {
+        const firstId = this.watchIDs.values().next().value;
+        this.watchIDs.delete(firstId);
+      }
+      this.watchIDs.add(c.id);
+      return false;
+    }
+  }
+
+  /**
+   * @param {import('./context.js').Ctx} c
+   */
+  isSafeForCMD(c) {
+    const isAppend = c?.eventType === "append";
+    const isPrekey = c?.type === "senderKeyDistributionMessage";
+    const isUndefined =
+      c?.type === "undefined" || typeof c?.type === "undefined";
+    const idExist = isPrekey || isUndefined ? true : this.isIDExist(c);
+
+    return !(isAppend || isPrekey || isUndefined || idExist);
+  }
+
   /**
    * @param {import('./context.js').Ctx} c
    */
@@ -194,7 +230,7 @@ export class Handler {
         },
       );
 
-      if (c.pattern?.length > 0) {
+      if (c.pattern?.length > 0 && this.isSafeForCMD(c)) {
         const pattern = c.pattern.toLowerCase();
         const cmd = this.plugin_commands.get(pattern);
         if (cmd) {
