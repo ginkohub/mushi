@@ -14,8 +14,9 @@ import { RegistryEvents } from "./registry.js";
 /**
  * @typedef {Object} HandlerOpts
  * @property {string[]} [plugins]
- * @property {string[]} prefixs
+ * @property {string[]} prefixes
  * @property {import('./registry.js').PluginRegistry} registry
+ * @property {import('./store.js').StoreJson} settings
  */
 
 /**
@@ -31,24 +32,30 @@ export class Handler {
    */
   constructor(opts) {
     /** @type {string[]} */
-    this.prefixs = opts?.prefixs?.length > 0 ? opts.prefixs : [".", "/"];
+    this.prefixes = opts?.prefixes?.length > 0 ? opts.prefixes : [".", "/"];
 
     /** @type {import('./registry.js').PluginRegistry} */
     this.registry = opts.registry;
+
     if (this.registry.isReady) {
       this.generate();
     } else {
       this.registry.once(RegistryEvents.READY, () => this.generate());
     }
+
     this.registry.on(RegistryEvents.PLUGIN_LOAD, () => {
       if (this.isReady) this.generate();
     });
+
     this.registry.on(RegistryEvents.PLUGIN_REMOVE, () => {
       if (this.isReady) this.generate();
     });
 
     /** @type {string[]} */
     this.plugins = opts.plugins;
+
+    /** @type {import('./store.js').StoreJson} */
+    this.settings = opts.settings;
 
     /** @type {Set<string>} */
     this.plugin_listeners = new Set();
@@ -64,6 +71,24 @@ export class Handler {
 
     /** @type {Set<string>} */
     this.watchIDs = new Set();
+  }
+
+  /**
+   * @param {string[]} list
+   */
+  setPrefixes(list) {
+    this.prefixes = Array.isArray(list) ? list : [list];
+    if (this.settings) {
+      this.settings.set("prefixes", this.prefixes);
+    }
+    this.generate();
+  }
+
+  /**
+   * @returns {string[]}
+   */
+  getPrefixes() {
+    return this.prefixes;
   }
 
   /**
@@ -114,7 +139,7 @@ export class Handler {
           cmd,
         };
       } else {
-        for (const prefix of this.prefixs) {
+        for (const prefix of this.prefixes) {
           result[prefix + cmd] = {
             name,
             prefix,
