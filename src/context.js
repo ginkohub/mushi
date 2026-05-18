@@ -77,28 +77,42 @@ export function extractTextContext(m) {
 }
 
 /**
+ * @typedef {Object} CtxOpts
+ * @property {'append'|'notify'} eventType
+ * @property {import('./const.js').Events} eventName
+ * @property {import('baileys').Contact} bot
+ * @property {import('./handler.js').Handler} handler
+ * @property {import('./client.js').Client} client
+
+/**
  * @class Ctx
  * @description Context parsed from a message
  */
 export class Ctx {
   /**
-   * @param {{handler: import('./handler.js').Handler, eventName: import('./const.js').Events, eventType: string, event: any}} opts
+   * @param {CtxOpts} opts
    */
-  constructor({ handler, eventName, eventType, event }) {
+  constructor(opts) {
     /** @returns {import('./handler.js').Handler} */
-    this.handler = () => handler;
+    this.handler = () => opts.handler;
+
+    /** @returns {import('./client.js').Client} */
+    this.client = () => opts.client;
 
     /** @returns {import('baileys').WASocket} */
-    this.sock = () => handler?.client?.sock;
+    this.sock = () => opts.client.sock;
 
     /** @type {import('./const.js').Events} */
-    this.eventName = eventName;
+    this.eventName = opts.eventName;
 
     /** @type {import('baileys').WAMessage|undefined} */
-    this.event = event;
+    this.event = opts.event;
 
     /** @type {string} */
-    this.eventType = eventType;
+    this.eventType = opts.eventType;
+
+    /** @type {import('baileys').Contact} */
+    this.bot = opts.bot;
   }
 
   async init() {
@@ -114,10 +128,10 @@ export class Ctx {
       : Date.now();
 
     /** @type {string} */
-    this.me = jidNormalizedUser(this.handler()?.client?.sock?.user?.id);
+    this.me = jidNormalizedUser(this.bot.id);
 
     /** @type {string} */
-    this.meLID = jidNormalizedUser(this.handler()?.client?.sock?.user?.lid);
+    this.meLID = jidNormalizedUser(this.bot.lid);
 
     if (this.eventName === Events.GROUPS_UPDATE) {
       /** @type {string} */
@@ -274,7 +288,7 @@ export class Ctx {
     this.isStatus = this.chat === "status@broadcast";
 
     if (this.isGroup) {
-      const data = this.handler()?.getGroupMetadata(this.chat);
+      const data = this.client()?.getGroupMetadata(this.chat);
       if (data && Array.isArray(data?.participants)) {
         /** @type {'lid' | 'pn'} */
         this.addressingMode = data.addressingMode;
@@ -309,11 +323,11 @@ export class Ctx {
       !this.type &&
       this.event?.messageStubParameters?.includes("Message absent from node");
 
-    /** @returns {string} */
-    this.user = () => this.handler().userManager?.getUser(this.senderJid);
+    /** @returns {import('./user_manager.js').User} */
+    this.user = this.client().getUser(this.senderJid);
 
     /** @returns {import('./chat_manager.js').Chat} */
-    this.chatData = () => this.handler().chatManager?.getChat(this.chat);
+    this.chatData = this.client().getChat(this.chat);
   }
 
   /**
@@ -331,7 +345,7 @@ export class Ctx {
    * @returns {string}
    */
   getName(jid) {
-    return this.handler()?.getName(jid);
+    return this.client().getName(jid);
   }
 
   /**
@@ -341,7 +355,7 @@ export class Ctx {
    * @returns {Promise<import('baileys').proto.WebMessageInfo>}
    */
   async sendMessage(jid, content, options) {
-    return await this.handler()?.sendMessage(jid, content, options);
+    return await this.client().sendMessage(jid, content, options);
   }
 
   /**
@@ -351,7 +365,7 @@ export class Ctx {
    * @returns {Promise<string>}
    */
   async relayMessage(jid, content, options) {
-    return await this.handler()?.relayMessage(jid, content, options);
+    return await this.client().relayMessage(jid, content, options);
   }
 
   /**
@@ -403,7 +417,7 @@ export class Ctx {
    * @param {string} jid
    */
   async chatModify(mods, jid) {
-    return await this.sock()?.chatModify(mods, jid);
+    return await this.sock().chatModify(mods, jid);
   }
 
   /**
@@ -411,7 +425,7 @@ export class Ctx {
    * @returns {Promise<void>}
    */
   async readMessages(keys) {
-    return await this.sock()?.readMessages(keys);
+    return await this.sock().readMessages(keys);
   }
 
   /**
@@ -453,7 +467,7 @@ export class Ctx {
       this.args = splitted.slice(1)?.join(" ");
 
       /** @type {boolean} */
-      this.isCMD = this.handler()?.isCMD(this.pattern);
+      this.isCMD = this.handler().isCMD(this.pattern);
 
       if (this.args && this.args?.length > 0) {
         try {
@@ -472,11 +486,7 @@ export class Ctx {
    * @param {import('baileys').ParticipantAction} action
    */
   async groupParticipantsUpdate(jid, participants, action) {
-    return await this.sock()?.groupParticipantsUpdate(
-      jid,
-      participants,
-      action,
-    );
+    return await this.sock().groupParticipantsUpdate(jid, participants, action);
   }
 
   /**
@@ -484,7 +494,7 @@ export class Ctx {
    * @param {string} subject
    */
   async groupUpdateSubject(jid, subject) {
-    return await this.sock()?.groupUpdateSubject(jid, subject);
+    return await this.sock().groupUpdateSubject(jid, subject);
   }
 
   /**
@@ -492,14 +502,14 @@ export class Ctx {
    * @param {string} description
    */
   async groupUpdateDescription(jid, description) {
-    return await this.sock()?.groupUpdateDescription(jid, description);
+    return await this.sock().groupUpdateDescription(jid, description);
   }
 
   /**
    * @param {string} jid
    */
   async groupInviteCode(jid) {
-    return await this.sock()?.groupInviteCode(jid);
+    return await this.sock().groupInviteCode(jid);
   }
 
   /**
