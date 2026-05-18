@@ -140,7 +140,8 @@ export default {
         `${t("prefix", {}, c)} ` +
         c
           .handler()
-          ?.prefixs?.map((p) => `\`${p}\``)
+          ?.getPrefixes()
+          ?.map((p) => `\`${p}\``)
           .join(", "),
         `${t("lang", {}, c)} ${getLang()} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
