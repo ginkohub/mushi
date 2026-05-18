@@ -21,7 +21,8 @@ import { RegistryEvents } from "./registry.js";
 /**
  * @typedef {Object} Command
  * @property {string} name
- * @property {prefix} prefix
+ * @property {string} prefix
+ * @property {string} cmd
  */
 
 export class Handler {
@@ -39,6 +40,12 @@ export class Handler {
     } else {
       this.registry.once(RegistryEvents.READY, () => this.generate());
     }
+    this.registry.on(RegistryEvents.PLUGIN_LOAD, () => {
+      if (this.isReady) this.generate();
+    });
+    this.registry.on(RegistryEvents.PLUGIN_REMOVE, () => {
+      if (this.isReady) this.generate();
+    });
 
     /** @type {string[]} */
     this.plugins = opts.plugins;
@@ -58,7 +65,7 @@ export class Handler {
   /**
    * Get command by pattern
    * @param {string} pattern
-   * @returns {{id: string, prefix?: string, cmd: string, plugin:import('./plugin.js').Plugin}|undefined}
+   * @returns {Command}
    */
   getCMD(pattern) {
     pattern = pattern.trim().toLowerCase();
@@ -87,26 +94,32 @@ export class Handler {
   /**
    * Generate command and listener for a plugin
    * @param {string} name
-   * @param {string|string[]} cmd
+   * @param {string|string[]} cmds
    * @param {boolean} noPrefix
+   * @returns {Record<string, Command>}
    */
-  generateCMD(name, cmd, noPrefix) {
-    const cmds = Array.isArray(cmd) ? cmd : [cmd];
-    for (const cmd of cmds) {
+  generateCMD(name, cmds, noPrefix) {
+    cmds = Array.isArray(cmds) ? cmds : [cmds];
+    const result = {};
+    for (let cmd of cmds) {
+      cmd = cmd.toLowerCase();
       if (noPrefix) {
-        this.plugin_commands.set(cmd.toLowerCase(), {
+        result[cmd] = {
           name: name,
           prefix: "",
-        });
+          cmd,
+        };
       } else {
         for (const prefix of this.prefixs) {
-          this.plugin_commands.set(prefix + cmd.toLowerCase(), {
+          result[prefix + cmd] = {
             name,
             prefix,
-          });
+            cmd,
+          };
         }
       }
     }
+    return result;
   }
 
   /**
@@ -115,8 +128,8 @@ export class Handler {
   generate() {
     this.isReady = false;
 
-    this.plugin_listeners.clear();
-    this.plugin_commands.clear();
+    const temp_listeners = new Set();
+    const temp_commands = new Map();
 
     const names =
       this.plugins?.length > 0 ? this.plugins : this.registry.plugins.keys();
@@ -127,22 +140,28 @@ export class Handler {
       const item = this.registry.getPlugin(pluginName);
       if (!item) {
         this.pen.Warn(`Plugin ${pluginName} not found`);
-        this.pen.Warn(this.registry.plugins.keys());
         continue;
       }
       if (item.plugin.cmd) {
-        this.generateCMD(pluginName, item.plugin.cmd, item.plugin.noPrefix);
+        for (const [cmd, data] of Object.entries(
+          this.generateCMD(pluginName, item.plugin.cmd, item.plugin.noPrefix),
+        )) {
+          temp_commands.set(cmd, data);
+        }
       } else {
-        this.plugin_listeners.add(pluginName);
+        temp_listeners.add(pluginName);
       }
       includeNames.push(pluginName);
     }
+
+    this.plugin_listeners = temp_listeners;
+    this.plugin_commands = temp_commands;
 
     this.isReady = true;
     this.pen.Info(
       `${this.plugin_listeners.size} listeners ${this.plugin_commands.size} commands`,
     );
-    this.pen.Info(includeNames.join(", "));
+    /* this.pen.Info(includeNames.join(", ")); */
   }
 
   /**
@@ -157,6 +176,7 @@ export class Handler {
           if (!item) return;
           try {
             const clone = c.clone();
+            clone.plugin = () => item.plugin;
 
             /** @type {import('./reason.js').Reason} */
             const checked = await item.plugin.check(clone);
@@ -182,6 +202,8 @@ export class Handler {
           const item = this.registry.getPlugin(cmd.name);
           if (item) {
             const clone = c.clone();
+            clone.plugin = () => item.plugin;
+
             allTasks.push(
               (async () => {
                 try {
