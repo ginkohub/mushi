@@ -158,7 +158,7 @@ export function translate(sets, altLang = "en") {
       lang = ctx;
     } else if (ctx && typeof ctx === "object") {
       // Check User pref, then Chat pref, then Global
-      lang = ctx.user()?.lang || ctx.chatData()?.lang || getLang();
+      lang = ctx.user?.lang || ctx.chatData?.lang || getLang();
     }
 
     let text = sets[lang]?.[key] || sets[altLang]?.[key] || key;

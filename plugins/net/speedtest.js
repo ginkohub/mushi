@@ -15,8 +15,8 @@ import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
 
 const service = new SpeedTestService();
-const clientInfo = await service.fetchClientInfo();
-const bestServer = await service.findBestServer();
+let clientInfo;
+let bestServer;
 
 const t = translate({
   en: {
@@ -57,6 +57,9 @@ export default {
   roles: [Role.PREMIUM],
   /** @param {import('../../src/context.js').Ctx} c */
   exec: async (c) => {
+    if (!bestServer) bestServer = await service.findBestServer();
+    if (!clientInfo) clientInfo = await service.fetchClientInfo();
+
     let testServer = bestServer;
 
     if (c.argv?.server && c.argv?.server?.length > 1) {

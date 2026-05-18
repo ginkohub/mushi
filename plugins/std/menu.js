@@ -89,7 +89,8 @@ export default {
     const plugins = new Map();
 
     if (userKeys?.length > 0) {
-      c.handler()?.plugins?.forEach((p, k) => {
+      c.handler()?.registry?.plugins?.forEach((item, k) => {
+        const p = item.plugin;
         if (!p?.cmd) return;
 
         const searchable = [
@@ -132,36 +133,37 @@ export default {
     } else {
       texts.push(t("available", {}, c));
 
-      const since = Date.now() - c.handler()?.client?.dateCreated;
+      const since = Date.now() - c.client()?.startedAt;
       texts.push(
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
         `${t("prefix", {}, c)} ` +
         c
           .handler()
-          ?.prefix?.map((p) => `\`${p}\``)
+          ?.prefixs?.map((p) => `\`${p}\``)
           .join(", "),
-        `${t("lang", {}, c)} ${getLang()} (global)${c.chatData()?.lang ? `, ${c.chatData().lang} (this chat)` : ""}`,
+        `${t("lang", {}, c)} ${getLang()} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
 
       const categories = new Map();
       let cmdCount = 0;
 
-      for (const dataCMD of c.handler()?.cmds?.values() ?? []) {
-        const p = c.handler()?.plugins?.get(dataCMD?.id);
+      for (const dataCMD of c.handler()?.plugin_commands?.values() ?? []) {
+        const item = c.handler()?.registry?.getPlugin(dataCMD?.name);
+        const p = item?.plugin;
         if (!p || p?.hidden) continue;
 
         // If searching, filter the full list
-        if (userKeys?.length > 0 && !plugins.has(dataCMD.id)) continue;
+        if (userKeys?.length > 0 && !plugins.has(dataCMD.name)) continue;
 
         if (!categories.has(p.cat)) categories.set(p.cat, new Map());
 
         const cat = categories.get(p.cat);
-        if (cat.has(dataCMD?.id)) continue;
+        if (cat.has(dataCMD?.name)) continue;
 
         const patt = Array.isArray(p.cmd) ? p.cmd[0] : p.cmd;
 
-        cat.set(dataCMD?.id, {
+        cat.set(dataCMD?.name, {
           pre: `${p.noPrefix ? patt : prefix + patt}`,
           plugin: p,
         });
@@ -192,7 +194,7 @@ export default {
           "footer",
           {
             cmd: cmdCount,
-            listener: c.handler()?.listens?.size,
+            listener: c.handler()?.plugin_listeners?.size,
             disabled: disabledCount,
           },
           c,

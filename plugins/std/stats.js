@@ -18,12 +18,12 @@ export default {
   exec: async (c) => {
     if (!c.senderJid || !c.type) return;
 
-    const user = c.handler().userManager.getUser(c.senderJid);
+    const user = c.client().getUser(c.senderJid);
     if (!user) return;
 
     if (!user.stats) user.stats = {};
     user.stats[c.type] = (user.stats[c.type] || 0) + 1;
 
-    c.handler().userManager.updateUser(c.senderJid, { stats: user.stats });
+    c.client().updateUser(c.senderJid, { stats: user.stats });
   },
 };

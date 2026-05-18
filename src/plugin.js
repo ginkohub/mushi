@@ -131,7 +131,7 @@ export class Plugin {
     }
 
     if (this.roles?.length > 0) {
-      const user = ctx.user();
+      const user = ctx.user;
       if (!user?.roles?.length) {
         return reason
           .setBad()
