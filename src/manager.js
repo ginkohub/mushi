@@ -90,7 +90,7 @@ export class BotManager extends EventEmitter {
 
     config.handler = new Handler({
       registry: this.registry,
-      prefixs: config.prefixs || [".", "/"],
+      prefixes: config.prefixes,
       plugins: config.plugins || [],
     });
 
