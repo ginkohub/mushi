@@ -23,6 +23,80 @@ export const LogLevel = Object.freeze({
 /** @type {string} */
 export const TIME_FORMAT = "HH:mm:ss.SSS";
 
+export const TimeFormats = Object.freeze({
+  // "Thu May 16 10:30:00 2026"
+  ANSIC: "ddd MMM DD HH:mm:ss YYYY",
+
+  // "Thu May 16 10:30:00 WIB 2026"
+  UnixDate: "ddd MMM DD HH:mm:ss ZZ YYYY",
+
+  // "Thu May 16 10:30:00 +0700 2026"
+  RubyDate: "ddd MMM DD HH:mm:ss ZZ YYYY",
+
+  // "16 May 26 10:30 WIB"
+  RFC822: "DD MMM YY HH:mm ZZ",
+
+  // "16 May 26 10:30 +0700"
+  RFC822Z: "DD MMM YY HH:mm ZZ",
+
+  // "Saturday, 16-May-26 10:30:00 WIB"
+  RFC850: "dddd, DD-MMM-YY HH:mm:ss ZZ",
+
+  // "Thu, 16 May 2026 10:30:00 WIB"
+  RFC1123: "ddd, DD MMM YYYY HH:mm:ss ZZ",
+
+  // "Thu, 16 May 2026 10:30:00 +0700"
+  RFC1123Z: "ddd, DD MMM YYYY HH:mm:ss ZZ",
+
+  // "2026-05-16T10:30:00+07:00"
+  RFC3339: "YYYY-MM-DDTHH:mm:ssZ",
+
+  // "2026-05-16T10:30:00.123456789+07:00"
+  RFC3339Nano: "YYYY-MM-DDTHH:mm:ss.SSSSSSSSSZ",
+
+  // "10:30AM"
+  Kitchen: "h:mmA",
+});
+
+const DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_LONG = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const MONTHS_LONG = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 /**
  * getTime returns the current time in the specified format.
  *
@@ -31,24 +105,65 @@ export const TIME_FORMAT = "HH:mm:ss.SSS";
  */
 export function getTime(format) {
   if (!format || format === "") {
-    format = TIME_FORMAT;
+    format = TimeFormats.Kitchen;
   }
-  const now = new Date();
 
-  /** @type {Record<string, any>} */
+  const now = new Date();
+  const hours24 = now.getHours();
+  const hours12 = hours24 % 12 || 12;
+
+  // offset timezone, e.g. "+0700" dan "+07:00"
+  const offsetMin = -now.getTimezoneOffset();
+  const offsetSign = offsetMin >= 0 ? "+" : "-";
+  const offsetAbs = Math.abs(offsetMin);
+  const offsetH = Math.floor(offsetAbs / 60)
+    .toString()
+    .padStart(2, "0");
+  const offsetM = (offsetAbs % 60).toString().padStart(2, "0");
+  const offsetFlat = `${offsetSign}${offsetH}${offsetM}`; // +0700
+  const offsetColon = `${offsetSign}${offsetH}:${offsetM}`; // +07:00
+
+  // timezone name, e.g. "WIB"
+  const tzName =
+    now.toLocaleTimeString("en", { timeZoneName: "short" }).split(" ").pop() ??
+    offsetFlat;
+
+  /** @type {Record<string, string>} */
   const repl = {
-    HH: now.getHours().toString().padStart(2, "0"),
+    YYYY: now.getFullYear().toString(),
+    YY: now.getFullYear().toString().slice(-2),
+
+    MMMM: MONTHS_LONG[now.getMonth()],
+    MMM: MONTHS_SHORT[now.getMonth()],
+    MM: (now.getMonth() + 1).toString().padStart(2, "0"),
+    M: (now.getMonth() + 1).toString(),
+
+    dddd: DAYS_LONG[now.getDay()],
+    ddd: DAYS_SHORT[now.getDay()],
+    DD: now.getDate().toString().padStart(2, "0"),
+    D: now.getDate().toString(),
+
+    HH: hours24.toString().padStart(2, "0"),
+    H: hours24.toString(),
+    hh: hours12.toString().padStart(2, "0"),
+    h: hours12.toString(),
+
     mm: now.getMinutes().toString().padStart(2, "0"),
     ss: now.getSeconds().toString().padStart(2, "0"),
     SSS: now.getMilliseconds().toString().padStart(3, "0"),
+
+    A: hours24 < 12 ? "AM" : "PM",
+    a: hours24 < 12 ? "am" : "pm",
+
+    ZZ: tzName,
+    Z: offsetColon,
   };
 
-  for (const key in repl) {
-    format = format.replaceAll(key, repl[key]);
-  }
-  return format;
-}
+  const tokens = Object.keys(repl).sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(tokens.join("|"), "g");
 
+  return format.replace(pattern, (match) => repl[match] ?? match);
+}
 /**
  * Pen is a class that provides methods to print colored logs to the console.
  *
@@ -62,7 +177,7 @@ export class Pen {
   constructor({ level = LogLevel.DEBUG, format, prefix }) {
     this.prefix = prefix;
     this.level = level;
-    this.format = format ?? TIME_FORMAT;
+    this.format = format ?? TimeFormats.Kitchen;
   }
 
   /**
