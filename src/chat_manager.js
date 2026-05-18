@@ -20,16 +20,24 @@ import { StoreJson } from "./store.js";
  * @property {number} addedAt
  */
 
+/**
+ * @typedef {Object} ChatManagerOpts
+ * @property {string} [saveName]
+ * @property {import('./store.js').StoreSQLite} store
+ */
+
 export class ChatManager {
   /**
-   * @param {{saveName?: string}} options
+   * @param {ChatManagerOpts} opts
    */
-  constructor({ saveName = "chat.json" }) {
-    this.storage = new StoreJson({
-      saveName: saveName,
-      autoSave: true,
-      autoLoad: true,
-    });
+  constructor(opts) {
+    this.storage =
+      opts.store ||
+      new StoreJson({
+        saveName: opts.saveName,
+        autoSave: true,
+        autoLoad: true,
+      });
   }
 
   /**
