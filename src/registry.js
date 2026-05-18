@@ -28,8 +28,9 @@ export function cleanName(name) {
 
 /**
  * @typedef {Object} PluginItem
+ * @property {string} name
  * @property {string} location
- * @property {string} id
+ * @property {number} estimate
  * @property {import('./plugin.js').Plugin}
  */
 
@@ -213,9 +214,9 @@ export class PluginRegistry extends EventEmitter {
             if (plugin.name && typeof plugin.exec === "function") {
               /** @type {PluginItem} */
               const item = {
-                estimate,
-                location,
                 name: plugin.name,
+                location,
+                estimate,
                 plugin: new Plugin(plugin),
               };
 
