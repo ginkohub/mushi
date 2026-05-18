@@ -37,8 +37,12 @@ const TextExtractors = {
   listResponseMessage: (m) => m.singleSelectReply?.selectedRowId,
   templateButtonReplyMessage: (m) => m.selectedId,
   interactiveResponseMessage: (m) => {
-    const body = JSON.parse(m.nativeFlowResponseMessage?.paramsJson || "{}");
-    return body.id || m.nativeFlowResponseMessage?.selectedDisplayText;
+    try {
+      const body = JSON.parse(m.nativeFlowResponseMessage?.paramsJson || "{}");
+      return body.id || m.nativeFlowResponseMessage?.selectedDisplayText;
+    } catch {
+      return "";
+    }
   },
 };
 
@@ -434,7 +438,7 @@ export class Ctx {
    */
   async LIDToPN(lid) {
     return jidNormalizedUser(
-      await this.sock().signalRepository.lidMapping.getPNForLID(lid),
+      await this.sock()?.signalRepository?.lidMapping?.getPNForLID(lid),
     );
   }
 
@@ -444,7 +448,7 @@ export class Ctx {
    */
   async PNToLID(jid) {
     return jidNormalizedUser(
-      await this.sock().signalRepository.lidMapping.getLIDForPN(jid),
+      await this.sock()?.signalRepository?.lidMapping?.getLIDForPN(jid),
     );
   }
 
@@ -524,6 +528,10 @@ export class Ctx {
     if (m?.message?.documentWithCaptionMessage)
       m = m.message.documentWithCaptionMessage;
     if (m?.message?.viewOnceMessage) m = m.message.viewOnceMessage;
+    if (m?.message?.viewOnceMessageV2) m = m.message.viewOnceMessageV2;
+    if (m?.message?.viewOnceMessageV2Extension)
+      m = m.message.viewOnceMessageV2Extension;
+
     return downloadMediaMessage(m, output, options);
   }
 
