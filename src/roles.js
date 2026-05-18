@@ -43,16 +43,15 @@ export const RoleLevel = Object.freeze({
  * @enum {string}
  */
 export const RoleBadge = Object.freeze({
-  [Role.BLOCKED]: "🚫",
-  [Role.GUEST]: "👤",
-  [Role.USER]: "✅",
-  [Role.PREMIUM]: "🌟",
+  [Role.BLOCKED]: "⛔",
+  [Role.GUEST]: "👁️",
+  [Role.USER]: "👤",
+  [Role.PREMIUM]: "💎",
   [Role.MODERATOR]: "🛡️",
-  [Role.ADMIN]: "🚀",
-  [Role.SUPERADMIN]: "⚡",
+  [Role.ADMIN]: "⚙️",
+  [Role.SUPERADMIN]: "🔑",
   [Role.OWNER]: "👑",
 });
-
 /**
  * @typedef {typeof Role[keyof typeof Role]} RoleName
  */
@@ -63,6 +62,16 @@ export const RoleBadge = Object.freeze({
  * @returns {string}
  */
 export function getRoleBadge(roleName) {
+  return RoleBadge[roleName] || "";
+}
+
+/**
+ * Get badge for role level
+ * @param {number} roleLevel
+ * @returns {string}
+ */
+export function getRoleLevelBadge(roleLevel) {
+  const roleName = levelToName(roleLevel);
   return RoleBadge[roleName] || "";
 }
 
