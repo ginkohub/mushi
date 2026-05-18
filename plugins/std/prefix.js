@@ -9,9 +9,7 @@
  */
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { getPrefixes, setPrefixes } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -54,7 +52,7 @@ export default [
       if (!newPrefix) newPrefix = [];
       newPrefix = newPrefix.filter((v, i, a) => a.indexOf(v) === i && v);
 
-      let allow = getPrefixes();
+      let allow = c.handler().getPrefixes();
       if (!allow) allow = [];
 
       let pattern = c.pattern;
@@ -70,8 +68,7 @@ export default [
       }
 
       if (status.length > 0) {
-        setPrefixes(allow);
-        c.handler().setPrefix(allow);
+        c.handler().setPrefixes(allow);
       }
 
       let text = "";
@@ -95,12 +92,3 @@ export default [
     },
   },
 ];
-
-/** @param {import('../../src/handler.js').Handler} hand */
-export const pre = (hand) => {
-  const prefixes = getPrefixes();
-  if (prefixes?.length > 0) {
-    pen.Debug("Setting prefix to", prefixes, "from", hand.prefix);
-    hand?.setPrefix(prefixes);
-  }
-};
