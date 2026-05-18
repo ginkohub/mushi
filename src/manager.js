@@ -12,27 +12,37 @@ import EventEmitter from "node:events";
 import fs from "node:fs";
 import path from "node:path";
 import { Client } from "./client.js";
-import pen from "./pen.js";
+import { Handler } from "./handler.js";
+import { Pen } from "./pen.js";
 import { PluginRegistry } from "./registry.js";
 import { delay } from "./tools.js";
+
+/**
+ * @typedef {Object} BotManagerOpts
+ * @property {string} baseDir
+ * @property {string} pluginDir
+ * @property {Record<string, any>} [registryListeners]
+ */
 
 /**
  * @class BotManager
  * @description class for handling multiple WhatsApp bot instances
  */
 export class BotManager extends EventEmitter {
-  constructor(baseDir = "data", pluginDir = "plugins") {
+  /** @param {BotManagerOpts} opts */
+  constructor(opts) {
     super();
+
+    this.pen = new Pen({ prefix: "mgr", format: "" });
 
     /** @type {Map<string, import('./client.js').Client>} */
     this.bots = new Map();
 
     /** @type {string} */
-    this.baseDir = baseDir || process.cwd();
+    this.baseDir = opts?.baseDir || path.resolve(process.cwd(), "data");
 
     /** @type {string} */
-    this.pluginDir =
-      pluginDir || path.resolve(path.resolve(process.cwd(), "plugins"));
+    this.pluginDir = opts?.pluginDir || path.resolve(process.cwd(), "plugins");
 
     if (!fs.existsSync(this.baseDir)) {
       fs.mkdirSync(this.baseDir, { recursive: true });
@@ -41,10 +51,16 @@ export class BotManager extends EventEmitter {
     /** @type {PluginRegistry} */
     this.registry = new PluginRegistry(this.pluginDir);
 
+    if (opts?.registryListeners) {
+      for (const [key, fn] of Object.entries(opts.registryListeners)) {
+        this.registry.on(key, fn);
+      }
+    }
+
     /* Register signal handlers */
     ["SIGTERM", "SIGINT"].forEach((signal) => {
       process.on(signal, async () => {
-        pen.Info(`Received ${signal}. Stopping all bot instances...`);
+        this.pen.Info(`Received ${signal}. Stopping all bot instances...`);
         await this.stopAll();
       });
     });
@@ -66,14 +82,27 @@ export class BotManager extends EventEmitter {
    */
   addBot(config) {
     if (this.bots.has(config.name)) {
-      pen.Warn(
+      this.pen.Warn(
         `Bot instance ${config.name} already exists. Skipping initialization.`,
       );
       return this.bots.get(config.name);
     }
 
-    config.botDir = config.botDir || path.join(this.baseDir, config.name);
+    config.handler = new Handler({
+      registry: this.registry,
+      prefixs: config.prefixs || [".", "/"],
+      plugins: config.plugins || [],
+    });
 
+    if (this.registry.isReady) {
+      config.handler.generate();
+    } else {
+      this.registry.once("ready", () => {
+        config.handler.generate();
+      });
+    }
+
+    config.botDir = config.botDir || path.join(this.baseDir, config.name);
     const bot = new Client(config);
 
     this.bots.set(config.name, bot);
@@ -93,7 +122,7 @@ export class BotManager extends EventEmitter {
           const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
           this.addBot(config);
         } catch (e) {
-          pen.Error(`Failed to load config for instance ${id}:`, e);
+          this.pen.Error(`Failed to load config for instance ${id}:`, e);
         }
       }
     }
@@ -106,13 +135,13 @@ export class BotManager extends EventEmitter {
    */
   async connectAll() {
     for (const [id, bot] of this.bots) {
-      pen.Info(`Connecting bot: ${id}`);
+      this.pen.Info(`Connecting bot: ${id}`);
       try {
         await bot.connect();
         // Delay 2s between connections to prevent resource spikes
         await delay(2000);
       } catch (e) {
-        pen.Error(`Failed to connect bot ${id}:`, e);
+        this.pen.Error(`Failed to connect bot ${id}:`, e);
       }
     }
   }
@@ -138,7 +167,7 @@ export class BotManager extends EventEmitter {
     if (bot?.sock) {
       bot.sock.end();
       this.bots.delete(id);
-      pen.Info(`Bot ${id} disconnected and removed.`);
+      this.pen.Info(`Bot ${id} disconnected and removed.`);
     }
   }
 }
