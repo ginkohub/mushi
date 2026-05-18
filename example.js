@@ -15,7 +15,7 @@ import { ClientEvents } from "./src/client.js";
 import { BotManager } from "./src/manager.js";
 import pen from "./src/pen.js";
 import { RegistryEvents } from "./src/registry.js";
-import { getRoleBadge, rolesToLevel } from "./src/roles.js";
+import { getRoleLevelBadge, RoleLevel, rolesToLevel } from "./src/roles.js";
 import { isBun, isDeno } from "./src/tools.js";
 
 /* Load environment variables from .env file */
@@ -41,8 +41,8 @@ function parseItems(items) {
   const parsedItems = [];
   for (const [key, val] of Object.entries(items)) {
     const roles = rolesToLevel(val.roles) || [];
-    const rolesMax = Math.max(roles);
-    parsedItems.push(`${key}:${getRoleBadge(rolesMax)}`);
+    const rolesMax = roles.length > 0 ? Math.max(...roles) : RoleLevel.guest;
+    parsedItems.push(`${key}:${getRoleLevelBadge(rolesMax)}`);
   }
   return parsedItems;
 }
@@ -54,7 +54,7 @@ const manager = new BotManager({
     [RegistryEvents.PLUGIN_LOAD]: async (item) => {
       const filename = path.basename(item.location);
       pen.Info(
-        `Load: ${pen.MagentaBr(filename)} ${item?.estimate || 0}ms  ${parseItems(item?.items)}`,
+        `Load: ${pen.MagentaBr(filename)} ${item?.estimate || 0}ms${parseItems(item?.items)?.map((i) => `\n  - ${i}`)}`,
       );
     },
   },
