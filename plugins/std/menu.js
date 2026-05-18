@@ -79,7 +79,7 @@ export default {
   desc: "Show the menu of commands",
   roles: [Role.GUEST],
   exec: async (c) => {
-    const prefix = c.pattern[0];
+    const prefix = c.prefix;
     const isDetail = c.pattern.endsWith("?");
     const texts = [];
     const withDesc = c.argv?.desc || c.argv?.d;
