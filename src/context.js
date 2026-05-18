@@ -461,10 +461,11 @@ export class Ctx {
     /* Parsing cmd */
     if (text && text.length > 0) {
       const splitted = text.split(" ");
-      /** @type {string} - With prefix */
+
+      /** @type {string} - Contains prefix+cmd */
       this.pattern = splitted[0];
 
-      /** @type {string} - No prefixed */
+      /** @type {string} - Cmd no prefixed */
       this.cmd = this.pattern?.slice(this.prefix?.length ?? 1);
 
       /** @type {string} */

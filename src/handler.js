@@ -203,6 +203,8 @@ export class Handler {
           if (item) {
             const clone = c.clone();
             clone.plugin = () => item.plugin;
+            clone.prefix = cmd.prefix;
+            clone.cmd = cmd.cmd;
 
             allTasks.push(
               (async () => {
