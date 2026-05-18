@@ -97,7 +97,7 @@ export const Method = Object.freeze({
  * @property {import('baileys').WABrowserDescription} browser
  * @property {import('baileys').UserFacingSocketConfig} socketCofig
  * @property {import('./handler.js').Handler} handler
- * @property {string[]} prefixs
+ * @property {string[]} prefixes
  * @property {string[]} plugins
  */
 
@@ -208,6 +208,14 @@ export class Client extends EventEmitter {
     this.initBotDir();
     this.initDatabases();
     await this.initBot();
+
+    this.handler.settings = this.settings;
+
+    const prefixes = this.settings.get("prefixes");
+    if (Array.isArray(prefixes) && prefixes?.length > 0) {
+      this.handler.setPrefixes(prefixes);
+      this.handler.generate();
+    }
   }
 
   initDatabases() {
