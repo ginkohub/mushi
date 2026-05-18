@@ -97,7 +97,7 @@ function formatCaption(video, c) {
     "",
     `*${t("author", {}, c)}:* ${video.uploader || t("unknown", {}, c)}`,
     `*${t("duration", {}, c)}:* ${video.duration_string || t("na", {}, c)}`,
-    `*${t("views", {}, c)}:* ${video.view_count?.toLocaleString(c.user()?.lang || "en-US") ?? t("na", {}, c)}`,
+    `*${t("views", {}, c)}:* ${video.view_count?.toLocaleString(c.user?.lang || "en-US") ?? t("na", {}, c)}`,
   ];
   return parts.join("\n");
 }

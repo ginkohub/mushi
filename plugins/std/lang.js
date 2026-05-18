@@ -78,7 +78,7 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.chatData()?.lang || getLang();
+      const current = c.chatData?.lang || getLang();
 
       if (isQuestion || !lang) {
         return await c.reply({
@@ -114,7 +114,7 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.user()?.lang || getLang();
+      const current = c.user?.lang || getLang();
 
       if (isQuestion || !lang) {
         return await c.reply({

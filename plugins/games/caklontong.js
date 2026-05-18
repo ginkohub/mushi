@@ -231,7 +231,7 @@ export default [
         sessions.delete(c.chat);
 
         const xp = session.xp;
-        const user = c.user();
+        const user = c.user;
         if (user) {
           user.xp += xp;
           c.handler().userManager.updateUser(c.senderJid, user);
