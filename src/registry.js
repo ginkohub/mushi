@@ -18,11 +18,41 @@ import { Plugin } from "./plugin.js";
 import { watchDir } from "./tools.js";
 
 /**
+ * Clean name
+ * @param {string} name
+ * @returns {string}
+ */
+export function cleanName(name) {
+  return name.trim().toLowerCase();
+}
+
+/**
  * @typedef {Object} PluginItem
  * @property {string} location
  * @property {string} id
  * @property {import('./plugin.js').Plugin}
  */
+
+/**
+ * @enum {string}
+ * @readonly
+ */
+export const RegistryEvents = Object.freeze({
+  PLUGIN_LOAD: "plugin:load",
+  PLUGIN_ADD: "plugin:add",
+  PLUGIN_ERROR: "plugin:error",
+  PLUGIN_REMOVE: "plugin:remove",
+
+  WATCH_START: "watch:start",
+  WATCH_CLOSE: "watch:close",
+  WATCH_STOP: "watch:stop",
+  WATCH_ERROR: "watch:error",
+
+  READY: "ready",
+
+  SCAN_START: "scan:start",
+  SCAN_END: "scan:end",
+});
 
 /**
  * @class PluginRegistry
@@ -43,7 +73,7 @@ export class PluginRegistry extends EventEmitter {
 
     this.isReady = false;
 
-    this.pen = new Pen({ prefix: "registry" });
+    this.pen = new Pen({ prefix: "reg" });
 
     this.scan(this.pluginDir);
 
@@ -74,7 +104,7 @@ export class PluginRegistry extends EventEmitter {
       if (watcherIntance) {
         if (typeof watcherIntance.close === "function") {
           await watcherIntance.close();
-          this.emit("watch", "closed");
+          this.emit(RegistryEvents.WATCH_CLOSE);
         }
         this.watcher = null;
       }
@@ -88,6 +118,7 @@ export class PluginRegistry extends EventEmitter {
    * @param {string} dir
    */
   async scan(dir) {
+    this.emit(RegistryEvents.SCAN_START, dir);
     const walk = async (currentDir) => {
       let files = [];
       try {
@@ -114,38 +145,42 @@ export class PluginRegistry extends EventEmitter {
 
     await walk(dir);
     this.isReady = true;
-    this.emit("ready");
+
+    this.emit(RegistryEvents.SCAN_END, dir);
+    this.emit(RegistryEvents.READY);
   }
 
   /**
    * Add plugins to registry
-   * @param {...PluginItem} items
+   * @param {PluginItem} item
    */
-  add(...items) {
-    for (const item of items) {
-      if (!item.name) {
-        this.pen.Warn(`Skipped! missing plugin name ${item.location}`);
-        continue;
-      }
+  add(item) {
+    if (!item.name) {
+      this.pen.Warn(`Skipped! missing plugin name ${item.location}`);
+      return;
+    } else {
       if (this.plugins.has(item.name)) {
         this.pen.Warn(`Duplicate name ${item.name}`);
       }
       this.plugins.set(item.name, item);
-      this.emit("plugin-add", item.name, item.location);
+      this.emit(RegistryEvents.PLUGIN_ADD, {
+        name: item.name,
+        location: item.location,
+      });
     }
   }
 
   /**
    * Load plugin file
-   * @param {string} loc
+   * @param {string} location
    */
-  async loadFile(loc) {
-    loc = path.resolve(loc);
+  async loadFile(location) {
+    location = path.resolve(location);
 
-    if (!loc.endsWith(".js")) return;
+    if (!location.endsWith(".js")) return;
 
     try {
-      const filename = loc.split("/").pop();
+      const filename = location.split("/").pop();
 
       if (
         filename &&
@@ -156,65 +191,74 @@ export class PluginRegistry extends EventEmitter {
         return;
       }
 
-      const originalLoc = loc;
+      const original = location;
       if (platform() === "win32") {
-        loc = pathToFileURL(loc).href;
+        location = pathToFileURL(location).href;
       }
 
-      const imported = await import(`${loc}?t=${Date.now()}`);
+      const start = Date.now();
+      const imported = await import(`${location}?t=${Date.now()}`);
+      const estimate = Date.now() - start;
+
       if (!imported) return;
 
-      this.removeByLocation(originalLoc);
+      this.removeByLocation(original);
 
-      /** @type {Array<{location: string, names: Array<string>}>} */
-      const items = [];
+      /** @type {Record<string, any>} */
+      const items = {};
 
       if (imported.default) {
         if (Array.isArray(imported.default)) {
-          const names = [];
           for (const plugin of imported.default) {
             if (plugin.name && typeof plugin.exec === "function") {
               /** @type {PluginItem} */
               const item = {
-                location: loc,
+                estimate,
+                location,
                 name: plugin.name,
                 plugin: new Plugin(plugin),
               };
 
               this.add(item);
-              names.push(item.name);
+              items[item.name] = {
+                cmd: plugin.cmd,
+                roles: plugin.roles,
+              };
             }
           }
-          items.push({ names, location: loc });
         } else {
           if (typeof imported.default.exec === "function") {
             /** @type {PluginItem} */
             const item = {
-              location: loc,
+              estimate,
+              location,
               name: imported.default.name,
               plugin: new Plugin(imported.default),
             };
 
             this.add(item);
-            items.push({ names: [item.name], location: loc });
+            items[item.name] = {
+              cmd: imported.default.cmd,
+              roles: imported.default.roles,
+            };
           }
         }
       }
 
-      /* Notify for loaded */
-      this.emit("load-file", ...items);
+      this.emit(RegistryEvents.PLUGIN_LOAD, { location, estimate, items });
     } catch (e) {
-      this.pen.Error("registry-load", loc, e);
+      this.pen.Error("registry-load", location, e);
+      this.emit(RegistryEvents.PLUGIN_ERROR, { location, error: e });
     }
   }
 
   /**
    * Remove by location
-   * @param {string} loc
+   * @param {string} location
    */
-  removeByLocation(loc) {
+  removeByLocation(location) {
     for (const [name, item] of this.plugins.entries()) {
-      if (item.location === loc) {
+      if (item.location === location) {
         this.remove(name);
       }
     }
@@ -228,8 +272,7 @@ export class PluginRegistry extends EventEmitter {
     if (this.plugins.has(name)) {
       this.plugins.delete(name);
 
-      /* Notify for remove */
-      this.emit("remove", name);
+      this.emit(RegistryEvents.PLUGIN_REMOVE, name);
     }
   }
 
