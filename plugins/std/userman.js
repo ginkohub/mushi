@@ -84,7 +84,7 @@ export default [
           if (lidName) updateData.name = lidName;
         }
 
-        const user = c.handler().userManager.updateUser(jid, updateData);
+        const user = c.client().userManager.updateUser(jid, updateData);
         if (!user) continue;
 
         const roles = user.roles
@@ -151,10 +151,10 @@ export default [
       }
 
       for (const jid of jids) {
-        const user = c.handler().userManager.getUser(jid);
+        const user = c.client().userManager.getUser(jid);
         if (!user.roles.includes(role)) {
           user.roles.push(role);
-          c.handler().userManager.updateUser(jid, { roles: user.roles });
+          c.client().userManager.updateUser(jid, { roles: user.roles });
         }
       }
 
@@ -190,11 +190,11 @@ export default [
         });
 
       for (const jid of jids) {
-        const user = c.handler().userManager.getUser(jid);
+        const user = c.client().userManager.getUser(jid);
         if (user.roles.includes(role)) {
           user.roles = user.roles.filter((r) => r !== role);
           if (user.roles.length === 0) user.roles.push(Role.GUEST);
-          c.handler().userManager.updateUser(jid, { roles: user.roles });
+          c.client().userManager.updateUser(jid, { roles: user.roles });
         }
       }
 
