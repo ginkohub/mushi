@@ -9,6 +9,7 @@
  */
 
 import { Pen } from "./pen.js";
+import { RegistryEvents } from "./registry.js";
 
 /**
  * @typedef {Object} HandlerOpts
@@ -33,6 +34,11 @@ export class Handler {
 
     /** @type {import('./registry.js').PluginRegistry} */
     this.registry = opts.registry;
+    if (this.registry.isReady) {
+      this.generate();
+    } else {
+      this.registry.once(RegistryEvents.READY, () => this.generate());
+    }
 
     /** @type {string[]} */
     this.plugins = opts.plugins;

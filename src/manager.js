@@ -94,14 +94,6 @@ export class BotManager extends EventEmitter {
       plugins: config.plugins || [],
     });
 
-    if (this.registry.isReady) {
-      config.handler.generate();
-    } else {
-      this.registry.once("ready", () => {
-        config.handler.generate();
-      });
-    }
-
     config.botDir = config.botDir || path.join(this.baseDir, config.name);
     const bot = new Client(config);
 
