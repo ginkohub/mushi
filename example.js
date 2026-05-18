@@ -11,11 +11,11 @@
 import path from "node:path";
 import { Browsers } from "baileys";
 import pino from "pino";
-import { Wangsaf } from "./src/client.js";
-import { getFile } from "./src/data.js";
-import { Handler } from "./src/handler.js";
+import { ClientEvents } from "./src/client.js";
+import { BotManager } from "./src/manager.js";
 import pen from "./src/pen.js";
-import { StoreJson } from "./src/store.js";
+import { RegistryEvents } from "./src/registry.js";
+import { getRoleBadge, rolesToLevel } from "./src/roles.js";
 import { isBun, isDeno } from "./src/tools.js";
 
 /* Load environment variables from .env file */
@@ -33,37 +33,53 @@ try {
   pen.Debug("loadEnvFile", e.message);
 }
 
-const wea = new Wangsaf({
-  dataDir: "data",
-  phone: process.env.PHONE || "",
-  method: process.env.METHOD || "otp",
-  session: process.env.SESSION || "sesi",
-  browser: Browsers.macOS(process.env.BROWSER || "Safari"),
-  handler: new Handler({
-    pluginDir:
-      process.env.PLUGIN_DIR || path.resolve(`${process.cwd()}/plugins`),
-    groupCache: new StoreJson({
-      saveName: getFile("group_metadata.json"),
-      autoSave: true,
-    }),
-    contactCache: new StoreJson({
-      saveName: getFile("contacts.json"),
-      autoSave: true,
-    }),
-    timerCache: new StoreJson({
-      saveName: getFile("timer.json"),
-      autoSave: true,
-    }),
-  }),
-  socketOptions: {
-    logger: pino({ level: "silent" }),
+function parseItems(items) {
+  if (!items) {
+    return;
+  }
+
+  const parsedItems = [];
+  for (const [key, val] of Object.entries(items)) {
+    const roles = rolesToLevel(val.roles) || [];
+    const rolesMax = Math.max(roles);
+    parsedItems.push(`${key}:${getRoleBadge(rolesMax)}`);
+  }
+  return parsedItems;
+}
+
+const manager = new BotManager({
+  baseDir: path.resolve(process.cwd(), "data"),
+  pluginDir: path.resolve(process.cwd(), "plugins"),
+  registryListeners: {
+    [RegistryEvents.PLUGIN_LOAD]: async (item) => {
+      const filename = path.basename(item.location);
+      pen.Info(
+        `Load: ${pen.MagentaBr(filename)} ${item?.estimate || 0}ms  ${parseItems(item?.items)}`,
+      );
+    },
   },
-  retry: true,
+});
+
+const mainBot = manager.addBot({
+  name: "example",
+  method: process.env.METHOD || "otp",
+  phone: process.env.PHONE || "",
+  socketCofig: {
+    browser: Browsers.macOS(process.env.BROWSER || "Safari"),
+    logger: pino({ level: "silent" }),
+    syncFullHistory: false,
+    version: [2, 3000, 1038162681],
+  },
+  prefixs: ["!", "#"],
+  /* plugins: ["std-log", "std-ping", "dev-dump"], */
+});
+
+mainBot.on(ClientEvents.CONNECTED, async () => {
+  pen.Info("Connected");
 });
 
 try {
-  wea.connect();
+  await manager.connectAll();
 } catch (e) {
   pen.Error(e);
-  wea.connect();
 }
