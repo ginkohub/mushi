@@ -70,7 +70,7 @@ const mainBot = manager.addBot({
     syncFullHistory: false,
     version: [2, 3000, 1038162681],
   },
-  prefixs: ["!", "#"],
+  prefixes: [".", "/"],
   /* plugins: ["std-log", "std-ping", "dev-dump"], */
 });
 
