@@ -214,7 +214,6 @@ export class Client extends EventEmitter {
     const prefixes = this.settings.get("prefixes");
     if (Array.isArray(prefixes) && prefixes?.length > 0) {
       this.handler.setPrefixes(prefixes);
-      this.handler.generate();
     }
   }
 
