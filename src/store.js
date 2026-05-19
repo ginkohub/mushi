@@ -373,7 +373,7 @@ export class StoreSQLite {
    * Clear data
    */
   clear() {
-    return this.run_(`DELETE FROM data`);
+    return this.run_(`DELETE FROM ${this.tableName}`);
   }
 
   /**
