@@ -142,7 +142,7 @@ export class Client extends EventEmitter {
 
     this.pen = new Pen({ prefix: `${this.name}` });
 
-    /** @type {import('./store.js').StoreSQLite} */
+    /** @type {import('./store.js').Store} */
     this.store = null;
 
     /** @type {import('./user_manager.js').UserManager} */
@@ -151,16 +151,16 @@ export class Client extends EventEmitter {
     /** @type {import('./chat_manager.js').ChatManager} */
     this.chatManager = null;
 
-    /** @type {import('./store.js').StoreSQLite} */
+    /** @type {import('./store.js').Store} */
     this.settings = null;
 
-    /** @type {import('./store.js').StoreSQLite} */
+    /** @type {import('./store.js').Store} */
     this.groupCache = null;
 
-    /** @type {import('./store.js').StoreSQLite} */
+    /** @type {import('./store.js').Store} */
     this.contactCache = null;
 
-    /** @type {import('./store.js').StoreSQLite} */
+    /** @type {import('./store.js').Store} */
     this.timerCache = null;
 
     /** @type {number} */
