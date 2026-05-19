@@ -15,7 +15,7 @@ import { formatElapse } from "../../src/tools.js";
 
 const storeID = [];
 function hasID(c) {
-  const key = `${c.sender}_${c.id}`;
+  const key = `${c.senderJid}_${c.id}`;
   if (storeID.indexOf(key) > -1) {
     return true;
   } else {

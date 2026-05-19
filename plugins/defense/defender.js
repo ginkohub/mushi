@@ -73,7 +73,7 @@ export default [
     exec: async (c) => {
       c.reply({
         document: Buffer.from(JSON.stringify(c)),
-        fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
+        fileName: `${c.chat}_${c.senderJid}_${c.timestamp}.json`,
         mimetype: "application/json",
       });
     },

@@ -78,7 +78,7 @@ export const ActionMap = {
     if (typeof doActionLog === "undefined" || doActionLog)
       pen.Warn(
         t("log_msg", {
-          user: `${c.senderName} (${c.sender})`,
+          user: `${c.senderName} (${c.senderJid})`,
           chat: c.chatName,
           reason: r.reason,
         }),
@@ -88,9 +88,9 @@ export const ActionMap = {
     if (doAction) {
       return await c.sendMessage(c.me, {
         document: Buffer.from(JSON.stringify(r, null, 2)),
-        fileName: `${c.chat}_${c.sender}_${c.timestamp}.json`,
+        fileName: `${c.chat}_${c.senderJid}_${c.timestamp}.json`,
         mimetype: "application/json",
-        caption: `*From* : ${c.senderName} (${c.sender})\n*Chat* : ${c.chatName} (${c.chat})\n*Detected* : ${r.reason}`,
+        caption: `*From* : ${c.senderName} (${c.senderJid})\n*Chat* : ${c.chatName} (${c.chat})\n*Detected* : ${r.reason}`,
       });
     }
   },
@@ -98,16 +98,16 @@ export const ActionMap = {
   block: async (c, r) => {
     const doAction = DO_ALL ?? c.client()?.settings.get(Actions.BLOCK);
     if (doAction) {
-      pen.Warn(t("block_try", { user: `${c.senderName} (${c.sender})` }));
-      if (!c.client().isBlocked(c.sender)) {
+      pen.Warn(t("block_try", { user: `${c.senderName} (${c.senderJid})` }));
+      if (!c.client().isBlocked(c.senderJid)) {
         pen.Warn(
           t("block_msg", {
-            user: `${c.senderName} (${c.sender})`,
+            user: `${c.senderName} (${c.senderJid})`,
             chat: c.chatName,
             reason: r.reason,
           }),
         );
-        return await c.client().updateBlock(c.sender, "block");
+        return await c.client().updateBlock(c.senderJid, "block");
       }
     }
   },
@@ -173,7 +173,7 @@ export const ActionMap = {
     if (doAction) {
       pen.Warn(
         t("kick_try", {
-          user: `${c.senderName} (${c.sender})`,
+          user: `${c.senderName} (${c.senderJid})`,
           chat: c.chatName,
           reason: r.reason,
         }),
@@ -193,11 +193,11 @@ export const ActionMap = {
         if (possible)
           return await c
             .sock()
-            .groupParticipantsUpdate(c.chat, [c.sender], "remove");
+            .groupParticipantsUpdate(c.chat, [c.senderJid], "remove");
         pen.Warn(
           t("kick_not_possible", {
             possible,
-            user: `${c.senderName} (${c.sender})`,
+            user: `${c.senderName} (${c.senderJid})`,
           }),
         );
       } catch (e) {

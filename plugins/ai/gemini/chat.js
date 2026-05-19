@@ -132,7 +132,7 @@ async function processChat(c) {
       if (!respText || respText?.length === 0) return;
       const sent = await c.reply({ text: `${respText}` }, { quoted: c.event });
       if (sent) {
-        chatWatch.set(sent.key?.id, `${c.sender}_${c.chat}_${c.timestamp}`);
+        chatWatch.set(sent.key?.id, `${c.senderJid}_${c.chat}_${c.timestamp}`);
       }
     } catch (e) {
       pen.Error(e);

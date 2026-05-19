@@ -50,7 +50,7 @@ export default [
       if (c.callStatus !== "offer") return;
 
       await delay(randomNumber(1000, 2000));
-      pen.Warn("Rejecting call from", c.senderName, c.sender);
+      pen.Warn("Rejecting call from", c.senderName, c.senderJid);
 
       await c.client()?.sock.rejectCall(c.id, c.sender);
     },
