@@ -9,7 +9,7 @@
  */
 
 import { execSync } from "node:child_process";
-import fs from "node:fs";
+import { existsSync } from "node:fs";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
 import pen from "./pen.js";
@@ -201,7 +201,7 @@ export function formatBytes(bytes) {
 export function shouldUsePolling(path) {
   /* Detect docker */
   try {
-    if (fs.existsSync("/.dockerenv")) return true;
+    if (existsSync("/.dockerenv")) return true;
   } catch {}
 
   /* Detect WSL */

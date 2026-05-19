@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "node:fs";
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 import pen from "./pen.js";
 
@@ -21,7 +21,7 @@ const dataDir = "data";
  */
 function checkDataDir(targetDir) {
   try {
-    fs.mkdirSync(targetDir);
+    mkdirSync(targetDir);
   } catch (e) {
     /* Ignore error if the directory already exists (EEXIST) */
     if (e.code !== "EEXIST") {

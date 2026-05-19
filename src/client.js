@@ -8,8 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import EventEmitter from "node:events";
-import fs from "node:fs";
+import { EventEmitter } from "node:events";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import {
@@ -266,10 +266,10 @@ export class Client extends EventEmitter {
     /* Check existence of bot directory */
     if (!this.botDir) throw Error("Bot directory is required");
 
-    const exist = fs.existsSync(this.botDir);
+    const exist = existsSync(this.botDir);
     if (!exist) {
       this.pen.Warn(`Creating ${this.botDir}`);
-      fs.mkdirSync(this.botDir, { recursive: true });
+      mkdirSync(this.botDir, { recursive: true });
     }
   }
 
@@ -489,7 +489,7 @@ export class Client extends EventEmitter {
             if (this.clearState) {
               await this.clearState();
             } else if (this.dbType === "folder") {
-              fs.rmSync(this.withDir("session.db"), { recursive: true });
+              rmSync(this.withDir("session.db"), { recursive: true });
             }
           } catch (e) {
             this.pen.Error(e);

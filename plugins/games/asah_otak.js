@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
@@ -77,8 +77,8 @@ let questions = [];
 function loadQuestions() {
   try {
     const path = getFile("asah_otak.json");
-    if (fs.existsSync(path)) {
-      questions = JSON.parse(fs.readFileSync(path, "utf-8"));
+    if (existsSync(path)) {
+      questions = JSON.parse(readFileSync(path, "utf-8"));
     }
   } catch (e) {
     console.error("Failed to load asah_otak.json:", e);
@@ -193,7 +193,7 @@ export default [
           throw new Error("Invalid data format: Expected an array");
 
         const path = getFile("asah_otak.json");
-        fs.writeFileSync(path, JSON.stringify(data, null, 2));
+        writeFileSync(path, JSON.stringify(data, null, 2));
 
         // Refresh local questions
         questions = data;

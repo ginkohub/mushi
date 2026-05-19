@@ -8,8 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import EventEmitter from "node:events";
-import fs from "node:fs";
+import { EventEmitter } from "node:events";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { Client } from "./client.js";
 import { Handler } from "./handler.js";
@@ -44,8 +44,8 @@ export class BotManager extends EventEmitter {
     /** @type {string} */
     this.pluginDir = opts?.pluginDir || path.resolve(process.cwd(), "plugins");
 
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir, { recursive: true });
+    if (!existsSync(this.baseDir)) {
+      mkdirSync(this.baseDir, { recursive: true });
     }
 
     /** @type {PluginRegistry} */
@@ -105,13 +105,13 @@ export class BotManager extends EventEmitter {
    * Load and connect all instances found in baseDir
    */
   async loadAll() {
-    if (!fs.existsSync(this.baseDir)) return;
-    const folders = fs.readdirSync(this.baseDir);
+    if (!existsSync(this.baseDir)) return;
+    const folders = readdirSync(this.baseDir);
     for (const id of folders) {
       const configFile = path.join(this.baseDir, id, "config.json");
-      if (fs.existsSync(configFile)) {
+      if (existsSync(configFile)) {
         try {
-          const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+          const config = JSON.parse(readFileSync(configFile, "utf8"));
           this.addBot(config);
         } catch (e) {
           this.pen.Error(`Failed to load config for instance ${id}:`, e);

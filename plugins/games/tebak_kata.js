@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import fs from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
@@ -110,8 +110,8 @@ const WORD_URL =
 function loadWords() {
   try {
     const path = getFile("tebak_kata.json");
-    if (fs.existsSync(path)) {
-      wordList = JSON.parse(fs.readFileSync(path, "utf-8"));
+    if (existsSync(path)) {
+      wordList = JSON.parse(readFileSync(path, "utf-8"));
     }
   } catch (e) {
     console.error("Failed to load tebak_kata.json:", e);
@@ -250,7 +250,7 @@ export default [
         };
 
         const path = getFile("tebak_kata.json");
-        fs.writeFileSync(path, JSON.stringify(newWordList, null, 2));
+        writeFileSync(path, JSON.stringify(newWordList, null, 2));
 
         // Refresh local wordList
         wordList = newWordList;

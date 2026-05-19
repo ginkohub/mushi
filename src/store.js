@@ -9,7 +9,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import fs from "node:fs/promises";
+import { readFile, writeFile, rename } from "node:fs/promises";
 import pen from "./pen.js";
 import { isBun, isDeno, watchDir } from "./tools.js";
 
@@ -135,7 +135,7 @@ export class StoreJson {
   async load(saveName) {
     try {
       const targetName = saveName ?? this.saveName;
-      const content = await fs.readFile(targetName, "utf-8");
+      const content = await readFile(targetName, "utf-8");
       const newData = JSON.parse(content);
 
       this.data = newData;
@@ -150,8 +150,8 @@ export class StoreJson {
     try {
       const tempPath = `${this.saveName}.tmp`;
       const content = JSON.stringify(this.data, null, 2);
-      await fs.writeFile(tempPath, content, "utf8");
-      await fs.rename(tempPath, this.saveName);
+      await writeFile(tempPath, content, "utf8");
+      await rename(tempPath, this.saveName);
       this._lastSave = Date.now();
     } catch (e) {
       pen.Error("Failed saving data", e);

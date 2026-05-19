@@ -9,7 +9,7 @@
  */
 
 import { execSync } from "node:child_process";
-import fs from "node:fs";
+import { readFileSync } from "node:fs";
 import os from "node:os";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
@@ -65,7 +65,7 @@ function getDistro() {
   const platform = os.platform();
   if (platform === "linux") {
     try {
-      const osRelease = fs.readFileSync("/etc/os-release", "utf8");
+      const osRelease = readFileSync("/etc/os-release", "utf8");
       const match = osRelease.match(/^PRETTY_NAME="(.+)"$/m);
       return match ? match[1] : os.release();
     } catch {
