@@ -81,7 +81,9 @@ export function getRoleLevelBadge(roleLevel) {
  * @returns {string}
  */
 export function levelToName(role) {
-  const names = Object.entries(RoleLevel).find(([, value]) => value === role);
+  const names = Object.entries(RoleLevel).find(
+    ([, value]) => typeof value === "number" && value === role,
+  );
   return names ? names[0] : "";
 }
 
