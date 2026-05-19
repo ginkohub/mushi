@@ -176,7 +176,8 @@ class Logger {
    * @returns {Logger}
    */
   child(prefix) {
-    const label = typeof prefix === "string" ? prefix : prefix?.class || "unknown";
+    const label =
+      typeof prefix === "string" ? prefix : prefix?.class || "unknown";
     return new Logger({
       level: this.#level,
       maxLogs: this.#maxLogs,
