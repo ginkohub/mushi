@@ -175,6 +175,9 @@ export class Client extends EventEmitter {
     /** @type {Map<string, Promise<void>>} */
     this.taskList = new Map();
 
+    /** @type {Set<string>} */
+    this.blockList = new Set();
+
     this.ready = this.init();
     this.ready.catch((e) => this.pen.Error(e));
   }
@@ -476,6 +479,40 @@ export class Client extends EventEmitter {
   }
 
   /* INFO: This section for data and updater methods */
+
+  /**
+   * Check whether given jid is blocked or not
+   * @param {string} jid
+   * @returns {boolean}
+   */
+  isBlocked(jid) {
+    return this.blockList.has(jidNormalizedUser(jid));
+  }
+
+  /**
+   * Block / unblock given jid
+   * @param {string} jid
+   * @param {string} action
+   * @returns {Promise<boolean | undefined>}
+   */
+  async updateBlock(jid, action) {
+    try {
+      await this.sock?.updateBlockStatus(jid, action);
+      switch (action) {
+        case "block": {
+          this.blockList.add(jidNormalizedUser(jid));
+          break;
+        }
+        case "unblock": {
+          this.blockList = this.blockList.delete(jidNormalizedUser(jid));
+          break;
+        }
+      }
+      return true;
+    } catch (e) {
+      this.pen.Error("update-block", e);
+    }
+  }
 
   /**
    * Get user by given jid
