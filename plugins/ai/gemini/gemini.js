@@ -8,7 +8,6 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
 import { GoogleGenAI } from "@google/genai";
 import pen from "../../../src/pen.js";
 
@@ -24,7 +23,7 @@ import pen from "../../../src/pen.js";
  * @property {string} apiKey - API key for the Gemini AI model
  * @property {string} modelName - Name of the Gemini AI model to use
  * @property {string} systemInstruction - System instruction for the Gemini AI model
- * @property {string} settingName - Name of the configuration to use for the gemini
+ * @property {import("../../../src/store.js").Store} settings - Settings store
  */
 
 /**
@@ -51,24 +50,29 @@ export const DEFAULT_SYSTEM_INSTRUCTION = [
  */
 export class Gemini {
   /**
-   * @param {GeminiOpts} options - Options for the Gemini AI model
+   * @param {GeminiOpts} opts - Options for the Gemini AI model
    */
-  constructor({ apiKey, modelName, systemInstruction, settingName }) {
-    /** @type {string} */
-    this.settingName = settingName;
+  constructor(opts) {
+    /** @type {import('../../../src/store.js').Store} */
+    this.settings = opts?.settings;
 
     /** @type {string} */
-    this.apiKey = apiKey;
+    this.apiKey = opts?.apiKey || this.settings?.get("gemini_api_key");
 
     /** @type {string} */
-    this.modelName = modelName ?? Model.GEMINI_3_1_FLASH_LITE;
+    this.modelName =
+      opts?.modelName ||
+      this.settings?.get("gemini_model_name") ||
+      Model.GEMINI_3_1_FLASH_LITE;
 
     /** @type {string} */
     this.systemInstruction =
-      systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION.join(" ");
+      opts?.systemInstruction ||
+      this.settings?.get("gemini_system_instruction") ||
+      DEFAULT_SYSTEM_INSTRUCTION.join(" ");
 
     this.genAI = new GoogleGenAI({
-      apiKey: apiKey ?? process.env.GEMINI_API_KEY,
+      apiKey: this.apiKey,
     });
 
     /** @type {Map<string,import('@google/genai').Model>} */
@@ -112,58 +116,18 @@ export class Gemini {
       }
     };
 
-    /** @type {Record<string, Object>} */
-    this.settings = {
-      limitedModels: {},
-    };
+    if (
+      this.settings &&
+      typeof this.settings.get === "function" &&
+      !this.settings.get("limited_models")
+    ) {
+      this.settings.set("limited_models", {});
+    }
 
     /** @type {Map<string,import('@google/genai').Chat>} */
     this.chats = new Map();
 
-    this.init().catch((e) => pen.Error("gemini-init", e));
-  }
-
-  async init() {
-    await this.load();
-    await this.fetchModels();
-  }
-
-  /**
-   * Load configuration from the given name
-   */
-  async load() {
-    if (!this.settingName) return;
-    try {
-      const text = readFileSync(this.settingName, "utf-8");
-      const config = JSON.parse(text);
-      this.settings = { ...this.settings, ...config };
-
-      if (!this.settings) {
-        this.settings = {
-          limitedModels: {},
-        };
-      }
-
-      if (!this.settings.limitedModels) {
-        this.settings.limitedModels = {};
-      }
-
-      if (this.settings?.systemInstruction)
-        this.systemInstruction = this.settings.systemInstruction;
-    } catch (e) {
-      if (e.code !== "ENOENT") pen.Error("gemini-load", e);
-    }
-  }
-
-  async save() {
-    if (this.settingName) {
-      try {
-        const text = JSON.stringify(this.settings, null, 2);
-        writeFileSync(this.settingName, text, "utf-8");
-      } catch (e) {
-        pen.Error("gemini-save", e);
-      }
-    }
+    this.fetchModels().catch((e) => pen.Error("gemini-init", e));
   }
 
   /**
@@ -172,8 +136,12 @@ export class Gemini {
    * @returns {Promise<import('@google/genai').GenerateContentResponse>}
    */
   async chat(id, params) {
-    if (!id) return;
-    if (!params) return;
+    if (!id) {
+      return;
+    }
+    if (!params) {
+      return;
+    }
     let chat = this.chats.get(id);
     if (!chat) {
       chat = this.genAI.chats.create({
@@ -191,12 +159,15 @@ export class Gemini {
       const resp = await chat.sendMessage(params);
       return resp;
     } catch (e) {
+      pen.Error("gemini sendMessage error:", e);
       this.chats.delete(id);
       switch (e.status) {
         case 429: {
           if (this.listModels.size > 0) {
             if (this.settings) {
-              this.settings.limitedModels[this.modelName] = Date.now();
+              const limited = this.settings.get("limited_models") || {};
+              limited[this.modelName] = Date.now();
+              this.settings.set("limited_models", limited);
             }
             const prevModel = this.modelName;
             this.switchModel();
@@ -215,17 +186,18 @@ export class Gemini {
           break;
         }
         case 400: {
-          break;
+          return;
         }
         default: {
           pen.Error("gemini-chat", this.modelName, e.message);
+          return;
         }
       }
     }
   }
 
   switchModel() {
-    const limitedModels = this.settings?.limitedModels ?? {};
+    const limitedModels = this.settings?.get("limited_models") || {};
     const currentModel = this.modelName;
     this.listModels.delete(currentModel);
 
@@ -239,8 +211,6 @@ export class Gemini {
       } else {
       }
     }
-
-    this.save();
   }
 
   /**

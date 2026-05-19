@@ -5,32 +5,70 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/
  *
- * This code is part of Ginko project (https://github.com/ginkohub)
+ * This code is part of Ginko project (https://github.com/ginkohub/mushi)
  */
 
 import { MESSAGES_UPSERT } from "../../../src/const.js";
 import { extractTextContext } from "../../../src/context.js";
-import { getFile } from "../../../src/data.js";
 import pen from "../../../src/pen.js";
 import { Role } from "../../../src/roles.js";
-import { StoreJson } from "../../../src/store.js";
 import { formatMD } from "../../../src/tools.js";
 import { translate } from "../../../src/translate.js";
-
 import { Gemini } from "./gemini.js";
 
-/** @type {import('./gemini.js').Gemini} */
-export const gemini = new Gemini({
-  apiKey: process.env.GEMINI_API_KEY,
-  settingName: getFile("gemini_settings.json"),
-  systemInstruction:
-    "Nama kamu adalah Ginko, humble, kalem, gk banyak ngomong, gk suka pamer. Sebisa mungkin persingkat kalimat, seperti sedang chat di WhatsApp.",
-});
+/** @type {Map<string, import('../../../src/store.js').Store>} - To store ID */
+const geminiStores = new Map();
 
-const chatWatch = new StoreJson({
-  autoSave: true,
-  saveName: getFile("gemini_id.json"),
-});
+/** @type {Map<string, import('./gemini.js').Gemini>} - To store Gemini client */
+const geminiClients = new Map();
+
+/**
+ * @param {import('../../../src/context.js').Ctx} c
+ * @returns {Promise<import('../../../src/store.js').Store|null>}
+ */
+async function getGeminiStore(c) {
+  const clientName = c.client()?.name;
+  if (!clientName) return null;
+
+  if (!geminiStores.has(clientName)) {
+    const store = c.client().store.use("gemini_id");
+    geminiStores.set(clientName, store);
+  }
+
+  return geminiStores.get(clientName);
+}
+
+/**
+ * @param {import('../../../src/context.js').Ctx} c
+ * @returns {Promise<Gemini|null>}
+ */
+async function getGeminiClient(c) {
+  const clientName = c.client()?.name;
+  if (!clientName) return null;
+
+  if (!geminiClients.has(clientName)) {
+    const apiKey = c.client()?.settings?.get("gemini_api_key");
+
+    if (!apiKey) {
+      pen.Warn("gemini: no API key configured");
+      return null;
+    }
+
+    try {
+      const gemini = new Gemini({
+        settings: c.client()?.settings,
+      });
+
+      geminiClients.set(clientName, gemini);
+      pen.Info(`gemini: initialized for ${clientName}`);
+    } catch (e) {
+      pen.Error("gemini-init", e);
+      return null;
+    }
+  }
+
+  return geminiClients.get(clientName);
+}
 
 const contentSupport = [
   "audioMessage",
@@ -44,9 +82,22 @@ const contentSupport = [
 const t = translate({
   en: {
     list_models: "*# List available models*",
+    not_configured: "Gemini not configured. Use {prefix}gm.key to set API key.",
+    model_set: "_Model set to {model}_",
+    prompt_updated: "_Prompt updated successfully_",
+    api_key_updated: "_API key updated_",
+    usage_key: "Usage: {prefix}gm.key <api_key>",
+    usage_chat: "Usage: {prefix}gm <message> or reply to a message",
   },
   id: {
     list_models: "*# Daftar model yang tersedia*",
+    not_configured:
+      "Gemini belum diatur. Gunakan {prefix}gm.key untuk mengatur API key.",
+    model_set: "_Model diatur ke {model}_",
+    prompt_updated: "_Prompt berhasil diperbarui_",
+    api_key_updated: "_API key berhasil diperbarui_",
+    usage_key: "Penggunaan: {prefix}gm.key <api_key>",
+    usage_chat: "Penggunaan: {prefix}gm <pesan> atau balas pesan",
   },
 });
 
@@ -55,7 +106,11 @@ const t = translate({
  */
 async function processChat(c) {
   let query = c.isCMD ? c.args : c.text;
-  if (c.quotedText && c.quotedText?.length > 0 && !chatWatch.has(c.stanzaId)) {
+  if (
+    c.quotedText &&
+    c.quotedText?.length > 0 &&
+    !(await getGeminiStore(c))?.has(c.stanzaId)
+  ) {
     query = query?.trim();
     if (query?.length > 0) {
       query = `${query} ${c.quotedText}`;
@@ -69,7 +124,12 @@ async function processChat(c) {
 
   query = query?.trim() || "";
 
-  if (query || query.length > 0) parts.push({ text: query });
+  if (query || query.length > 0) {
+    parts.push({ text: query });
+  } else {
+    await c.reply({ text: t("usage_chat", {}, c) }, { quoted: c.event });
+    return;
+  }
 
   const msgs = [c.message, c.quotedMessage];
   for (let m of msgs) {
@@ -94,6 +154,7 @@ async function processChat(c) {
         break;
       }
       case "documentWithCaptionMessage": {
+        content = m.documentWithCaptionMessage.message.documentMessage;
         m = m.documentWithCaptionMessage.message;
         break;
       }
@@ -124,18 +185,31 @@ async function processChat(c) {
 
   if (parts.length > 0) {
     try {
-      /* pen.Debug(`Parts ${parts.length}, Query : ${query?.length}`); */
+      const gem = await getGeminiClient(c);
+      if (!gem) {
+        await c.reply(
+          { text: t("not_configured", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+        return;
+      }
 
-      const resp = await gemini.chat(c.chat, { message: parts });
-      const respText = formatMD(resp?.text?.trim());
+      const resp = await gem.chat(c.chat, { message: parts });
+      const respText = formatMD(
+        resp?.candidates?.[0]?.content?.parts?.[0]?.text?.trim(),
+      );
 
       if (!respText || respText?.length === 0) return;
       const sent = await c.reply({ text: `${respText}` }, { quoted: c.event });
       if (sent) {
-        chatWatch.set(sent.key?.id, `${c.senderJid}_${c.chat}_${c.timestamp}`);
+        const store = await getGeminiStore(c);
+        store?.set(sent.key?.id, `${c.senderJid}_${c.chat}_${c.timestamp}`);
       }
     } catch (e) {
       pen.Error(e);
+      if (e.status === 401 || e.status === 403) {
+        geminiClients.delete(c.client()?.name);
+      }
     }
   }
 }
@@ -156,7 +230,9 @@ export default [
     desc: "Gemini chat listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.PREMIUM],
-    midware: (c) => ({ success: chatWatch.has(c.stanzaId) }),
+    midware: async (c) => ({
+      success: (await getGeminiStore(c))?.has(c.stanzaId),
+    }),
     exec: processChat,
   },
   {
@@ -166,9 +242,18 @@ export default [
     cat: "ai",
     roles: [Role.PREMIUM],
     exec: async (c) => {
-      const texts = [t("list_models"), ""];
+      const client = await getGeminiClient(c);
+      if (!client) {
+        await c.reply(
+          { text: t("not_configured", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+        return;
+      }
 
-      for (const [key] of gemini.listModels.entries()) {
+      const texts = [t("list_models", {}, c), ""];
+
+      for (const [key] of client.listModels.entries()) {
         texts.push(`- ${key}`);
       }
 
@@ -176,14 +261,50 @@ export default [
     },
   },
   {
-    name: "ai-gemini-set",
-    cmd: ["gm.set"],
+    name: "ai-gemini-key",
+    cmd: ["gm.key", "gemini.key"],
+    desc: "Set API key",
+    cat: "ai",
+    roles: [Role.PREMIUM],
+    exec: async (c) => {
+      const key = c.args?.trim();
+      if (!key) {
+        await c.reply(
+          { text: t("usage_key", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+        return;
+      }
+
+      c.client().settings.set("gemini_api_key", key);
+      geminiClients.delete(c.client().name);
+      await c.reply({ text: t("api_key_updated", {}, c) }, { quoted: c.event });
+    },
+  },
+  {
+    name: "ai-gemini-model",
+    cmd: ["gm.model"],
     desc: "Set model name",
     cat: "ai",
     roles: [Role.PREMIUM],
     exec: async (c) => {
+      const client = await getGeminiClient(c);
+      if (!client) {
+        await c.reply(
+          { text: t("not_configured", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+        return;
+      }
+
       const modelName = c.args?.trim();
-      if (modelName && modelName.length > 0) gemini.setModelName(modelName);
+      if (modelName && modelName.length > 0) {
+        client.setModelName(modelName);
+        await c.reply(
+          { text: t("model_set", { model: modelName }, c) },
+          { quoted: c.event },
+        );
+      }
     },
   },
   {
@@ -193,10 +314,22 @@ export default [
     cat: "ai",
     roles: [Role.PREMIUM],
     exec: async (c) => {
+      const client = await getGeminiClient(c);
+      if (!client) {
+        await c.reply(
+          { text: t("not_configured", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+        return;
+      }
+
       const prompt = c.args?.trim();
       if (prompt && prompt.length > 0) {
-        gemini.systemInstruction = prompt;
-        await c.reply({ text: "_Prompt updated successfully_" });
+        client.systemInstruction = prompt;
+        await c.reply(
+          { text: t("prompt_updated", {}, c) },
+          { quoted: c.event },
+        );
       }
     },
   },
