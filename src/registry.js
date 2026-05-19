@@ -101,10 +101,10 @@ export class PluginRegistry extends EventEmitter {
    */
   async stopWatch() {
     try {
-      const watcherIntance = await this.watcher;
-      if (watcherIntance) {
-        if (typeof watcherIntance.close === "function") {
-          await watcherIntance.close();
+      const watcherInstance = await this.watcher;
+      if (watcherInstance) {
+        if (typeof watcherInstance.close === "function") {
+          await watcherInstance.close();
           this.emit(RegistryEvents.WATCH_CLOSE);
         }
         this.watcher = null;
@@ -258,10 +258,14 @@ export class PluginRegistry extends EventEmitter {
    * @param {string} location
    */
   removeByLocation(location) {
+    const toRemove = [];
     for (const [name, item] of this.plugins.entries()) {
       if (item.location === location) {
-        this.remove(name);
+        toRemove.push(name);
       }
+    }
+    for (const name of toRemove) {
+      this.remove(name);
     }
   }
 
