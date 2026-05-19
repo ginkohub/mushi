@@ -16,7 +16,7 @@ import { RegistryEvents } from "./registry.js";
  * @property {string[]} [plugins]
  * @property {string[]} prefixes
  * @property {import('./registry.js').PluginRegistry} registry
- * @property {import('./store.js').StoreJson} settings
+ * @property {import('./store.js').Store} settings
  */
 
 /**
@@ -54,7 +54,7 @@ export class Handler {
     /** @type {string[]} */
     this.plugins = opts.plugins;
 
-    /** @type {import('./store.js').StoreJson} */
+    /** @type {import('./store.js').Store} */
     this.settings = opts.settings;
 
     /** @type {Set<string>} */
