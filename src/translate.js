@@ -8,8 +8,6 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { getLang } from "./settings.js";
-
 /**
  * List of supported languages by Google Translate API
  * @readonly
@@ -152,13 +150,13 @@ export async function translateText(text, to = "en", from = "auto") {
  */
 export function translate(sets, altLang = "en") {
   return (key, replaces = {}, ctx) => {
-    let lang = getLang();
+    let lang = "en";
 
     if (typeof ctx === "string") {
       lang = ctx;
     } else if (ctx && typeof ctx === "object") {
       // Check User pref, then Chat pref, then Global
-      lang = ctx.user?.lang || ctx.chatData?.lang || getLang();
+      lang = ctx.user?.lang || ctx.chatData?.lang || "en";
     }
 
     let text = sets[lang]?.[key] || sets[altLang]?.[key] || key;
