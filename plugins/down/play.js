@@ -91,7 +91,7 @@ export default {
       const msg = c.client()?.store.get(video.id);
       if (msg && !c.argv.force) {
         try {
-          const ephemeral = c.handler().getTimer(c.chat);
+          const ephemeral = c.client().getTimer(c.chat);
           msg.message.audioMessage.contextInfo.expiration = ephemeral;
         } catch (e) {
           pen.Error("set-expiration", e);

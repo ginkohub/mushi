@@ -22,10 +22,10 @@ export default {
   roles: ["admin"],
 
   exec: async (c) => {
-    const latest = c.handler()?.getTimer(c.chat);
+    const latest = c.client()?.getTimer(c.chat);
     const text = `Setting timer for ${c.chat} from ${latest} to ${c.expiration}`;
     pen.Debug(text);
-    c.handler()?.updateTimer(c.chat, c.expiration);
+    c.client()?.updateTimer(c.chat, c.expiration);
     return await c.reply({ text: text }, { quoted: c.event });
   },
 };

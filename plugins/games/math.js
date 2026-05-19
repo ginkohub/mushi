@@ -188,7 +188,7 @@ export default [
         const user = c.user;
         if (user) {
           user.xp += xp;
-          c.handler().userManager.updateUser(c.senderJid, user);
+          c.client().userManager.updateUser(c.senderJid, user);
         }
 
         return await c.reply(

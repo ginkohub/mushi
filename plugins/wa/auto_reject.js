@@ -52,7 +52,7 @@ export default [
       await delay(randomNumber(1000, 2000));
       pen.Warn("Rejecting call from", c.senderName, c.sender);
 
-      await c.handler().client.sock.rejectCall(c.id, c.sender);
+      await c.client()?.sock.rejectCall(c.id, c.sender);
     },
   },
 

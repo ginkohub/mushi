@@ -97,7 +97,7 @@ export default [
         });
       }
 
-      c.handler().chatManager.updateChat(c.chat, { lang });
+      c.client().chatManager.updateChat(c.chat, { lang });
       await c.reply({ text: t("chat_success", { lang }, c) });
     },
   },

@@ -99,7 +99,7 @@ export const ActionMap = {
     const doAction = DO_ALL ?? c.client()?.settings.get(Actions.BLOCK);
     if (doAction) {
       pen.Warn(t("block_try", { user: `${c.senderName} (${c.sender})` }));
-      if (!c.handler().isBlocked(c.sender)) {
+      if (!c.client().isBlocked(c.sender)) {
         pen.Warn(
           t("block_msg", {
             user: `${c.senderName} (${c.sender})`,
@@ -107,7 +107,7 @@ export const ActionMap = {
             reason: r.reason,
           }),
         );
-        return await c.handler().updateBlock(c.sender, "block");
+        return await c.client().updateBlock(c.sender, "block");
       }
     }
   },
