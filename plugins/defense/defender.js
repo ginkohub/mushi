@@ -49,17 +49,6 @@ const t = translate({
   },
 });
 
-/* filter duplicate types and defaults */
-try {
-  let setTypes = c.client()?.settings.get(KEY_DEFENSE_ALLOW_STATUS);
-  if (!setTypes || !Array.isArray(setTypes)) setTypes = [];
-  setTypes = setTypes.filter((v, i, a) => a.indexOf(v) === i);
-  setTypes = setTypes.filter((v) => !allowed?.includes(v));
-  c.client()?.settings.set(KEY_DEFENSE_ALLOW_STATUS, setTypes);
-} catch (e) {
-  pen.Error("defender-filter-types", e);
-}
-
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
