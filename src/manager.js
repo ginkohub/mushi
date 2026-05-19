@@ -140,9 +140,10 @@ export class BotManager extends EventEmitter {
 
   /**
    * Stop all bot instances
+   * @returns {Promise<void>}
    */
   async stopAll() {
-    pen.Info("Stopping all bot instances...");
+    this.pen.Info("Stopping all bot instances...");
     const promises = [];
     for (const id of this.bots.keys()) {
       promises.push(this.disconnectBot(id));
@@ -153,6 +154,7 @@ export class BotManager extends EventEmitter {
   /**
    * Disconnect a specific bot
    * @param {string} id
+   * @returns {Promise<void>}
    */
   async disconnectBot(id) {
     const bot = this.getBot(id);
