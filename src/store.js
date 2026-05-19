@@ -381,7 +381,7 @@ export class StoreSQLite {
    * @returns {IterableIterator<string>}
    */
   keys() {
-    return this.all_(`SELECT key FROM data`).map((row) => row.key);
+    return this.all_(`SELECT key FROM ${this.tableName}`).map((row) => row.key);
   }
 
   /**
