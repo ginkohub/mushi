@@ -14,6 +14,29 @@ import pen from "./pen.js";
 import { isBun, isDeno, watchDir } from "./tools.js";
 
 /**
+ * @typedef {Object} Store
+ * @property {string} saveName
+ * @property {string} [tableName]
+ * @property {boolean} autoSave
+ * @property {boolean} autoLoad
+ * @property {number} expiration
+ * @property {function():Promise<void>} load
+ * @property {function():Promise<void>} save
+ * @property {function():void} saveCheck
+ * @property {function():Promise<void>} close
+ * @property {function(key:string, value:any):void} set
+ * @property {function(key:string):any} get
+ * @property {function(key:string):void} delete
+ * @property {function():void} clear
+ * @property {function():IterableIterator<string>} keys
+ * @property {function(key:string):boolean} has
+ * @property {function():Promise<void>} [flush]
+ * @property {Promise<void>} waitReady
+ * @property {function():void} watch
+ * @property {function(tableName:string):StoreSQLite} [use]
+ */
+
+/**
  * @typedef {Object} StoreOpts
  * @property {string} saveName
  * @property {string} [tableName]
