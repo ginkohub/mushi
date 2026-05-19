@@ -27,7 +27,7 @@ import { useSQLite } from "./auth_sqlite.js";
 import { ChatManager } from "./chat_manager.js";
 import { Events } from "./const.js";
 import { Ctx } from "./context.js";
-import { Pen } from "./pen.js";
+import { logger as rootLogger } from "./logger.js";
 import { StoreSQLite } from "./store.js";
 import { delay, genHEX } from "./tools.js";
 import { UserManager } from "./user_manager.js";
@@ -140,7 +140,10 @@ export class Client extends EventEmitter {
     /** @type {import('./handler.js').Handler} */
     this.handler = opts.handler;
 
-    this.pen = new Pen({ prefix: `${this.name}` });
+    const logDir = path.join(this.botDir, "logs");
+    const clientLog = rootLogger.child(this.name);
+    clientLog.toFile({ path: path.join(logDir, `${this.name}.log`) });
+    this.log = clientLog;
 
     /** @type {import('./store.js').Store} */
     this.store = null;
@@ -179,7 +182,7 @@ export class Client extends EventEmitter {
     this.blockList = new Set();
 
     this.ready = this.init();
-    this.ready.catch((e) => this.pen.Error(e));
+    this.ready.catch((e) => this.log.error(e));
   }
 
   /**
@@ -190,16 +193,16 @@ export class Client extends EventEmitter {
    */
   async runTask(id, func) {
     if (this.taskList.has(id)) {
-      this.pen.Debug(`Task ${id} is already running`);
+      this.log.debug(`Task ${id} is already running`);
       return this.taskList.get(id);
     }
 
-    this.pen.Debug(`Running task ${id}`);
+    this.log.debug(`Running task ${id}`);
     const task = (async () => {
       try {
         return await func();
       } catch (e) {
-        this.pen.Error("run-task", id, e);
+        this.log.error("run-task", id, e);
       } finally {
         this.taskList.delete(id);
       }
@@ -268,7 +271,7 @@ export class Client extends EventEmitter {
 
     const exist = existsSync(this.botDir);
     if (!exist) {
-      this.pen.Warn(`Creating ${this.botDir}`);
+      this.log.warn(`Creating ${this.botDir}`);
       mkdirSync(this.botDir, { recursive: true });
     }
   }
@@ -308,7 +311,7 @@ export class Client extends EventEmitter {
       await c.init();
       await this.handler.handle(c);
     } catch (e) {
-      this.pen.Error("handle", e);
+      this.log.error("handle", e);
     }
   }
 
@@ -337,7 +340,7 @@ export class Client extends EventEmitter {
                   event: event,
                   eventType: update.type,
                 }).catch((e) => {
-                  this.pen.Error(eventName, e);
+                  this.log.error(eventName, e);
                 });
               }
               break;
@@ -356,7 +359,7 @@ export class Client extends EventEmitter {
                   event: event,
                   eventType: update.type,
                 }).catch((e) => {
-                  this.pen.Error(eventName, e);
+                  this.log.error(eventName, e);
                 });
               }
               break;
@@ -369,7 +372,7 @@ export class Client extends EventEmitter {
                 event: update,
                 eventType: update.type,
               }).catch((e) => {
-                this.pen.Error(eventName, e);
+                this.log.error(eventName, e);
               });
               break;
             }
@@ -382,7 +385,7 @@ export class Client extends EventEmitter {
                     event: event,
                     eventType: update.type,
                   }).catch((e) => {
-                    this.pen.Error(eventName, e);
+                    this.log.error(eventName, e);
                   });
                 }
               } else {
@@ -391,7 +394,7 @@ export class Client extends EventEmitter {
                   event: update,
                   eventType: update.type,
                 }).catch((e) => {
-                  this.pen.Error(eventName, e);
+                  this.log.error(eventName, e);
                 });
               }
             }
@@ -419,7 +422,7 @@ export class Client extends EventEmitter {
       !this.socketCofig.auth?.creds?.registered &&
       !this.socketCofig.auth?.creds?.platform
     ) {
-      this.pen.Info("Delay 3s before requesting pairing code");
+      this.log.info("Delay 3s before requesting pairing code");
       await delay(3000);
 
       let phone = this.phone;
@@ -429,23 +432,23 @@ export class Client extends EventEmitter {
           phone = phone?.replace(/[^+0-9]/g, "");
           phone = phone?.trim();
 
-          if (!phone || phone === "") this.pen.Error("Invalid phone number");
+          if (!phone || phone === "") this.log.error("Invalid phone number");
         }
       }
 
-      this.pen.Info(`Using this phone : ${phone}`);
+      this.log.info(`Using this phone : ${phone}`);
       const code = await this.sock.requestPairingCode(phone);
       if (code) {
-        this.pen.Log("Enter this OTP :", code);
+        this.log.info("Enter this OTP :", code);
       } else {
-        this.pen.Error("Failed to get pairing code");
+        this.log.error("Failed to get pairing code");
       }
     }
 
     this.sock.ev.on(Events.CONNECTION_UPDATE, async (event) => {
       const { connection, lastDisconnect, qr } = event;
       if (qr && this.method === Method.QRCode) {
-        this.pen.Info("Scan this QR :");
+        this.log.info("Scan this QR :");
         console.log(
           await QRCode.toString(qr, { type: "terminal", small: true }),
         );
@@ -459,7 +462,7 @@ export class Client extends EventEmitter {
           statusCode !== DisconnectReason.forbidden;
         if (shouldReconnect) {
           if (this.retry) {
-            this.pen.Debug(
+            this.log.debug(
               Events.CONNECTION_UPDATE,
               "statusCode :",
               statusCode,
@@ -468,7 +471,7 @@ export class Client extends EventEmitter {
             await delay(3000);
             this.connect();
           } else {
-            this.pen.Error(
+            this.log.error(
               Events.CONNECTION_UPDATE,
               "statusCode :",
               statusCode,
@@ -479,7 +482,7 @@ export class Client extends EventEmitter {
           statusCode === DisconnectReason.loggedOut ||
           statusCode === DisconnectReason.forbidden
         ) {
-          this.pen.Debug(
+          this.log.debug(
             Events.CONNECTION_UPDATE,
             "statusCode :",
             statusCode,
@@ -492,9 +495,9 @@ export class Client extends EventEmitter {
               rmSync(this.withDir("session.db"), { recursive: true });
             }
           } catch (e) {
-            this.pen.Error(e);
+            this.log.error(e);
           } finally {
-            this.pen.Warn(
+            this.log.warn(
               "statusCode :",
               statusCode,
               "Session terminated. Reconnecting in 5s...",
@@ -504,7 +507,7 @@ export class Client extends EventEmitter {
         }
       } else if (connection === "open") {
         this.emit("connected", { name: this.name });
-        this.pen.Info("Client connected");
+        this.log.info("Client connected");
       }
     });
 
@@ -594,14 +597,14 @@ export class Client extends EventEmitter {
                 );
               });
             } catch (e) {
-              this.pen.Error("update-data-fetch-blocklist", e);
+              this.log.error("update-data-fetch-blocklist", e);
             }
           }
           break;
         }
       }
     } catch (e) {
-      this.pen.Error("update-data", e);
+      this.log.error("update-data", e);
     }
   }
 
@@ -635,7 +638,7 @@ export class Client extends EventEmitter {
       }
       return true;
     } catch (e) {
-      this.pen.Error("update-block", e);
+      this.log.error("update-block", e);
     }
   }
 
@@ -674,7 +677,7 @@ export class Client extends EventEmitter {
    */
   async updateGroupMetadata(jid, c) {
     try {
-      this.pen.Debug(
+      this.log.debug(
         "Updating group metadata",
         jid,
         c ? `via ${c.eventName} with action : ${c.action}` : "",
@@ -762,7 +765,7 @@ export class Client extends EventEmitter {
         return data;
       }
     } catch (e) {
-      this.pen.Error("update-group-metadata", jid, e);
+      this.log.error("update-group-metadata", jid, e);
     }
   }
 
@@ -778,7 +781,7 @@ export class Client extends EventEmitter {
         try {
           await this.updateGroupMetadata(jid);
         } catch (e) {
-          this.pen.Error("get-group-metadata", jid, e);
+          this.log.error("get-group-metadata", jid, e);
         }
       });
     return data;
@@ -793,7 +796,7 @@ export class Client extends EventEmitter {
     try {
       if (data) this.contactCache.set(jid, data);
     } catch (e) {
-      this.pen.Error("update-contact", e);
+      this.log.error("update-contact", e);
     }
   }
 
@@ -813,7 +816,7 @@ export class Client extends EventEmitter {
    * @param {string} via
    */
   updateTimer(jid, ephemeral, via) {
-    this.pen.Debug(
+    this.log.debug(
       "Updating ephemeral for",
       jid,
       "to",
@@ -886,7 +889,7 @@ export class Client extends EventEmitter {
 
       return await this.sock.sendMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error("send-message", e);
+      this.log.error("send-message", e);
     }
     return;
   }
@@ -927,7 +930,7 @@ export class Client extends EventEmitter {
       }
       return await this.sock.relayMessage(jid, content, options);
     } catch (e) {
-      this.pen.Error("relay-message", e);
+      this.log.error("relay-message", e);
     }
   }
 

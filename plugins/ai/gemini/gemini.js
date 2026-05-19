@@ -9,7 +9,6 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import pen from "../../../src/pen.js";
 
 /**
  * @typedef {Object} Gemini - Gemini AI model
@@ -56,6 +55,9 @@ export class Gemini {
     /** @type {import('../../../src/store.js').Store} */
     this.settings = opts?.settings;
 
+    /** @type {any} */
+    this.client = opts?.client;
+
     /** @type {string} */
     this.apiKey = opts?.apiKey || this.settings?.get("gemini_api_key");
 
@@ -83,7 +85,7 @@ export class Gemini {
       try {
         await this.genAI.files.upload(params);
       } catch (e) {
-        pen.Error("gemini-upload", e);
+        this.client?.log.error("gemini-upload", e);
       }
     };
 
@@ -95,7 +97,7 @@ export class Gemini {
       try {
         await this.genAI.files.delete({ name: name });
       } catch (e) {
-        pen.Error("gemini-delete", e);
+        this.client?.log.error("gemini-delete", e);
       }
     };
 
@@ -104,7 +106,7 @@ export class Gemini {
       try {
         return await this.genAI.files.list({});
       } catch (e) {
-        pen.Error("gemini-list-file", e);
+        this.client?.log.error("gemini-list-file", e);
       }
       return;
     };
@@ -127,7 +129,7 @@ export class Gemini {
     /** @type {Map<string,import('@google/genai').Chat>} */
     this.chats = new Map();
 
-    this.fetchModels().catch((e) => pen.Error("gemini-init", e));
+    this.fetchModels().catch((e) => this.client?.log.error("gemini-init", e));
   }
 
   /**
@@ -159,7 +161,7 @@ export class Gemini {
       const resp = await chat.sendMessage(params);
       return resp;
     } catch (e) {
-      pen.Error("gemini sendMessage error:", e);
+      this.client?.log.error("gemini sendMessage error:", e);
       this.chats.delete(id);
       switch (e.status) {
         case 429: {
@@ -171,13 +173,13 @@ export class Gemini {
             }
             const prevModel = this.modelName;
             this.switchModel();
-            pen.Warn(
+            this.client?.log.warn(
               e.status,
               `try switching model from ${prevModel} to ${this.modelName}`,
             );
             return await this.chat(id, params);
           } else {
-            pen.Error(
+            this.client?.log.error(
               "gemini-chat",
               this.modelName,
               "All model is limited, please try again later.",
@@ -189,7 +191,7 @@ export class Gemini {
           return;
         }
         default: {
-          pen.Error("gemini-chat", this.modelName, e.message);
+          this.client?.log.error("gemini-chat", this.modelName, e.message);
           return;
         }
       }

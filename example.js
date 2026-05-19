@@ -12,8 +12,8 @@ import path from "node:path";
 import { Browsers } from "baileys";
 import pino from "pino";
 import { ClientEvents } from "./src/client.js";
+import { logger } from "./src/logger.js";
 import { BotManager } from "./src/manager.js";
-import pen from "./src/pen.js";
 import { RegistryEvents } from "./src/registry.js";
 import { getRoleLevelBadge, RoleLevel, rolesToLevel } from "./src/roles.js";
 import { isBun, isDeno } from "./src/tools.js";
@@ -30,7 +30,7 @@ try {
     }
   }
 } catch (e) {
-  pen.Debug("loadEnvFile", e.message);
+  logger.debug("loadEnvFile", e.message);
 }
 
 function parseItems(items) {
@@ -53,8 +53,8 @@ const manager = new BotManager({
   registryListeners: {
     [RegistryEvents.PLUGIN_LOAD]: async (item) => {
       const filename = path.basename(item.location);
-      pen.Info(
-        `Load: ${pen.MagentaBr(filename)} ${item?.estimate || 0}ms${parseItems(item?.items)?.map((i) => `\n  - ${i}`)}`,
+      logger.info(
+        `Load: ${filename} ${item?.estimate || 0}ms${parseItems(item?.items)?.map((i) => `\n  - ${i}`)}`,
       );
     },
   },
@@ -75,11 +75,11 @@ const mainBot = manager.addBot({
 });
 
 mainBot.on(ClientEvents.CONNECTED, async () => {
-  pen.Info("Connected");
+  logger.info("Connected");
 });
 
 try {
   await manager.connectAll();
 } catch (e) {
-  pen.Error(e);
+  logger.error(e);
 }

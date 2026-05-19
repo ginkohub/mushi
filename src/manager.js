@@ -9,11 +9,13 @@
  */
 
 import { EventEmitter } from "node:events";
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+
+import { logger } from "./logger.js";
 import { Client } from "./client.js";
 import { Handler } from "./handler.js";
-import { Pen } from "./pen.js";
 import { PluginRegistry } from "./registry.js";
 import { delay } from "./tools.js";
 
@@ -33,7 +35,7 @@ export class BotManager extends EventEmitter {
   constructor(opts) {
     super();
 
-    this.pen = new Pen({ prefix: "mgr", format: "" });
+    this.log = logger.child("manager");
 
     /** @type {Map<string, import('./client.js').Client>} */
     this.bots = new Map();
@@ -60,7 +62,7 @@ export class BotManager extends EventEmitter {
     /* Register signal handlers */
     ["SIGTERM", "SIGINT"].forEach((signal) => {
       process.on(signal, async () => {
-        this.pen.Info(`Received ${signal}. Stopping all bot instances...`);
+        this.log.info(`Received ${signal}. Stopping all bot instances...`);
         await this.stopAll();
       });
     });
@@ -82,7 +84,7 @@ export class BotManager extends EventEmitter {
    */
   addBot(config) {
     if (this.bots.has(config.name)) {
-      this.pen.Warn(
+      this.log.warn(
         `Bot instance ${config.name} already exists. Skipping initialization.`,
       );
       return this.bots.get(config.name);
@@ -114,7 +116,7 @@ export class BotManager extends EventEmitter {
           const config = JSON.parse(readFileSync(configFile, "utf8"));
           this.addBot(config);
         } catch (e) {
-          this.pen.Error(`Failed to load config for instance ${id}:`, e);
+          this.log.error(`Failed to load config for instance ${id}:`, e);
         }
       }
     }
@@ -127,13 +129,13 @@ export class BotManager extends EventEmitter {
    */
   async connectAll() {
     for (const [id, bot] of this.bots) {
-      this.pen.Info(`Connecting bot: ${id}`);
+      this.log.info(`Connecting bot: ${id}`);
       try {
         await bot.connect();
         // Delay 2s between connections to prevent resource spikes
         await delay(2000);
       } catch (e) {
-        this.pen.Error(`Failed to connect bot ${id}:`, e);
+        this.log.error(`Failed to connect bot ${id}:`, e);
       }
     }
   }
@@ -143,7 +145,7 @@ export class BotManager extends EventEmitter {
    * @returns {Promise<void>}
    */
   async stopAll() {
-    this.pen.Info("Stopping all bot instances...");
+    this.log.info("Stopping all bot instances...");
     const promises = [];
     for (const id of this.bots.keys()) {
       promises.push(this.disconnectBot(id));
@@ -161,7 +163,7 @@ export class BotManager extends EventEmitter {
     if (bot?.sock) {
       bot.sock.end();
       this.bots.delete(id);
-      this.pen.Info(`Bot ${id} disconnected and removed.`);
+      this.log.info(`Bot ${id} disconnected and removed.`);
     }
   }
 }

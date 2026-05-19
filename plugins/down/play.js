@@ -12,7 +12,6 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 
 const BIN_DIR = resolve("./bin");
@@ -37,10 +36,10 @@ async function resolveBinary() {
 
   try {
     if (!existsSync(BIN_DIR)) mkdirSync(BIN_DIR, { recursive: true });
-    pen.Info("yt-dlp binary not found. Downloading to ./bin...");
+    c.log().info("yt-dlp binary not found. Downloading to ./bin...");
     return await YtDlpWrap.downloadBinary(BIN_DIR);
   } catch (e) {
-    pen.Error(
+    c.log().error(
       "Failed to download yt-dlp binary, falling back to system PATH:",
       e,
     );
@@ -94,7 +93,7 @@ export default {
           const ephemeral = c.client().getTimer(c.chat);
           msg.message.audioMessage.contextInfo.expiration = ephemeral;
         } catch (e) {
-          pen.Error("set-expiration", e);
+          c.log().error("set-expiration", e);
         }
         return c.replyRelay(msg.message);
       } else {
@@ -110,7 +109,7 @@ export default {
         ]);
 
         if (!audioBuffer || audioBuffer.length === 0) {
-          pen.Error("Downloaded buffer is empty for video ID:", video.id);
+          c.log().error("Downloaded buffer is empty for video ID:", video.id);
           return c.react("🔥");
         }
 
@@ -143,7 +142,7 @@ export default {
         if (resp) c.client()?.store.set(video.id, resp);
       }
     } catch (e) {
-      pen.Error(e);
+      c.log().error(e);
       await c.react("❌");
     } finally {
       await c.react("");

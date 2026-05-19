@@ -9,7 +9,6 @@
  */
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { delay, randomNumber } from "../../src/tools.js";
 import { translate } from "../../src/translate.js";
@@ -69,14 +68,14 @@ export default [
         case "+": {
           c.client()?.settings.set(AUTO_READ_KEY, true);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Activating auto read for ${c.me}`);
+          c.log().warn(`Activating auto read for ${c.me}`);
           break;
         }
 
         case "-": {
           c.client()?.settings.set(AUTO_READ_KEY, false);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Deactivating auto read for ${c.me}`);
+          c.log().warn(`Deactivating auto read for ${c.me}`);
           break;
         }
       }

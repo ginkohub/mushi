@@ -13,7 +13,7 @@ import pg from "pg";
 const { Pool } = pg;
 
 import { BufferJSON, initAuthCreds, WAProto } from "baileys";
-import pen from "./pen.js";
+import logger from "./logger.js";
 
 const TABLE_NAME = "baileys_auth_store";
 
@@ -36,9 +36,9 @@ export async function usePostgres(connectionString) {
 
   try {
     await ensureTable();
-    pen.Debug("Connected to PostgreSQL for authentication");
+    logger.debug("Connected to PostgreSQL for authentication");
   } catch (error) {
-    pen.Error("Failed to connect to PostgreSQL or create table:", error);
+    logger.error("Failed to connect to PostgreSQL or create table:", error);
     throw error;
   }
 

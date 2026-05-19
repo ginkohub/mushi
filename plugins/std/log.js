@@ -10,7 +10,6 @@
 
 import { Events } from "../../src/const.js";
 import { BotDetector } from "../../src/detector.js";
-import pen from "../../src/pen.js";
 import { formatElapse } from "../../src/tools.js";
 
 const storeID = [];
@@ -100,7 +99,7 @@ export default {
             data.push(c.presence);
         }
 
-        data.push(pen.Blue(chatName), "<", pen.Red(senderName));
+        data.push(chatName, "<", senderName);
 
         break;
       }
@@ -131,10 +130,10 @@ export default {
         data.push(sliceStr(c.id, 8, "-"));
 
         data.push(
-          pen.GreenBr(c.type?.replaceAll("Message", "")),
-          pen.Blue(chatName),
+          c.type?.replaceAll("Message", ""),
+          chatName,
           "<",
-          pen.Red(senderName),
+          senderName,
           c.text?.slice(0, 100).replaceAll("\n", " ") || "",
         );
 
@@ -165,19 +164,13 @@ export default {
           default:
             data.push(c.action);
         }
-        data.push(
-          "",
-          pen.Blue(chatName),
-          "<",
-          pen.Red(senderName),
-          c.mentionedJid?.map((jid) => pen.Green(jid)).join(", "),
-        );
+        data.push("", chatName, "<", senderName, c.mentionedJid?.join(", "));
 
         break;
       }
 
       case Events.CALL: {
-        data.push("📞", c.callStatus, "from", pen.Blue(chatName));
+        data.push("📞", c.callStatus, "from", chatName);
         break;
       }
 
@@ -185,6 +178,6 @@ export default {
         data.push(c.eventName);
     }
 
-    if (data.length > 0) pen.Info(...data);
+    if (data.length > 0) c.log().info(...data);
   },
 };

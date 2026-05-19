@@ -9,8 +9,8 @@
  */
 
 import { readFileSync } from "node:fs";
-import { readFile, writeFile, rename } from "node:fs/promises";
-import pen from "./pen.js";
+import { readFile, rename, writeFile } from "node:fs/promises";
+import logger from "./logger.js";
 import { isBun, isDeno, watchDir } from "./tools.js";
 
 /**
@@ -49,7 +49,7 @@ import { isBun, isDeno, watchDir } from "./tools.js";
 const activeStore = new Set();
 
 export async function cleanUp() {
-  pen.Debug("Cleaning up active store store");
+  logger.debug("Cleaning up active store store");
   for (const store of Array.from(activeStore)) {
     if (store.saveTimeout) {
       await store.flush();
@@ -103,7 +103,7 @@ export class StoreJson {
       const content = readFileSync(this.saveName, "utf8");
       return JSON.parse(content);
     } catch (e) {
-      if (e.code !== "ENOENT") pen.Error("Failed initial loading data", e);
+      if (e.code !== "ENOENT") logger.error("Failed initial loading data", e);
       return {};
     }
   }
@@ -118,12 +118,12 @@ export class StoreJson {
           onChange: async (loc) => {
             if (Date.now() - this._lastSave < 2000 || this._saving) return;
 
-            pen.Debug("Reloading store due to external change:", loc);
+            logger.debug("Reloading store due to external change:", loc);
             await this.load();
           },
         });
       } catch (e) {
-        pen.Error("Failed to start watcher", e);
+        logger.error("Failed to start watcher", e);
       }
     }
   }
@@ -140,7 +140,7 @@ export class StoreJson {
 
       this.data = newData;
     } catch (e) {
-      if (e.code !== "ENOENT") pen.Error("Failed loading data", e);
+      if (e.code !== "ENOENT") logger.error("Failed loading data", e);
     }
   }
 
@@ -154,7 +154,7 @@ export class StoreJson {
       await rename(tempPath, this.saveName);
       this._lastSave = Date.now();
     } catch (e) {
-      pen.Error("Failed saving data", e);
+      logger.error("Failed saving data", e);
     } finally {
       this._saving = false;
     }
@@ -178,7 +178,7 @@ export class StoreJson {
           if (!isDeno) await instance.close();
         }
       } catch (e) {
-        pen.Error("Failed to close", e);
+        logger.error("Failed to close", e);
       }
     }
   }
@@ -327,7 +327,7 @@ export class StoreSQLite {
     );
   }
 
-  save() { }
+  save() {}
 
   /**
    * Set data

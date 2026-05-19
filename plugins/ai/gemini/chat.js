@@ -10,7 +10,6 @@
 
 import { MESSAGES_UPSERT } from "../../../src/const.js";
 import { extractTextContext } from "../../../src/context.js";
-import pen from "../../../src/pen.js";
 import { Role } from "../../../src/roles.js";
 import { formatMD } from "../../../src/tools.js";
 import { translate } from "../../../src/translate.js";
@@ -50,19 +49,20 @@ async function getGeminiClient(c) {
     const apiKey = c.client()?.settings?.get("gemini_api_key");
 
     if (!apiKey) {
-      pen.Warn("gemini: no API key configured");
+      c.client().log.warn("gemini: no API key configured");
       return null;
     }
 
     try {
       const gemini = new Gemini({
         settings: c.client()?.settings,
+        client: c.client(),
       });
 
       geminiClients.set(clientName, gemini);
-      pen.Info(`gemini: initialized for ${clientName}`);
+      c.client().log.info(`gemini: initialized for ${clientName}`);
     } catch (e) {
-      pen.Error("gemini-init", e);
+      c.client().log.error("gemini-init", e);
       return null;
     }
   }
@@ -206,7 +206,7 @@ async function processChat(c) {
         store?.set(sent.key?.id, `${c.senderJid}_${c.chat}_${c.timestamp}`);
       }
     } catch (e) {
-      pen.Error(e);
+      c.client().log.error(e);
       if (e.status === 401 || e.status === 403) {
         geminiClients.delete(c.client()?.name);
       }

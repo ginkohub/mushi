@@ -9,7 +9,6 @@
  */
 
 import { Events } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -76,7 +75,7 @@ export const ActionMap = {
   log: async (c, r) => {
     const doActionLog = DO_ALL ?? c.client()?.settings.get(Actions.LOG);
     if (typeof doActionLog === "undefined" || doActionLog)
-      pen.Warn(
+      c.log().warn(
         t("log_msg", {
           user: `${c.senderName} (${c.senderJid})`,
           chat: c.chatName,
@@ -98,9 +97,11 @@ export const ActionMap = {
   block: async (c, r) => {
     const doAction = DO_ALL ?? c.client()?.settings.get(Actions.BLOCK);
     if (doAction) {
-      pen.Warn(t("block_try", { user: `${c.senderName} (${c.senderJid})` }));
+      c.log().warn(
+        t("block_try", { user: `${c.senderName} (${c.senderJid})` }),
+      );
       if (!c.client().isBlocked(c.senderJid)) {
-        pen.Warn(
+        c.log().warn(
           t("block_msg", {
             user: `${c.senderName} (${c.senderJid})`,
             chat: c.chatName,
@@ -116,7 +117,7 @@ export const ActionMap = {
     const doAction = DO_ALL ?? c.client()?.settings.get(Actions.DELETE_FOR_ALL);
     if (doAction) {
       try {
-        pen.Warn(
+        c.log().warn(
           t("delete_try", {
             id: c.id,
             user: c.senderName,
@@ -136,9 +137,9 @@ export const ActionMap = {
             ) ?? false;
         }
         if (possible) return await c.reply({ delete: c.key });
-        pen.Warn(t("delete_not_possible", { possible, id: c.id }));
+        c.log().warn(t("delete_not_possible", { possible, id: c.id }));
       } catch (e) {
-        pen.Error(e);
+        c.log().error(e);
       }
     }
   },
@@ -146,7 +147,7 @@ export const ActionMap = {
   delete_for_me: async (c, r) => {
     const doAction = DO_ALL ?? c.client()?.settings.get(Actions.DELETE_FOR_ME);
     if (doAction) {
-      pen.Warn(
+      c.log().warn(
         t("delete_for_me", {
           id: c.id,
           user: c.senderName,
@@ -171,7 +172,7 @@ export const ActionMap = {
     const doAction =
       DO_ALL ?? c.client()?.settings.get(Actions.KICK_FROM_GROUP);
     if (doAction) {
-      pen.Warn(
+      c.log().warn(
         t("kick_try", {
           user: `${c.senderName} (${c.senderJid})`,
           chat: c.chatName,
@@ -194,14 +195,14 @@ export const ActionMap = {
           return await c
             .sock()
             .groupParticipantsUpdate(c.chat, [c.senderJid], "remove");
-        pen.Warn(
+        c.log().warn(
           t("kick_not_possible", {
             possible,
             user: `${c.senderName} (${c.senderJid})`,
           }),
         );
       } catch (e) {
-        pen.Error(e);
+        c.log().error(e);
       }
     }
   },
@@ -273,7 +274,7 @@ export default [
       if (!detect.suspect) {
         return;
       }
-      pen.Warn(
+      c.log().warn(
         t("defense_log", {
           event: c.eventName,
           suspect: detect.suspect,
@@ -283,7 +284,7 @@ export default [
       try {
         await detect.process(c);
       } catch (e) {
-        pen.Error(e);
+        c.log().error(e);
       }
     },
   },

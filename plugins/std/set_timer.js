@@ -9,7 +9,6 @@
  */
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 
 /** @type {import('../../src/plugin.js').Plugin} */
 export default {
@@ -24,7 +23,7 @@ export default {
   exec: async (c) => {
     const latest = c.client()?.getTimer(c.chat);
     const text = `Setting timer for ${c.chat} from ${latest} to ${c.expiration}`;
-    pen.Debug(text);
+    c.log().debug(text);
     c.client()?.updateTimer(c.chat, c.expiration);
     return await c.reply({ text: text }, { quoted: c.event });
   },

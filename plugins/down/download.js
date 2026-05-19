@@ -10,7 +10,6 @@
 
 import browser from "../../src/browser.js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
 
@@ -130,7 +129,7 @@ export default {
         }
         await c.react("✅");
       } catch (err) {
-        pen.Error(`Downloader error [${link}]:`, err.message);
+        c.log().error(`Downloader error [${link}]:`, err.message);
         await c.react("❌");
         c.reply({ text: t("failed", { val: link }, c) });
       }

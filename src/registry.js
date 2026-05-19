@@ -13,7 +13,7 @@ import { readdirSync, statSync } from "node:fs";
 import { platform } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { Pen } from "./pen.js";
+import logger from "./logger.js";
 import { Plugin } from "./plugin.js";
 import { watchDir } from "./tools.js";
 
@@ -74,21 +74,21 @@ export class PluginRegistry extends EventEmitter {
 
     this.isReady = false;
 
-    this.pen = new Pen({ prefix: "reg" });
+    this.log = logger.child("registry");
 
     this.scan(this.pluginDir);
 
     this.watcher = watchDir(this.pluginDir, {
       onChange: async (loc) => {
-        this.pen.Debug(`Plugin changed:`, loc);
+        this.log.debug(`Plugin changed:`, loc);
         await this.loadFile(loc);
       },
       onAdd: async (loc) => {
-        this.pen.Debug(`Plugin added:`, loc);
+        this.log.debug(`Plugin added:`, loc);
         await this.loadFile(loc);
       },
       onRemove: async (loc) => {
-        this.pen.Debug(`Plugin removed:`, loc);
+        this.log.debug(`Plugin removed:`, loc);
         this.removeByLocation(loc);
       },
     });
@@ -110,7 +110,7 @@ export class PluginRegistry extends EventEmitter {
         this.watcher = null;
       }
     } catch (e) {
-      this.pen.Error("registry-stop-watch", e);
+      this.log.error("registry-stop-watch", e);
     }
   }
 
@@ -125,7 +125,7 @@ export class PluginRegistry extends EventEmitter {
       try {
         files = readdirSync(currentDir);
       } catch (e) {
-        this.pen.Error("registry-walk", e);
+        this.log.error("registry-walk", e);
         return;
       }
 
@@ -139,7 +139,7 @@ export class PluginRegistry extends EventEmitter {
             if (loc.endsWith(".js")) await this.loadFile(loc);
           }
         } catch (e) {
-          this.pen.Error("registry-walk-stat", e.message);
+          this.log.error("registry-walk-stat", e.message);
         }
       }
     };
@@ -157,11 +157,11 @@ export class PluginRegistry extends EventEmitter {
    */
   add(item) {
     if (!item.name) {
-      this.pen.Warn(`Skipped! missing plugin name ${item.location}`);
+      this.log.warn(`Skipped! missing plugin name ${item.location}`);
       return;
     } else {
       if (this.plugins.has(item.name)) {
-        this.pen.Warn(`Duplicate name ${item.name}`);
+        this.log.warn(`Duplicate name ${item.name}`);
       }
       this.plugins.set(item.name, item);
       this.emit(RegistryEvents.PLUGIN_ADD, {
@@ -248,7 +248,7 @@ export class PluginRegistry extends EventEmitter {
 
       this.emit(RegistryEvents.PLUGIN_LOAD, { location, estimate, items });
     } catch (e) {
-      this.pen.Error("registry-load", location, e);
+      this.log.error("registry-load", location, e);
       this.emit(RegistryEvents.PLUGIN_ERROR, { location, error: e });
     }
   }

@@ -12,7 +12,7 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
-import pen from "./pen.js";
+import logger from "./logger.js";
 
 /** @type {boolean} True if the current runtime are Deno */
 export const isDeno = typeof Deno !== "undefined";
@@ -256,11 +256,11 @@ const taskList = new Map();
  */
 export async function runTask(id, fn, onError, onFinal) {
   if (taskList.has(id)) {
-    pen.Debug(`Task ${id} is already running`);
+    logger.debug(`Task ${id} is already running`);
     return await taskList.get(id);
   }
 
-  pen.Debug(`Task ${id} started`);
+  logger.debug(`Task ${id} started`);
   const task = (async () => {
     try {
       return await fn();
@@ -355,7 +355,7 @@ export async function closeWatchers(...dirs) {
         watchers.delete(dir);
       }
     } catch (e) {
-      pen.Error(e);
+      logger.error(e);
     }
   }
 }

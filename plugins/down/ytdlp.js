@@ -12,7 +12,6 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
 
@@ -59,10 +58,10 @@ async function resolveBinary() {
 
   try {
     if (!existsSync(BIN_DIR)) mkdirSync(BIN_DIR, { recursive: true });
-    pen.Info("yt-dlp binary not found. Downloading to ./bin...");
+    c.log().info("yt-dlp binary not found. Downloading to ./bin...");
     return await YtDlpWrap.downloadBinary(BIN_DIR);
   } catch (e) {
-    pen.Error(
+    c.log().error(
       "Failed to download yt-dlp binary, falling back to system PATH:",
       e,
     );
@@ -82,7 +81,7 @@ async function getYT() {
 }
 
 // Pre-initialize to speed up first use
-getYT().catch((e) => pen.Error("yt-dlp pre-initialization failed:", e));
+getYT().catch((e) => c.log().error("yt-dlp pre-initialization failed:", e));
 
 /**
  * Formats a video caption with metadata.
@@ -134,7 +133,7 @@ export default {
         try {
           const video = await ytDlp.getVideoInfo(link);
           if (!video?.id) {
-            pen.Warn(`Could not retrieve info for: ${link}`);
+            c.log().warn(`Could not retrieve info for: ${link}`);
             c.reply({ text: t("not_retrieved", { val: link }, c) });
             continue;
           }
@@ -147,7 +146,7 @@ export default {
 
           const buffer = await downloadVideo(ytDlp, link);
           if (!buffer || buffer.length === 0) {
-            pen.Error(`Download failed for: ${video.title}`);
+            c.log().error(`Download failed for: ${video.title}`);
             c.reply({ text: t("failed", { val: video.title }, c) });
             continue;
           }
@@ -164,11 +163,11 @@ export default {
 
           if (resp) c.client()?.store.set(video.id, resp);
         } catch (err) {
-          pen.Error(`Error processing link [${link}]:`, err.message);
+          c.log().error(`Error processing link [${link}]:`, err.message);
         }
       }
     } catch (e) {
-      pen.Error("Fatal ytdlp error:", e);
+      c.log().error("Fatal ytdlp error:", e);
       c.react("❌");
     }
   },

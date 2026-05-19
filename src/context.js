@@ -103,6 +103,9 @@ export class Ctx {
     /** @returns {import('./client.js').Client} */
     this.client = () => opts.client;
 
+    /** @returns {import('./logger.js').Logger} */
+    this.log = () => opts.client?.log;
+
     /** @returns {import('baileys').WASocket} */
     this.sock = () => opts.client.sock;
 

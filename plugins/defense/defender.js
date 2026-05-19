@@ -9,7 +9,6 @@
  */
 
 import { Events } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
 import { allowed } from "./detector.js";
@@ -83,14 +82,14 @@ export default [
         case "+": {
           c.client()?.settings.set(key, true);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Activating defense for ${c.me}`);
+          c.log().warn(`Activating defense for ${c.me}`);
           break;
         }
 
         case "-": {
           c.client()?.settings.set(key, false);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Deactivating defense for ${c.me}`);
+          c.log().warn(`Deactivating defense for ${c.me}`);
           break;
         }
       }

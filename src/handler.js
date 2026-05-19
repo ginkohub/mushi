@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Pen } from "./pen.js";
+import { logger } from "./logger.js";
 import { RegistryEvents } from "./registry.js";
 
 /**
@@ -66,8 +66,7 @@ export class Handler {
     /** @type {boolean} */
     this.isReady = false;
 
-    /** @type {import('./pen.js').Pen}  */
-    this.pen = new Pen({ prefix: "hand" });
+    this.log = logger.child("handler");
 
     /** @type {Set<string>} */
     this.watchIDs = new Set();
@@ -169,7 +168,7 @@ export class Handler {
       /** @type {import('./registry.js').PluginItem} */
       const item = this.registry.getPlugin(pluginName);
       if (!item) {
-        this.pen.Warn(`Plugin ${pluginName} not found`);
+        this.log.warn(`Plugin ${pluginName} not found`);
         continue;
       }
       if (item.plugin.cmd) {
@@ -188,10 +187,10 @@ export class Handler {
     this.plugin_commands = temp_commands;
 
     this.isReady = true;
-    this.pen.Info(
+    this.log.info(
       `${this.plugin_listeners.size} listeners ${this.plugin_commands.size} commands`,
     );
-    /* this.pen.Info(includeNames.join(", ")); */
+    /* this.log.info(includeNames.join(", ")); */
   }
 
   /* INFO: Events handlers */
@@ -253,7 +252,8 @@ export class Handler {
 
             await item.plugin.exec(clone);
           } catch (e) {
-            this.pen.Error("handler-handle-listen", e);
+            const msg = e?.message || e?.status || String(e);
+            this.log.error("handler-handle-listen", msg);
             if (item.plugin.onError) await item.plugin.onError(clone, e);
           }
         },
@@ -283,7 +283,8 @@ export class Handler {
                     await item.plugin.exec(clone);
                   }
                 } catch (e) {
-                  this.pen.Error("handler-handle-command", e);
+                  const msg = e?.message || e?.status || String(e);
+                  this.log.error("handler-handle-command", msg);
                   if (item.plugin.onError) await item.plugin.onError(clone, e);
                 }
               })(),
@@ -294,7 +295,8 @@ export class Handler {
 
       await Promise.allSettled(allTasks);
     } catch (e) {
-      this.pen.Error("handler-handle", e);
+      const msg = e?.message || e?.status || String(e);
+      this.log.error("handler-handle", msg);
     }
   }
 }

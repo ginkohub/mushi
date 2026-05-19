@@ -10,7 +10,6 @@
 
 import { CALL, MESSAGES_UPSERT } from "../../src/const.js";
 import { midwareAnd } from "../../src/midware.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { delay, randomNumber } from "../../src/tools.js";
 import { translate } from "../../src/translate.js";
@@ -50,7 +49,7 @@ export default [
       if (c.callStatus !== "offer") return;
 
       await delay(randomNumber(1000, 2000));
-      pen.Warn("Rejecting call from", c.senderName, c.senderJid);
+      c.log().warn("Rejecting call from", c.senderName, c.senderJid);
 
       await c.client()?.sock.rejectCall(c.id, c.sender);
     },
@@ -70,14 +69,14 @@ export default [
         case "+": {
           c.client()?.settings.set(AUTO_REJECT_KEY, true);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Activating auto reject for ${c.me}`);
+          c.log().warn(`Activating auto reject for ${c.me}`);
           break;
         }
 
         case "-": {
           c.client()?.settings.set(AUTO_REJECT_KEY, false);
           pattern = c.pattern.slice(0, -1);
-          pen.Warn(`Deactivating auto reject for ${c.me}`);
+          c.log().warn(`Deactivating auto reject for ${c.me}`);
           break;
         }
       }

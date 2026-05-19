@@ -10,7 +10,6 @@
 
 import { SpeedTestService } from "@ginkohub/speedtest-js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
-import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
 
@@ -69,7 +68,7 @@ export default {
           testServer = remotes[0];
         }
       } catch (e) {
-        pen.Error("speedtest", e);
+        c.log().error("speedtest", e);
       }
     }
 

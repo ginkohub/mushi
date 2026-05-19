@@ -10,7 +10,7 @@
 
 import { BufferJSON, initAuthCreds, WAProto } from "baileys";
 import { MongoClient } from "mongodb";
-import pen from "./pen.js";
+import logger from "./logger.js";
 
 /**
  * Use MongoDB to store authentication state
@@ -25,9 +25,9 @@ export async function useMongoDB(url) {
     await client.connect();
     const db = client.db();
     collection = db.collection("baileys_auth_store");
-    pen.Debug("Connected to MongoDB for authentication");
+    logger.debug("Connected to MongoDB for authentication");
   } catch (error) {
-    pen.Error("Failed to connect to MongoDB:", error);
+    logger.error("Failed to connect to MongoDB:", error);
     throw error;
   }
 
