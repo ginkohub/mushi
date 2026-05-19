@@ -8,78 +8,25 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import path from "node:path";
-import { Browsers } from "baileys";
 import pino from "pino";
+
 import { ClientEvents } from "./src/client.js";
-import { logger } from "./src/logger.js";
-import { BotManager } from "./src/manager.js";
-import { RegistryEvents } from "./src/registry.js";
-import { getRoleLevelBadge, RoleLevel, rolesToLevel } from "./src/roles.js";
-import { isBun, isDeno } from "./src/tools.js";
-
-/* Load environment variables from .env file */
-try {
-  if (isDeno) {
-    const { load } = await import("jsr:@std/dotenv");
-    await load({ export: true });
-  } else {
-    if (!isBun) {
-      const { loadEnvFile } = await import("node:process");
-      loadEnvFile();
-    }
-  }
-} catch (e) {
-  logger.debug("loadEnvFile", e.message);
-}
-
-function parseItems(items) {
-  if (!items) {
-    return;
-  }
-
-  const parsedItems = [];
-  for (const [key, val] of Object.entries(items)) {
-    const roles = rolesToLevel(val.roles) || [];
-    const rolesMax = roles.length > 0 ? Math.max(...roles) : RoleLevel.guest;
-    parsedItems.push(`${key}:${getRoleLevelBadge(rolesMax)}`);
-  }
-  return parsedItems;
-}
-
-const manager = new BotManager({
-  baseDir: path.resolve(process.cwd(), "data"),
-  pluginDir: path.resolve(process.cwd(), "plugins"),
-  registryListeners: {
-    [RegistryEvents.PLUGIN_LOAD]: async (item) => {
-      const filename = path.basename(item.location);
-      logger.info(
-        `Load: ${filename} ${item?.estimate || 0}ms${parseItems(item?.items)?.map((i) => `\n  - ${i}`)}`,
-      );
-    },
-  },
-});
+import { logger, manager } from "./src/index.js";
 
 const mainBot = manager.addBot({
   name: "example",
   method: process.env.METHOD || "otp",
   phone: process.env.PHONE || "",
   socketCofig: {
-    browser: Browsers.macOS(process.env.BROWSER || "Safari"),
-    logger: pino({ level: "silent" }),
+    browser: process.env.BROWSER || "Safari",
+    logger: pino({ level: "fatal" }),
     syncFullHistory: false,
-    version: [2, 3000, 1038162681],
   },
   prefixes: [".", "/"],
-  /* plugins: ["std-log", "std-ping", "dev-dump"], */
 });
 
 mainBot.on(ClientEvents.CONNECTED, async () => {
   logger.info("Connected");
 });
 
-try {
-  await manager.connectAll();
-} catch (e) {
-  logger.error(e);
-}
+mainBot.connect();
