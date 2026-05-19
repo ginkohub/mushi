@@ -182,6 +182,12 @@ export class Client extends EventEmitter {
     this.ready.catch((e) => this.pen.Error(e));
   }
 
+  /**
+   * Run a task with deduplication
+   * @param {string} id
+   * @param {() => Promise<unknown>} func
+   * @returns {Promise<unknown>}
+   */
   async runTask(id, func) {
     if (this.taskList.has(id)) {
       this.pen.Debug(`Task ${id} is already running`);
@@ -203,10 +209,19 @@ export class Client extends EventEmitter {
     return task;
   }
 
+  /**
+   * Resolve path relative to bot directory
+   * @param {string} name
+   * @returns {string}
+   */
   withDir(name) {
     return path.resolve(this.botDir, name);
   }
 
+  /**
+   * Initialize client
+   * @returns {Promise<void>}
+   */
   async init() {
     this.initBotDir();
     this.initDatabases();
@@ -220,6 +235,9 @@ export class Client extends EventEmitter {
     }
   }
 
+  /**
+   * Initialize database stores
+   */
   initDatabases() {
     this.store = new StoreSQLite({
       saveName: path.join(this.botDir, "settings.db"),
@@ -241,6 +259,9 @@ export class Client extends EventEmitter {
     this.settings = this.store.use("settings");
   }
 
+  /**
+   * Initialize bot directory
+   */
   initBotDir() {
     /* Check existence of bot directory */
     if (!this.botDir) throw Error("Bot directory is required");
@@ -252,6 +273,10 @@ export class Client extends EventEmitter {
     }
   }
 
+  /**
+   * Initialize bot authentication
+   * @returns {Promise<void>}
+   */
   async initBot() {
     const { state, saveCreds, clearState, type } = await useStore(
       this.withDir("session.db"),
@@ -264,9 +289,14 @@ export class Client extends EventEmitter {
     this.dbType = type;
   }
 
+  /**
+   * Handle event with context
+   * @param {{eventName: string, event: unknown, eventType: string}} param0
+   * @returns {Promise<void>}
+   */
   async handle({ eventName, event, eventType }) {
     try {
-      const ctx = new Ctx({
+      const c = new Ctx({
         bot: this.sock.user,
         eventName: eventName,
         event: event,
@@ -275,13 +305,17 @@ export class Client extends EventEmitter {
         handler: this.handler,
       });
 
-      await ctx.init();
-      await this.handler.handle(ctx);
+      await c.init();
+      await this.handler.handle(c);
     } catch (e) {
       this.pen.Error("handle", e);
     }
   }
 
+  /**
+   * Initialize event handler
+   * @returns {Promise<void>}
+   */
   async initHandler() {
     this.sock.ev.process(
       /** @param {import('baileys').BaileysEventMap} events */
@@ -367,6 +401,10 @@ export class Client extends EventEmitter {
     );
   }
 
+  /**
+   * Connect to WhatsApp
+   * @returns {Promise<void>}
+   */
   async connect() {
     await this.ready;
     this.emit(ClientEvents.READY);
@@ -474,11 +512,98 @@ export class Client extends EventEmitter {
     this.emit(ClientEvents.CONNECTED);
   }
 
+  /**
+   * Disconnect from WhatsApp
+   * @returns {Promise<void>}
+   */
   async disconnect() {
     this.emit(ClientEvents.DISCONNECTED);
   }
 
   /* INFO: This section for data and updater methods */
+
+  /**
+   * Handle update data
+   * @param {import('./context.js').Ctx} c
+   */
+  async updateData(c) {
+    try {
+      switch (c.eventName) {
+        case Events.GROUPS_UPSERT:
+        case Events.GROUP_PARTICIPANTS_UPDATE:
+        case Events.GROUPS_UPDATE: {
+          await this.updateGroupMetadata(c.chat, c);
+          break;
+        }
+
+        case Events.CONTACTS_UPDATE:
+        case Events.CONTACTS_UPSERT: {
+          this.updateContact(c.sender, {
+            id: c.sender,
+            name: c.pushName,
+          });
+          break;
+        }
+
+        case Events.MESSAGES_UPSERT: {
+          if (
+            c?.fromMe &&
+            !c?.edited &&
+            c?.eventType !== "append" &&
+            c?.type !== "senderKeyDistributionMessage"
+          ) {
+            this.updateTimer(c.chat, c.expiration, c.eventName);
+          }
+          break;
+        }
+
+        case Events.BLOCKLIST_SET:
+        case Events.BLOCKLIST_UPDATE: {
+          /** @type {{blocklist: string[], type: 'add' | 'remove'}} */
+          const ev = c.event;
+          switch (ev?.type) {
+            case "add": {
+              ev?.blocklist?.forEach((jid) => {
+                this.blockList.add(jidNormalizedUser(jid));
+              });
+              break;
+            }
+            case "remove": {
+              ev.blocklist?.forEach((jid) => {
+                this.blockList.delete(jidNormalizedUser(jid));
+              });
+              break;
+            }
+            default: {
+              if (c.eventName === Events.BLOCKLIST_SET)
+                this.blockList = new Set(ev.blocklist || []);
+            }
+          }
+
+          this.blockList = new Set(this.blockList);
+          break;
+        }
+
+        case Events.CONNECTION_UPDATE: {
+          if (c?.event?.isOnline) {
+            await delay(3000);
+            try {
+              this.runTask("update-data-fetch-blocklist", async () => {
+                this.blockList = new Set(
+                  (await this.sock.fetchBlocklist()) || [],
+                );
+              });
+            } catch (e) {
+              this.pen.Error("update-data-fetch-blocklist", e);
+            }
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      this.pen.Error("update-data", e);
+    }
+  }
 
   /**
    * Check whether given jid is blocked or not
@@ -504,7 +629,7 @@ export class Client extends EventEmitter {
           break;
         }
         case "unblock": {
-          this.blockList = this.blockList.delete(jidNormalizedUser(jid));
+          this.blockList.delete(jidNormalizedUser(jid));
           break;
         }
       }
@@ -544,35 +669,33 @@ export class Client extends EventEmitter {
   /**
    * Update group metadata by given jid
    * @param {string} jid
-   * @param {import('./context.js').Ctx} ctx
+   * @param {import('./context.js').Ctx} c
    * @returns {Promise<import('baileys').GroupMetadata>}
    */
-  async updateGroupMetadata(jid, ctx) {
+  async updateGroupMetadata(jid, c) {
     try {
       this.pen.Debug(
         "Updating group metadata",
         jid,
-        ctx ? `via ${ctx.eventName} with action : ${ctx.action}` : "",
+        c ? `via ${c.eventName} with action : ${c.action}` : "",
       );
       let data = this.groupCache.get(jid);
       let updated = false;
 
       if (data) {
-        switch (ctx?.eventName) {
+        switch (c?.eventName) {
           case Events.GROUP_PARTICIPANTS_UPDATE: {
-            switch (ctx?.action) {
+            switch (c?.action) {
               case "add": {
-                for (const add of ctx.mentionedJid) {
+                for (const add of c.mentionedJid) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = !ctx.mentionedJid.some((jid) =>
-                    jid.endsWith("@lid"),
-                  );
+                  updated = !c.mentionedJid.some((jid) => jid.endsWith("@lid"));
                 }
                 break;
               }
               case "remove": {
-                for (const rm of ctx.mentionedJid) {
+                for (const rm of c.mentionedJid) {
                   const i = data.participants?.findIndex(
                     (part) =>
                       part.id === rm || part.lid === rm || part.jid === rm,
@@ -587,8 +710,8 @@ export class Client extends EventEmitter {
               case "promote": {
                 data?.participants?.forEach((part) => {
                   if (
-                    ctx.mentionedJid?.includes(part.id) ||
-                    ctx.mentionedJid?.includes(part.lid)
+                    c.mentionedJid?.includes(part.id) ||
+                    c.mentionedJid?.includes(part.lid)
                   ) {
                     part.admin = "admin";
                     updated = true;
@@ -599,8 +722,8 @@ export class Client extends EventEmitter {
               case "demote": {
                 data?.participants?.forEach((part) => {
                   if (
-                    ctx.mentionedJid?.includes(part.id) ||
-                    ctx.mentionedJid?.includes(part.lid)
+                    c.mentionedJid?.includes(part.id) ||
+                    c.mentionedJid?.includes(part.lid)
                   ) {
                     part.admin = null;
                     updated = true;
@@ -618,9 +741,9 @@ export class Client extends EventEmitter {
           }
           case Events.GROUPS_UPDATE: {
             const skip = ["author", "id"];
-            for (const key in ctx?.event) {
+            for (const key in c?.event) {
               if (skip.includes(key)) continue;
-              data[key] = ctx.event[key];
+              data[key] = c.event[key];
               updated = true;
             }
             break;
@@ -635,7 +758,7 @@ export class Client extends EventEmitter {
       if (data) {
         data.size = data.participants.length;
         this.groupCache.set(jid, data);
-        this.updateTimer(data.id, data.ephemeralDuration, ctx?.eventName);
+        this.updateTimer(data.id, data.ephemeralDuration, c?.eventName);
         return data;
       }
     } catch (e) {
@@ -736,8 +859,8 @@ export class Client extends EventEmitter {
     }
 
     /* TODO: Handle other types of jids
-    else if (jid.endsWith('@newsletter')) { } 
-    */
+      else if (jid.endsWith('@newsletter')) { } 
+      */
 
     return null;
   }
