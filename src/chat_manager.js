@@ -42,6 +42,7 @@ export class ChatManager {
 
   /**
    * Clear all chat data
+   * @returns {void}
    */
   clear() {
     this.storage?.clear();

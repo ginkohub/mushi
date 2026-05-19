@@ -54,6 +54,7 @@ export class UserManager {
 
   /**
    * Clear all user data
+   * @returns {void}
    */
   clear() {
     this.storage?.clear();
@@ -64,7 +65,7 @@ export class UserManager {
    * @param {...string} jids
    */
   addOwners(...jids) {
-    if (jids)
+    if (jids?.length)
       jids.forEach((jid) => {
         jid = jidNormalizedUser(jid);
         if (!this.owners?.includes(jid)) this.owners?.push(jid);
