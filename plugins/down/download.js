@@ -12,7 +12,6 @@ import browser from "../../src/browser.js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { storeMsg } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -110,7 +109,7 @@ export default {
 
         for (const url of result.media.urls) {
           const id = url;
-          const cached = storeMsg.get(id);
+          const cached = c.client()?.store.get(id);
           if (cached && !c.argv?.force) {
             await c.replyRelay(cached.message);
             continue;
@@ -127,7 +126,7 @@ export default {
 
           const resp = await c.reply(content, { quoted: c.event });
 
-          if (resp && id) storeMsg.set(id, resp);
+          if (resp && id) c.client()?.store.set(id, resp);
         }
         await c.react("✅");
       } catch (err) {

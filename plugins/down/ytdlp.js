@@ -14,7 +14,6 @@ import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { storeMsg } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -140,7 +139,7 @@ export default {
             continue;
           }
 
-          const cached = storeMsg.get(video.id);
+          const cached = c.client()?.store.get(video.id);
           if (cached && !c.argv.force) {
             await c.replyRelay(cached.message);
             continue;
@@ -163,7 +162,7 @@ export default {
             { quoted: c.event },
           );
 
-          if (resp) storeMsg.set(video.id, resp);
+          if (resp) c.client()?.store.set(video.id, resp);
         } catch (err) {
           pen.Error(`Error processing link [${link}]:`, err.message);
         }

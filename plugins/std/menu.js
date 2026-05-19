@@ -9,7 +9,6 @@
  */
 
 import { levelToName, Role } from "../../src/roles.js";
-import { getLang } from "../../src/settings.js";
 import { formatElapse } from "../../src/tools.js";
 import { translate } from "../../src/translate.js";
 
@@ -134,6 +133,7 @@ export default {
       texts.push(t("available", {}, c));
 
       const since = Date.now() - c.client()?.startedAt;
+      const globalLang = c.client()?.settings.get("lang") || "";
       texts.push(
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
@@ -143,7 +143,7 @@ export default {
           ?.getPrefixes()
           ?.map((p) => `\`${p}\``)
           .join(", "),
-        `${t("lang", {}, c)} ${getLang()} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
+        `${t("lang", {}, c)} ${globalLang} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
 
       const categories = new Map();

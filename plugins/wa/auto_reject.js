@@ -12,7 +12,6 @@ import { CALL, MESSAGES_UPSERT } from "../../src/const.js";
 import { midwareAnd } from "../../src/midware.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { settings } from "../../src/settings.js";
 import { delay, randomNumber } from "../../src/tools.js";
 import { translate } from "../../src/translate.js";
 
@@ -44,7 +43,7 @@ export default [
     midware: midwareAnd(
       (ctx) => ({ success: !ctx.isStatus }),
       (ctx) => ({ success: !ctx.fromMe }),
-      (_) => ({ success: settings.get(AUTO_REJECT_KEY) }),
+      (_) => ({ success: c.client()?.settings.get(AUTO_REJECT_KEY) }),
     ),
 
     exec: async (c) => {
@@ -69,21 +68,21 @@ export default [
       const tail = c.pattern.slice(-1);
       switch (tail) {
         case "+": {
-          settings.set(AUTO_REJECT_KEY, true);
+          c.client()?.settings.set(AUTO_REJECT_KEY, true);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Activating auto reject for ${c.me}`);
           break;
         }
 
         case "-": {
-          settings.set(AUTO_REJECT_KEY, false);
+          c.client()?.settings.set(AUTO_REJECT_KEY, false);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Deactivating auto reject for ${c.me}`);
           break;
         }
       }
 
-      let set = settings.get(AUTO_REJECT_KEY);
+      let set = c.client()?.settings.get(AUTO_REJECT_KEY);
       if (!set) set = false;
       const texts = [];
       texts.push(t("status", { val: set }, c));

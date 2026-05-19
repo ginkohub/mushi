@@ -10,7 +10,6 @@
 
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
-import { getLang, setLang } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -52,7 +51,7 @@ export default [
     exec: async (c) => {
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = getLang();
+      const current = c.client()?.settings.get("lang");
 
       if (!lang || !available.includes(lang)) {
         const text = !lang
@@ -62,7 +61,7 @@ export default [
         return await c.reply({ text }, { quoted: c.event });
       }
 
-      setLang(lang);
+      c.client()?.settings.set("lang", lang);
       await c.reply({ text: t("success", { lang }, c) }, { quoted: c.event });
     },
   },
@@ -78,7 +77,7 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.chatData?.lang || getLang();
+      const current = c.chatData?.lang || c.client()?.settings.get("lang");
 
       if (isQuestion || !lang) {
         return await c.reply({
@@ -88,7 +87,7 @@ export default [
 
       if (
         !c.isAdmin &&
-        !c.handler().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
         return await c.reply({ text: t("admin_only", {}, c) });
 
@@ -114,7 +113,7 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.user?.lang || getLang();
+      const current = c.user?.lang || c.client()?.settings.get("lang");
 
       if (isQuestion || !lang) {
         return await c.reply({
@@ -128,7 +127,7 @@ export default [
         });
       }
 
-      c.handler().userManager.updateUser(c.senderJid, { lang });
+      c.client().userManager.updateUser(c.senderJid, { lang });
       await c.reply({ text: t("user_success", { lang }, c) });
     },
   },

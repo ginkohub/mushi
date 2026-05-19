@@ -11,7 +11,6 @@
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { settings } from "../../src/settings.js";
 import { delay, randomNumber } from "../../src/tools.js";
 import { translate } from "../../src/translate.js";
 
@@ -46,7 +45,7 @@ export default [
         !c.isStatus &&
         !c.fromMe &&
         !skipTypes.includes(c.type) &&
-        settings.get(AUTO_READ_KEY),
+        c.client()?.settings.get(AUTO_READ_KEY),
     }),
 
     exec: async (c) => {
@@ -68,21 +67,21 @@ export default [
       const tail = c.pattern.slice(-1);
       switch (tail) {
         case "+": {
-          settings.set(AUTO_READ_KEY, true);
+          c.client()?.settings.set(AUTO_READ_KEY, true);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Activating auto read for ${c.me}`);
           break;
         }
 
         case "-": {
-          settings.set(AUTO_READ_KEY, false);
+          c.client()?.settings.set(AUTO_READ_KEY, false);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Deactivating auto read for ${c.me}`);
           break;
         }
       }
 
-      let set = settings.get(AUTO_READ_KEY);
+      let set = c.client()?.settings.get(AUTO_READ_KEY);
       if (!set) set = false;
       const texts = [];
       texts.push(t("status", { val: set }, c));

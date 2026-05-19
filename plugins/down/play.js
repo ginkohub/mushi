@@ -14,7 +14,6 @@ import YtDlpWrap from "yt-dlp-wrap";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { storeMsg } from "../../src/settings.js";
 
 const BIN_DIR = resolve("./bin");
 const YTDLP_PATHS = [
@@ -89,7 +88,7 @@ export default {
 
       /* Check on database */
       /** @type {import('baileys').proto.IWebMessageInfo }*/
-      const msg = storeMsg.get(video.id);
+      const msg = c.client()?.store.get(video.id);
       if (msg && !c.argv.force) {
         try {
           const ephemeral = c.handler().getTimer(c.chat);
@@ -141,7 +140,7 @@ export default {
             },
           },
         });
-        if (resp) storeMsg.set(video.id, resp);
+        if (resp) c.client()?.store.set(video.id, resp);
       }
     } catch (e) {
       pen.Error(e);

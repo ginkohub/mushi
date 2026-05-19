@@ -11,7 +11,6 @@
 import { Events } from "../../src/const.js";
 import pen from "../../src/pen.js";
 import { Role } from "../../src/roles.js";
-import { settings } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 import { allowed } from "./detector.js";
 
@@ -52,11 +51,11 @@ const t = translate({
 
 /* filter duplicate types and defaults */
 try {
-  let setTypes = settings.get(KEY_DEFENSE_ALLOW_STATUS);
+  let setTypes = c.client()?.settings.get(KEY_DEFENSE_ALLOW_STATUS);
   if (!setTypes || !Array.isArray(setTypes)) setTypes = [];
   setTypes = setTypes.filter((v, i, a) => a.indexOf(v) === i);
   setTypes = setTypes.filter((v) => !allowed?.includes(v));
-  settings.set(KEY_DEFENSE_ALLOW_STATUS, setTypes);
+  c.client()?.settings.set(KEY_DEFENSE_ALLOW_STATUS, setTypes);
 } catch (e) {
   pen.Error("defender-filter-types", e);
 }
@@ -93,20 +92,20 @@ export default [
       const tail = pattern.slice(-1);
       switch (tail) {
         case "+": {
-          settings.set(key, true);
+          c.client()?.settings.set(key, true);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Activating defense for ${c.me}`);
           break;
         }
 
         case "-": {
-          settings.set(key, false);
+          c.client()?.settings.set(key, false);
           pattern = c.pattern.slice(0, -1);
           pen.Warn(`Deactivating defense for ${c.me}`);
           break;
         }
       }
-      const set = settings.get(key);
+      const set = c.client()?.settings.get(key);
 
       const texts = [
         t("status", { val: set === true ? t("active") : t("inactive") }),
@@ -133,7 +132,7 @@ export default [
       if (!newAllowed || !Array.isArray(newAllowed)) newAllowed = [];
       newAllowed = newAllowed.filter((v, i, a) => a.indexOf(v) === i);
 
-      let setAllows = settings.get(KEY_DEFENSE_ALLOW_STATUS);
+      let setAllows = c.client()?.settings.get(KEY_DEFENSE_ALLOW_STATUS);
       if (!setAllows || !Array.isArray(setAllows)) setAllows = [];
 
       const tail = c.pattern.slice(-1);
@@ -163,7 +162,7 @@ export default [
       }
 
       if (status?.length > 0) {
-        settings.set(KEY_DEFENSE_ALLOW_STATUS, setAllows);
+        c.client()?.settings.set(KEY_DEFENSE_ALLOW_STATUS, setAllows);
         texts.push(
           status === "add" ? t("success_add") : t("success_remove"),
           "",

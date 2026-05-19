@@ -10,7 +10,6 @@
 
 import { Events } from "../../src/const.js";
 import pen from "../../src/pen.js";
-import { settings } from "../../src/settings.js";
 import { translate } from "../../src/translate.js";
 
 const t = translate({
@@ -75,7 +74,7 @@ const DO_ALL = true;
 /** @type {Record<Actions, Action>} */
 export const ActionMap = {
   log: async (c, r) => {
-    const doActionLog = DO_ALL ?? settings.get(Actions.LOG);
+    const doActionLog = DO_ALL ?? c.client()?.settings.get(Actions.LOG);
     if (typeof doActionLog === "undefined" || doActionLog)
       pen.Warn(
         t("log_msg", {
@@ -85,7 +84,7 @@ export const ActionMap = {
         }),
       );
 
-    const doAction = DO_ALL ?? settings.get(Actions.SEND_SAMPLE);
+    const doAction = DO_ALL ?? c.client()?.settings.get(Actions.SEND_SAMPLE);
     if (doAction) {
       return await c.sendMessage(c.me, {
         document: Buffer.from(JSON.stringify(r, null, 2)),
@@ -97,7 +96,7 @@ export const ActionMap = {
   },
 
   block: async (c, r) => {
-    const doAction = DO_ALL ?? settings.get(Actions.BLOCK);
+    const doAction = DO_ALL ?? c.client()?.settings.get(Actions.BLOCK);
     if (doAction) {
       pen.Warn(t("block_try", { user: `${c.senderName} (${c.sender})` }));
       if (!c.handler().isBlocked(c.sender)) {
@@ -114,7 +113,7 @@ export const ActionMap = {
   },
 
   delete_for_all: async (c, r) => {
-    const doAction = DO_ALL ?? settings.get(Actions.DELETE_FOR_ALL);
+    const doAction = DO_ALL ?? c.client()?.settings.get(Actions.DELETE_FOR_ALL);
     if (doAction) {
       try {
         pen.Warn(
@@ -127,7 +126,7 @@ export const ActionMap = {
         );
         let possible = false;
         if (c.isGroup) {
-          const meta = c.handler()?.getGroupMetadata(c.chat);
+          const meta = c.client()?.getGroupMetadata(c.chat);
           /* check if bot are admin */
           possible =
             meta?.participants?.some(
@@ -145,7 +144,7 @@ export const ActionMap = {
   },
 
   delete_for_me: async (c, r) => {
-    const doAction = DO_ALL ?? settings.get(Actions.DELETE_FOR_ME);
+    const doAction = DO_ALL ?? c.client()?.settings.get(Actions.DELETE_FOR_ME);
     if (doAction) {
       pen.Warn(
         t("delete_for_me", {
@@ -169,7 +168,8 @@ export const ActionMap = {
   },
 
   kick_from_group: async (c, r) => {
-    const doAction = DO_ALL ?? settings.get(Actions.KICK_FROM_GROUP);
+    const doAction =
+      DO_ALL ?? c.client()?.settings.get(Actions.KICK_FROM_GROUP);
     if (doAction) {
       pen.Warn(
         t("kick_try", {
@@ -181,7 +181,7 @@ export const ActionMap = {
       try {
         let possible = false;
         if (c.isGroup) {
-          const meta = c.handler()?.getGroupMetadata(c.chat);
+          const meta = c.client()?.getGroupMetadata(c.chat);
           /* check if bot are admin */
           possible =
             meta?.participants?.some(
@@ -257,7 +257,9 @@ export default [
     name: "defense-listener",
     desc: "Defense system",
     events: [Events.MESSAGES_UPSERT],
-    midware: (c) => ({ success: settings.get("defense") && !c.fromMe }),
+    midware: (c) => ({
+      success: c.client()?.settings.get("defense") && !c.fromMe,
+    }),
     timeout: 0,
     exec: async (c) => {
       let detect = new Result({ suspect: false });
@@ -297,7 +299,7 @@ const listDetectors = [
         reason: "Not a status message",
       };
 
-    let allow = settings.get("defense_allow_status");
+    let allow = c.client()?.settings.get("defense_allow_status");
     if (!allow) allow = [];
     allow.push(...allowed);
     allow = allow.filter((v, i, a) => a.indexOf(v) === i);
