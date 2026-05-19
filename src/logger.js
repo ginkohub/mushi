@@ -171,16 +171,17 @@ class Logger {
   }
 
   /**
-   * Create a child logger with prefix
-   * @param {string} prefix
+   * Create a child logger with prefix (pino-compatible)
+   * @param {string|{class:string}} prefix
    * @returns {Logger}
    */
   child(prefix) {
+    const label = typeof prefix === "string" ? prefix : prefix?.class || "unknown";
     return new Logger({
       level: this.#level,
       maxLogs: this.#maxLogs,
       console: this.#console,
-      prefix: this.#prefix ? `${this.#prefix}:${prefix}` : prefix,
+      prefix: this.#prefix ? `${this.#prefix}:${label}` : label,
     });
   }
 
