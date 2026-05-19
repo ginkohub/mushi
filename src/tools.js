@@ -257,7 +257,7 @@ const taskList = new Map();
 export async function runTask(id, fn, onError, onFinal) {
   if (taskList.has(id)) {
     pen.Debug(`Task ${id} is already running`);
-    return taskList.get(id);
+    return await taskList.get(id);
   }
 
   pen.Debug(`Task ${id} started`);
