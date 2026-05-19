@@ -153,6 +153,7 @@ export class Handler {
 
   /**
    * Generate command and listener
+   * @returns {void}
    */
   generate() {
     this.isReady = false;
@@ -213,20 +214,23 @@ export class Handler {
   }
 
   /**
+   * Check if safe for command execution
    * @param {import('./context.js').Ctx} c
+   * @returns {boolean}
    */
   isSafeForCMD(c) {
     const isAppend = c?.eventType === "append";
     const isPrekey = c?.type === "senderKeyDistributionMessage";
-    const isUndefined =
-      c?.type === "undefined" || typeof c?.type === "undefined";
+    const isUndefined = c?.type == null;
     const idExist = isPrekey || isUndefined ? true : this.isIDExist(c);
 
     return !(isAppend || isPrekey || isUndefined || idExist);
   }
 
   /**
+   * Handle incoming event
    * @param {import('./context.js').Ctx} c
+   * @returns {Promise<void>}
    */
   async handle(c) {
     try {
