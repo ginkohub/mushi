@@ -44,11 +44,11 @@ export class Handler {
     }
 
     this.registry.on(RegistryEvents.PLUGIN_LOAD, () => {
-      if (this.isReady) this.generate();
+      if (this.isReady && this.registry.isReady) this.generate();
     });
 
     this.registry.on(RegistryEvents.PLUGIN_REMOVE, () => {
-      if (this.isReady) this.generate();
+      if (this.isReady && this.registry.isReady) this.generate();
     });
 
     /** @type {string[]} */
