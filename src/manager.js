@@ -9,14 +9,14 @@
  */
 
 import { EventEmitter } from "node:events";
-
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
-
-import { logger } from "./logger.js";
 import { Client } from "./client.js";
 import { Handler } from "./handler.js";
-import { PluginRegistry } from "./registry.js";
+import { logger } from "./logger.js";
+import { PluginRegistry, RegistryEvents } from "./registry.js";
+import { getRoleLevelBadge, rolesToLevel } from "./roles.js";
+import { StoreSQLite } from "./store.js";
 import { delay } from "./tools.js";
 
 /**
@@ -24,6 +24,7 @@ import { delay } from "./tools.js";
  * @property {string} baseDir
  * @property {string} pluginDir
  * @property {Record<string, any>} [registryListeners]
+ * @property {import('./store.js').Store} [store]
  */
 
 /**
@@ -50,6 +51,16 @@ export class BotManager extends EventEmitter {
       mkdirSync(this.baseDir, { recursive: true });
     }
 
+    /** @type {import("./store.js").Store} */
+    this.store =
+      opts?.store ||
+      new StoreSQLite({
+        saveName: path.join(this.baseDir, "manager.db"),
+        tableName: "bots",
+      });
+
+    this.ready = this._init();
+
     /** @type {PluginRegistry} */
     this.registry = new PluginRegistry(this.pluginDir);
 
@@ -66,6 +77,10 @@ export class BotManager extends EventEmitter {
         await this.stopAll();
       });
     });
+  }
+
+  async _init() {
+    await this.store.waitReady();
   }
 
   /**
@@ -100,24 +115,38 @@ export class BotManager extends EventEmitter {
     const bot = new Client(config);
 
     this.bots.set(config.name, bot);
+
+    /** Save config to SQLite */
+    const savedConfig = { ...config };
+    delete savedConfig.handler;
+    delete savedConfig.logger;
+    if (savedConfig.socketCofig) {
+      delete savedConfig.socketCofig.logger;
+    }
+
+    /** We use a promise here to not block the sync addBot but still ensure it saves */
+    this.store.waitReady().then(() => {
+      this.store.set(config.name, savedConfig);
+      this.log.info(`Config saved to database for bot: ${config.name}`);
+    });
+
     return bot;
   }
 
   /**
-   * Load and connect all instances found in baseDir
+   * Load and connect all instances from database
    */
   async loadAll() {
-    if (!existsSync(this.baseDir)) return;
-    const folders = readdirSync(this.baseDir);
-    for (const id of folders) {
-      const configFile = path.join(this.baseDir, id, "config.json");
-      if (existsSync(configFile)) {
-        try {
-          const config = JSON.parse(readFileSync(configFile, "utf8"));
+    await this.store.waitReady();
+    const keys = this.store.keys();
+    for (const id of keys) {
+      try {
+        const config = this.store.get(id);
+        if (config) {
           this.addBot(config);
-        } catch (e) {
-          this.log.error(`Failed to load config for instance ${id}:`, e);
         }
+      } catch (e) {
+        this.log.error(`Failed to load config for instance ${id} from DB:`, e);
       }
     }
     return this.connectAll();
@@ -132,7 +161,7 @@ export class BotManager extends EventEmitter {
       this.log.info(`Connecting bot: ${id}`);
       try {
         await bot.connect();
-        // Delay 2s between connections to prevent resource spikes
+        /** Delay 2s between connections to prevent resource spikes */
         await delay(2000);
       } catch (e) {
         this.log.error(`Failed to connect bot ${id}:`, e);
@@ -160,10 +189,55 @@ export class BotManager extends EventEmitter {
    */
   async disconnectBot(id) {
     const bot = this.getBot(id);
-    if (bot?.sock) {
-      bot.sock.end();
+    if (bot) {
+      await bot.disconnect();
+      bot.removeAllListeners();
       this.bots.delete(id);
       this.log.info(`Bot ${id} disconnected and removed.`);
     }
   }
+
+  /**
+   * Remove a bot completely from memory and database
+   * @param {string} id
+   */
+  async removeBot(id) {
+    await this.disconnectBot(id);
+    this.store.delete(id);
+    this.log.info(`Bot ${id} removed from database.`);
+  }
 }
+
+/**
+ * @param {Record<string, any>} items
+ * @returns {string[]|undefined}
+ */
+function parseItems(items) {
+  if (!items) {
+    return;
+  }
+
+  const parsedItems = [];
+  for (const [key, val] of Object.entries(items)) {
+    const roles = rolesToLevel(val.roles) || [];
+    const rolesMax = roles.length > 0 ? Math.max(...roles) : 0;
+    parsedItems.push(`${key}:${getRoleLevelBadge(rolesMax)}`);
+  }
+  return parsedItems;
+}
+
+const baseDir = path.resolve(process.cwd(), "data");
+const pluginDir = path.resolve(process.cwd(), "plugins");
+
+export const manager = new BotManager({
+  baseDir,
+  pluginDir,
+  registryListeners: {
+    [RegistryEvents.PLUGIN_LOAD]: async (item) => {
+      const filename = path.basename(item.location);
+      logger.info(
+        `Load: ${filename} ${item?.estimate || 0}ms${parseItems(item?.items)?.map((i) => `\n  - ${i}`)}`,
+      );
+    },
+  },
+});
