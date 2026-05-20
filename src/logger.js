@@ -46,7 +46,7 @@ export const LogLevel = Object.freeze({
  * @property {number} [maxFiles] - max number of old log files to keep
  */
 
-class Logger {
+export class Logger {
   /** @type {LogEntry[]} */
   #logs = [];
 
@@ -193,7 +193,7 @@ class Logger {
     const now = new Date();
     const date = now.toISOString().split("T")[0];
 
-    // Daily rotation
+    /* Daily rotation */
     if (this.#lastDate && this.#lastDate !== date) {
       this.#rotateFiles();
       this.#lastDate = date;
@@ -207,7 +207,7 @@ class Logger {
 
     const line = `${JSON.stringify(entry)}\n`;
 
-    // Check size limit
+    /* Check size limit */
     if (this.#maxSize > 0 && existsSync(this.#filePath)) {
       const stats = statSync(this.#filePath);
       if (stats.size >= this.#maxSize) {
@@ -241,9 +241,7 @@ class Logger {
     for (let i = this.#maxFiles; i < files.length; i++) {
       try {
         unlinkSync(files[i].path);
-      } catch (_e) {
-        // ignore
-      }
+      } catch { }
     }
   }
 
@@ -329,7 +327,6 @@ const colors = {
 
 export const logger = new Logger();
 
-// Attach colors to logger for convenience
 Object.assign(logger, colors);
 
 export default logger;
