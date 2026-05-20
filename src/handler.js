@@ -31,6 +31,8 @@ export class Handler {
    * @param {HandlerOpts} opts
    */
   constructor(opts) {
+    this.log = logger.child("handler");
+
     /** @type {string[]} */
     this.prefixes = opts?.prefixes?.length > 0 ? opts.prefixes : [".", "/"];
 
@@ -65,8 +67,6 @@ export class Handler {
 
     /** @type {boolean} */
     this.isReady = false;
-
-    this.log = logger.child("handler");
 
     /** @type {Set<string>} */
     this.watchIDs = new Set();
