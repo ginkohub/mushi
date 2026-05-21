@@ -72,7 +72,7 @@ export class BotManager extends EventEmitter {
 
     /* Register signal handlers */
     ["SIGTERM", "SIGINT"].forEach((signal) => {
-      process.on(signal, async () => {
+      process.once(signal, async () => {
         this.log.info(`Received ${signal}. Stopping all bot instances...`);
         await this.stopAll();
       });
@@ -80,7 +80,14 @@ export class BotManager extends EventEmitter {
   }
 
   async _init() {
-    await this.store.waitReady();
+    await this.store
+      .waitReady()
+      .then(() => {
+        this.log.info("Manager store ready.");
+      })
+      .catch((e) => {
+        this.log.error("Manager store not ready:", e);
+      });
   }
 
   /**
@@ -120,15 +127,23 @@ export class BotManager extends EventEmitter {
     const savedConfig = { ...config };
     delete savedConfig.handler;
     delete savedConfig.logger;
-    if (savedConfig.socketCofig) {
-      delete savedConfig.socketCofig.logger;
+    if (savedConfig.socketConfig) {
+      delete savedConfig.socketConfig.logger;
     }
 
     /** We use a promise here to not block the sync addBot but still ensure it saves */
-    this.store.waitReady().then(() => {
-      this.store.set(config.name, savedConfig);
-      this.log.info(`Config saved to database for bot: ${config.name}`);
-    });
+    this.store
+      .waitReady()
+      .then(() => {
+        this.store.set(config.name, savedConfig);
+        this.log.info(`Config saved to database for bot: ${config.name}`);
+      })
+      .catch((e) => {
+        this.log.error(
+          `Failed to save config to database for bot: ${config.name}`,
+          e,
+        );
+      });
 
     return bot;
   }
