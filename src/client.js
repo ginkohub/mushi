@@ -11,7 +11,6 @@
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
-import readline from "node:readline";
 import {
   Browsers,
   DisconnectReason,
@@ -32,20 +31,6 @@ import { StoreSQLite } from "./store.js";
 import { delay, genHEX } from "./tools.js";
 import { UserManager } from "./user_manager.js";
 
-/* Initialize readline */
-const question = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-/**
- * Ask for input text
- * @param {string} prompt
- */
-function ask(prompt) {
-  return new Promise((resolve) => question.question(prompt, resolve));
-}
-
 /**
  * Use the appropriate store based on the session string
  * @param {string} sessionStr
@@ -60,7 +45,7 @@ export async function useStore(sessionStr) {
   } else if (sessionStr.startsWith("postgres")) {
     const { state, saveCreds, clearState } = await usePostgres(sessionStr);
     return { state, saveCreds, clearState, type: "postgres" };
-  } else if (sessionStr.includes(".sqlite") || sessionStr.includes(".db")) {
+  } else if (sessionStr.endsWith(".sqlite") || sessionStr.endsWith(".db")) {
     const { state, saveCreds, clearState } = await useSQLite(sessionStr);
     return { state, saveCreds, clearState, type: "sqlite" };
   } else {
@@ -78,6 +63,19 @@ export const ClientEvents = Object.freeze({
 
   CONNECTED: "connected",
   DISCONNECTED: "disconnected",
+
+  AUTH_OTP: "auth_otp",
+  AUTH_QRCODE: "auth_qrcode",
+
+  MESSAGE_RECEIVED: "message_received",
+  MESSAGE_SENT: "message_sent",
+
+  ERROR: "error",
+
+  LOG_DEBUG: "log_debug",
+  LOG_INFO: "log_info",
+  LOG_WARN: "log_warn",
+  LOG_ERROR: "log_error",
 });
 
 /**
@@ -95,7 +93,7 @@ export const Method = Object.freeze({
  * @property {Method} method
  * @property {string} botDir
  * @property {import('baileys').WABrowserDescription} browser
- * @property {import('baileys').UserFacingSocketConfig} socketCofig
+ * @property {import('baileys').UserFacingSocketConfig} socketConfig
  * @property {import('./handler.js').Handler} handler
  * @property {string[]} prefixes
  * @property {string[]} plugins
@@ -128,22 +126,19 @@ export class Client extends EventEmitter {
     this.botDir = opts.botDir;
 
     /** @type {import('baileys').UserFacingSocketConfig} */
-    this.socketCofig = {
+    this.socketConfig = {
       syncFullHistory: false,
       browser: Browsers.macOS("Safari"),
       logger: pino({ level: "error" }),
       version: [2, 3000, 1038162681],
     };
 
-    Object.assign(this.socketCofig, opts.socketCofig);
+    Object.assign(this.socketConfig, opts.socketConfig);
 
     /** @type {import('./handler.js').Handler} */
     this.handler = opts.handler;
 
-    const logDir = path.join(this.botDir, "logs");
-    const clientLog = rootLogger.child(this.name);
-    clientLog.toFile({ path: path.join(logDir, `${this.name}.log`) });
-    this.log = clientLog;
+    this.log = null; // clientLog;
 
     /** @type {import('./store.js').Store} */
     this.store = null;
@@ -172,6 +167,11 @@ export class Client extends EventEmitter {
     /** @type {number} */
     this.startedAt = 0;
 
+    this.messageReceived = 0;
+    this.messageSent = 0;
+    this.lastSeen = null;
+    this.isConnected = false;
+
     /** @type {boolean} */
     this.retry = true;
 
@@ -182,7 +182,7 @@ export class Client extends EventEmitter {
     this.blockList = new Set();
 
     this.ready = this.init();
-    this.ready.catch((e) => this.log.error(e));
+    this.ready.catch((e) => rootLogger?.error(e));
   }
 
   /**
@@ -227,6 +227,12 @@ export class Client extends EventEmitter {
    */
   async init() {
     this.initBotDir();
+
+    const logDir = path.join(this.botDir, "logs");
+    const clientLog = rootLogger.child(this.name);
+    clientLog.toFile({ path: path.join(logDir, `${this.name}.log`) });
+    this.log = clientLog;
+
     this.initDatabases();
     await this.initBot();
 
@@ -236,6 +242,10 @@ export class Client extends EventEmitter {
     if (Array.isArray(prefixes) && prefixes?.length > 0) {
       this.handler.setPrefixes(prefixes);
     }
+
+    this.messageReceived = this.store.get("message_received") || 0;
+    this.messageSent = this.store.get("message_sent") || 0;
+    this.lastSeen = this.store.get("last_seen") || null;
   }
 
   /**
@@ -271,7 +281,7 @@ export class Client extends EventEmitter {
 
     const exist = existsSync(this.botDir);
     if (!exist) {
-      this.log.warn(`Creating ${this.botDir}`);
+      this.log?.warn(`Creating ${this.botDir}`);
       mkdirSync(this.botDir, { recursive: true });
     }
   }
@@ -285,7 +295,7 @@ export class Client extends EventEmitter {
       this.withDir("session.db"),
     );
 
-    this.socketCofig.auth = state;
+    this.socketConfig.auth = state;
 
     this.saveCreds = saveCreds;
     this.clearState = clearState;
@@ -334,11 +344,13 @@ export class Client extends EventEmitter {
               break;
             }
             case Events.MESSAGES_UPSERT: {
-              for (const event of update?.messages ?? []) {
+              for (const event of update?.messages || []) {
+                this._messageReceived();
+                this._seenNow();
                 await this.handle({
                   eventName: eventName,
                   event: event,
-                  eventType: update.type,
+                  eventType: update?.type,
                 }).catch((e) => {
                   this.log.error(eventName, e);
                 });
@@ -353,11 +365,11 @@ export class Client extends EventEmitter {
             case Events.CONTACTS_UPSERT:
             case Events.GROUPS_UPSERT:
             case Events.GROUPS_UPDATE: {
-              for (const event of update) {
+              for (const event of update || []) {
                 await this.handle({
                   eventName: eventName,
                   event: event,
-                  eventType: update.type,
+                  eventType: update?.type,
                 }).catch((e) => {
                   this.log.error(eventName, e);
                 });
@@ -370,7 +382,7 @@ export class Client extends EventEmitter {
               await this.handle({
                 eventName: eventName,
                 event: update,
-                eventType: update.type,
+                eventType: update?.type,
               }).catch((e) => {
                 this.log.error(eventName, e);
               });
@@ -383,7 +395,7 @@ export class Client extends EventEmitter {
                   await this.handle({
                     eventName: eventName,
                     event: event,
-                    eventType: update.type,
+                    eventType: update?.type,
                   }).catch((e) => {
                     this.log.error(eventName, e);
                   });
@@ -392,7 +404,7 @@ export class Client extends EventEmitter {
                 await this.handle({
                   eventName: eventName,
                   event: update,
-                  eventType: update.type,
+                  eventType: update?.type,
                 }).catch((e) => {
                   this.log.error(eventName, e);
                 });
@@ -409,110 +421,110 @@ export class Client extends EventEmitter {
    * @returns {Promise<void>}
    */
   async connect() {
+    if (!this.retry) {
+      this.log.warn(
+        "Connect skipped: Client is in disconnected state (retry=false)",
+      );
+      return;
+    }
+
+    if (this.isConnected) {
+      this.log.warn("Already connected");
+      return;
+    }
+
     await this.ready;
     this.emit(ClientEvents.READY);
 
     this.startedAt = Date.now();
-    this.sock = makeWASocket(this.socketCofig);
+    this.sock = makeWASocket(this.socketConfig);
 
     await this.initHandler();
 
     if (
       this.method === Method.OTP &&
-      !this.socketCofig.auth?.creds?.registered &&
-      !this.socketCofig.auth?.creds?.platform
+      !this.socketConfig.auth?.creds?.registered &&
+      !this.socketConfig.auth?.creds?.platform
     ) {
       this.log.info("Delay 3s before requesting pairing code");
       await delay(3000);
 
-      let phone = this.phone;
+      const phone = this.phone;
       if (!phone) {
-        while (!phone) {
-          phone = await ask(`Enter phone ${phone ?? ""}: `);
-          phone = phone?.replace(/[^+0-9]/g, "");
-          phone = phone?.trim();
-
-          if (!phone || phone === "") this.log.error("Invalid phone number");
-        }
+        throw new Error(
+          "Phone number is required for 'otp' method but was not provided.",
+        );
       }
 
       this.log.info(`Using this phone : ${phone}`);
       const code = await this.sock.requestPairingCode(phone);
       if (code) {
-        this.log.info("Enter this OTP :", code);
+        this.log.info(`Pairing Code (OTP): ${code}`);
+        this.emit(ClientEvents.AUTH_OTP, { name: this.name, code });
       } else {
         this.log.error("Failed to get pairing code");
+        this.emit(ClientEvents.ERROR, {
+          name: this.name,
+          code: "request-pairing-code",
+          message: "Failed to get pairing code",
+        });
       }
     }
 
     this.sock.ev.on(Events.CONNECTION_UPDATE, async (event) => {
       const { connection, lastDisconnect, qr } = event;
+
       if (qr && this.method === Method.QRCode) {
-        this.log.info("Scan this QR :");
-        console.log(
-          await QRCode.toString(qr, { type: "terminal", small: true }),
-        );
-        this.emit("qr", { name: this.name, qr });
+        const qrTerminal = await QRCode.toString(qr, {
+          type: "terminal",
+          small: true,
+        });
+        this.log.info(`Scan this QR :\n${qrTerminal}`);
+        this.emit(ClientEvents.AUTH_QRCODE, { name: this.name, qr });
       }
 
       if (connection === "close") {
+        this.isConnected = false;
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect =
-          statusCode !== DisconnectReason.loggedOut &&
-          statusCode !== DisconnectReason.forbidden;
-        if (shouldReconnect) {
-          if (this.retry) {
-            this.log.debug(
-              Events.CONNECTION_UPDATE,
-              "statusCode :",
-              statusCode,
-              `Reconnecting...`,
-            );
-            await delay(3000);
-            this.connect();
-          } else {
-            this.log.error(
-              Events.CONNECTION_UPDATE,
-              "statusCode :",
-              statusCode,
-              "Not retrying.",
-            );
-          }
-        } else if (
+        const reason = lastDisconnect?.error?.message || "Unknown reason";
+
+        const isLoggedOut =
           statusCode === DisconnectReason.loggedOut ||
-          statusCode === DisconnectReason.forbidden
-        ) {
-          this.log.debug(
-            Events.CONNECTION_UPDATE,
-            "statusCode :",
-            statusCode,
-            "Logged out, closing connection",
+          statusCode === DisconnectReason.forbidden;
+
+        if (isLoggedOut) {
+          this.log.error(
+            "Connection closed: Logged out or Forbidden. Manual intervention required.",
           );
+          this.retry = false;
           try {
-            if (this.clearState) {
-              await this.clearState();
-            } else if (this.dbType === "folder") {
+            if (this.clearState) await this.clearState();
+            else if (this.dbType === "folder")
               rmSync(this.withDir("session.db"), { recursive: true });
-            }
           } catch (e) {
-            this.log.error(e);
-          } finally {
-            this.log.warn(
-              "statusCode :",
-              statusCode,
-              "Session terminated. Reconnecting in 5s...",
-            );
-            setTimeout(() => this.connect(), 5000);
+            this.log.error("Error clearing state:", e);
           }
+          this.emit(ClientEvents.DISCONNECTED, { reason: "logged_out" });
+          return;
+        }
+
+        if (this.retry) {
+          const delayTime = 5000;
+          this.log.warn(
+            `Connection closed (${reason}, code: ${statusCode}). Reconnecting in ${delayTime / 1000}s...`,
+          );
+          this._reconnectTimer = setTimeout(() => this.connect(), delayTime);
+        } else {
+          this.log.info(`Connection closed (${reason}). No retry requested.`);
         }
       } else if (connection === "open") {
-        this.emit("connected", { name: this.name });
-        this.log.info("Client connected");
+        this.isConnected = true;
+        this.emit(ClientEvents.CONNECTED, { name: this.name });
+        this.log.info("Client connected successfully");
       }
     });
 
-    this.sock.ev.on(Events.CREDS_UPDATE, this.saveCreds);
-    this.emit(ClientEvents.CONNECTED);
+    this.sock.ev.on(Events.CREDS_UPDATE, this.saveCreds.bind(this));
   }
 
   /**
@@ -520,10 +532,68 @@ export class Client extends EventEmitter {
    * @returns {Promise<void>}
    */
   async disconnect() {
+    this.retry = false;
+    this.isConnected = false;
+    this.log.info("Disconnecting and silencing bot...");
+    if (this.sock) {
+      try {
+        this.sock.ev.removeAllListeners();
+        this.sock.end();
+      } catch (e) {
+        this.log.error("Error during socket end:", e);
+      }
+    }
+
+    if (this._reconnectTimer) clearTimeout(this._reconnectTimer);
+
+    if (this._updateTimer) {
+      clearTimeout(this._updateTimer);
+      this._scheduleUpdate(true);
+    }
     this.emit(ClientEvents.DISCONNECTED);
+
+    /* TODO: Should we remove all listener on disconnect ?
+     * this.removeAllListeners();
+     */
   }
 
   /* INFO: This section for data and updater methods */
+
+  /**
+   * Schedule update data
+   * @param {boolean} force
+   */
+  _scheduleUpdate(force) {
+    if (this._updateTimer) clearTimeout(this._updateTimer);
+    if (force) {
+      this._updateTimer = null;
+      this.store.set("message_received", this.messageReceived);
+      this.store.set("message_sent", this.messageSent);
+      this.store.set("last_seen", this.lastSeen);
+    } else {
+      this._updateTimer = setTimeout(() => {
+        this._updateTimer = null;
+        this.store.set("message_received", this.messageReceived);
+        this.store.set("message_sent", this.messageSent);
+        this.store.set("last_seen", this.lastSeen);
+      }, 5000);
+    }
+  }
+
+  _messageReceived() {
+    this.messageReceived++;
+    this._scheduleUpdate();
+  }
+
+  _messageSent() {
+    this.messageSent++;
+    this._scheduleUpdate();
+  }
+
+  _seenNow() {
+    this.lastSeen = Date.now();
+    this._scheduleUpdate();
+  }
 
   /**
    * Handle update data
@@ -582,8 +652,6 @@ export class Client extends EventEmitter {
                 this.blockList = new Set(ev.blocklist || []);
             }
           }
-
-          this.blockList = new Set(this.blockList);
           break;
         }
 
@@ -690,15 +758,17 @@ export class Client extends EventEmitter {
           case Events.GROUP_PARTICIPANTS_UPDATE: {
             switch (c?.action) {
               case "add": {
-                for (const add of c.mentionedJid) {
+                for (const add of c.mentionedJid || []) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = !c.mentionedJid.some((jid) => jid.endsWith("@lid"));
+                  updated = !c.mentionedJid?.some((jid) =>
+                    jid.endsWith("@lid"),
+                  );
                 }
                 break;
               }
               case "remove": {
-                for (const rm of c.mentionedJid) {
+                for (const rm of c.mentionedJid || []) {
                   const i = data.participants?.findIndex(
                     (part) =>
                       part.id === rm || part.lid === rm || part.jid === rm,
@@ -851,7 +921,7 @@ export class Client extends EventEmitter {
    */
   getName(jid) {
     jid = jidNormalizedUser(jid);
-    if (!jid || jid === "") return null;
+    if (!jid || jid === "") return;
 
     if (jid.endsWith("@g.us")) {
       const data = this.getGroupMetadata(jid);
@@ -865,7 +935,7 @@ export class Client extends EventEmitter {
       else if (jid.endsWith('@newsletter')) { } 
       */
 
-    return null;
+    return;
   }
 
   /* INFO: This is a placeholder for sender methods */
@@ -887,9 +957,16 @@ export class Client extends EventEmitter {
       const ephemeral = this.getTimer(jid);
       options.ephemeralExpiration = ephemeral;
 
-      return await this.sock.sendMessage(jid, content, options);
+      const result = await this.sock.sendMessage(jid, content, options);
+      this._messageSent();
+      return result;
     } catch (e) {
       this.log.error("send-message", e);
+      this.emit(ClientEvents.ERROR, {
+        name: this.name,
+        code: "send-message",
+        message: e.message,
+      });
     }
     return;
   }
@@ -931,6 +1008,11 @@ export class Client extends EventEmitter {
       return await this.sock.relayMessage(jid, content, options);
     } catch (e) {
       this.log.error("relay-message", e);
+      this.emit(ClientEvents.ERROR, {
+        name: this.name,
+        code: "relay-message",
+        message: e.message,
+      });
     }
   }
 
@@ -942,9 +1024,9 @@ export class Client extends EventEmitter {
    */
   async sendFile(jid, filePath, opts) {
     if (!opts) opts = {};
-    if (!opts.filename) opts.filename = filePath.split(/\\|\//gi).pop();
+    if (!opts.filename) opts.filename = path.basename(filePath);
 
-    return this.sendMessage(jid, {
+    return await this.sendMessage(jid, {
       document: {
         file: filePath,
       },
