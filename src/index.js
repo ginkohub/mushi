@@ -28,7 +28,13 @@ export {
 
 export { ChatManager } from "./chat_manager.js";
 
-export { Client, ClientEvents, Method, useStore } from "./client.js";
+export {
+  Client,
+  ClientEvents,
+  ConnectionStatus,
+  Method,
+  useStore,
+} from "./client.js";
 
 export { Events } from "./const.js";
 
