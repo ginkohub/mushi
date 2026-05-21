@@ -55,8 +55,8 @@ export async function useStore(sessionStr) {
 }
 
 /**
- * @enum {string}
  * @readonly
+ * @enum {string}
  */
 export const ClientEvents = Object.freeze({
   READY: "ready",
@@ -84,6 +84,15 @@ export const ClientEvents = Object.freeze({
 export const Method = Object.freeze({
   OTP: "otp",
   QRCode: "qr",
+});
+
+/**
+ * @enum {string}
+ */
+export const ConnectionStatus = Object.freeze({
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
+  CONNECTING: "connecting",
 });
 
 /**
@@ -170,7 +179,9 @@ export class Client extends EventEmitter {
     this.messageReceived = 0;
     this.messageSent = 0;
     this.lastSeen = null;
-    this.isConnected = false;
+
+    this.isAuthenticated = false;
+    this.status = ConnectionStatus.DISCONNECTED;
 
     /** @type {boolean} */
     this.retry = true;
@@ -300,6 +311,8 @@ export class Client extends EventEmitter {
     this.saveCreds = saveCreds;
     this.clearState = clearState;
     this.dbType = type;
+
+    this.isAuthenticated = this.socketConfig.auth?.creds?.registered;
   }
 
   /**
@@ -428,9 +441,29 @@ export class Client extends EventEmitter {
       return;
     }
 
-    if (this.isConnected) {
+    if (this.status === ConnectionStatus.CONNECTED) {
       this.log.warn("Already connected");
       return;
+    }
+
+    if (this.status === ConnectionStatus.CONNECTING) {
+      this.log.warn("Connection in progress, skipping");
+      return;
+    }
+
+    this.status = ConnectionStatus.CONNECTING;
+
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+
+    if (this.sock) {
+      try {
+        this.sock.ev.removeAllListeners();
+        this.sock.end();
+      } catch { }
+      this.sock = null;
     }
 
     await this.ready;
@@ -451,23 +484,29 @@ export class Client extends EventEmitter {
 
       const phone = this.phone;
       if (!phone) {
+        this.status = ConnectionStatus.DISCONNECTED;
         throw new Error(
           "Phone number is required for 'otp' method but was not provided.",
         );
       }
 
-      this.log.info(`Using this phone : ${phone}`);
-      const code = await this.sock.requestPairingCode(phone);
-      if (code) {
-        this.log.info(`Pairing Code (OTP): ${code}`);
-        this.emit(ClientEvents.AUTH_OTP, { name: this.name, code });
-      } else {
-        this.log.error("Failed to get pairing code");
-        this.emit(ClientEvents.ERROR, {
-          name: this.name,
-          code: "request-pairing-code",
-          message: "Failed to get pairing code",
-        });
+      try {
+        this.log.info(`Using this phone : ${phone}`);
+        const code = await this.sock.requestPairingCode(phone);
+        if (code) {
+          this.log.info(`Pairing Code (OTP): ${code}`);
+          this.emit(ClientEvents.AUTH_OTP, { name: this.name, code });
+        } else {
+          this.log.error("Failed to get pairing code");
+          this.emit(ClientEvents.ERROR, {
+            name: this.name,
+            code: "request-pairing-code",
+            message: "Failed to get pairing code",
+          });
+        }
+      } catch (e) {
+        this.status = ConnectionStatus.DISCONNECTED;
+        throw e;
       }
     }
 
@@ -484,7 +523,7 @@ export class Client extends EventEmitter {
       }
 
       if (connection === "close") {
-        this.isConnected = false;
+        this.status = ConnectionStatus.DISCONNECTED;
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const reason = lastDisconnect?.error?.message || "Unknown reason";
 
@@ -518,7 +557,7 @@ export class Client extends EventEmitter {
           this.log.info(`Connection closed (${reason}). No retry requested.`);
         }
       } else if (connection === "open") {
-        this.isConnected = true;
+        this.status = ConnectionStatus.CONNECTED;
         this.emit(ClientEvents.CONNECTED, { name: this.name });
         this.log.info("Client connected successfully");
       }
@@ -533,7 +572,7 @@ export class Client extends EventEmitter {
    */
   async disconnect() {
     this.retry = false;
-    this.isConnected = false;
+    this.status = ConnectionStatus.DISCONNECTED;
     this.log.info("Disconnecting and silencing bot...");
     if (this.sock) {
       try {
