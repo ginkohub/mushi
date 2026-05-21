@@ -241,7 +241,7 @@ export class Logger {
     for (let i = this.#maxFiles; i < files.length; i++) {
       try {
         unlinkSync(files[i].path);
-      } catch { }
+      } catch {}
     }
   }
 

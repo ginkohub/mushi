@@ -43,7 +43,7 @@
 			await api.updateBot(id, {
 				prefixes,
 				plugins: bot.config.plugins,
-				autostart: bot.config.autostart
+				autoStart: bot.config.autoStart
 			});
 			await loadBot();
 		} catch (e) {
@@ -190,11 +190,11 @@
 							<div class="flex items-center gap-2 p-2 bg-black/50 border border-gray-800 cursor-pointer hover:border-gray-700 transition-colors">
 							<input
 							type="checkbox"
-							id="autostart-toggle"
-							bind:checked={bot.config.autostart}
+							id="autoStart-toggle"
+							bind:checked={bot.config.autoStart}
 							class="accent-blue-600"
 							/>
-							<label for="autostart-toggle" class="text-[10px] font-bold uppercase cursor-pointer flex-1">Autostart on Boot</label>
+							<label for="autoStart-toggle" class="text-[10px] font-bold uppercase cursor-pointer flex-1">Autostart on Boot</label>
 							</div>
 							<div>
 								<label for="plugins-list" class="block text-[9px] font-bold text-gray-500 uppercase mb-2">Active Modules</label>

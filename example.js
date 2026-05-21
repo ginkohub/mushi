@@ -39,7 +39,7 @@ try {
   logger.error(e);
 }
 
-if (mainBot.config?.autostart !== false) {
+if (mainBot.config?.autoStart !== false) {
   mainBot.connect();
 } else {
   logger.info(`Bot '${mainBot.name}' autostart is disabled.`);

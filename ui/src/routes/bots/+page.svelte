@@ -9,7 +9,7 @@
 		phone: '',
 		method: 'qr' as 'qr' | 'otp',
 		start: true,
-		autostart: true
+		autoStart: true
 	});
 
 	async function loadBots() {
@@ -20,7 +20,7 @@
 		try {
 			await api.registerBot(newBot);
 			showModal = false;
-			newBot = { name: '', phone: '', method: 'qr', start: true, autostart: true };
+			newBot = { name: '', phone: '', method: 'qr', start: true, autoStart: true };
 			loadBots();
 		} catch (e) {
 			console.error('Failed to register bot:', e);
@@ -130,8 +130,8 @@
 						<label for="start" class="text-[10px] text-gray-400 uppercase font-bold">Connect Immediately</label>
 					</div>
 					<div class="flex items-center gap-2 py-1">
-						<input type="checkbox" bind:checked={newBot.autostart} id="autostart" class="accent-blue-600" />
-						<label for="autostart" class="text-[10px] text-gray-400 uppercase font-bold">Autostart on Boot</label>
+						<input type="checkbox" bind:checked={newBot.autoStart} id="autoStart" class="accent-blue-600" />
+						<label for="autoStart" class="text-[10px] text-gray-400 uppercase font-bold">Autostart on Boot</label>
 					</div>
 					<div class="pt-2 flex gap-2">
 						<button

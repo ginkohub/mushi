@@ -195,7 +195,11 @@ export class BotManager extends EventEmitter {
     await this.ready;
     for (const [id, bot] of this.bots) {
       const config = this.store.get(id);
-      const shouldAutostart = config ? config.autostart !== false : true;
+      const shouldAutostart = config
+        ? (config.autoStart !== undefined
+            ? config.autoStart
+            : config.autostart) !== false
+        : true;
 
       if (!shouldAutostart) {
         this.log.info(

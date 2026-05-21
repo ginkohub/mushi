@@ -261,8 +261,11 @@ export class ApiServer {
             .json({ error: "Phone number is required for 'otp' method" });
         }
 
-        // Ensure autostart is saved in the config (defaults to true if not provided)
-        config.autostart = config.autostart !== false;
+        // Ensure autoStart is saved in the config (defaults to true if not provided)
+        config.autoStart =
+          (config.autoStart !== undefined
+            ? config.autoStart
+            : config.autostart) !== false;
 
         const bot = await this.manager.addBot(config);
 
@@ -533,7 +536,10 @@ export class ApiServer {
       config: {
         prefixes: config.prefixes || [".", "/"],
         plugins: config.plugins || [],
-        autostart: config.autostart !== false,
+        autoStart:
+          (config.autoStart !== undefined
+            ? config.autoStart
+            : config.autostart) !== false,
       },
     };
   }
@@ -546,7 +552,7 @@ export class ApiServer {
       return res.json({ status: "connected", message: "Already connected" });
     }
 
-    await bot.ready.catch(() => { });
+    await bot.ready.catch(() => {});
 
     if (this._isAuthenticated(bot)) {
       try {
