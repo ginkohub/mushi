@@ -81,14 +81,22 @@ export class BotManager extends EventEmitter {
   }
 
   async _init() {
-    await this.store
-      .waitReady()
-      .then(() => {
-        this.log.info("Manager store ready.");
-      })
-      .catch((e) => {
-        this.log.error("Manager store not ready:", e);
-      });
+    await this.store.waitReady();
+    this.log.info("Manager store ready.");
+
+    /** Load all bot configs into memory without connecting */
+    const keys = this.store.keys();
+    for (const id of keys) {
+      try {
+        const config = this.store.get(id);
+        if (config && !this.bots.has(id)) {
+          this.addBot(config);
+        }
+      } catch (e) {
+        this.log.error(`Failed to load config for instance ${id} from DB:`, e);
+      }
+    }
+    this.log.info(`Loaded ${this.bots.size} bot(s) from registry.`);
   }
 
   /**
@@ -158,7 +166,7 @@ export class BotManager extends EventEmitter {
     for (const id of keys) {
       try {
         const config = this.store.get(id);
-        if (config) {
+        if (config && !this.bots.has(id)) {
           this.addBot(config);
         }
       } catch (e) {
