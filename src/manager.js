@@ -25,6 +25,7 @@ import { delay } from "./tools.js";
  * @property {string} pluginDir
  * @property {Record<string, any>} [registryListeners]
  * @property {import('./store.js').Store} [store]
+ * @property {import('./api.js').ApiServerOpts} [apiServer]
  */
 
 /**
@@ -220,6 +221,23 @@ export class BotManager extends EventEmitter {
     await this.disconnectBot(id);
     this.store.delete(id);
     this.log.info(`Bot ${id} removed from database.`);
+  }
+
+  /**
+   * Create and optionally start an API server bound to this manager
+   * @param {import('./api.js').ApiServerOpts} [opts]
+   * @returns {Promise<import('./api.js').ApiServer>}
+   */
+  async createApiServer(opts = {}) {
+    if (this.apiServer) return this.apiServer;
+
+    const { ApiServer } = await import("./api.js");
+    this.apiServer = new ApiServer({
+      ...opts,
+      manager: this,
+      logger: this.log,
+    });
+    return this.apiServer;
   }
 }
 
