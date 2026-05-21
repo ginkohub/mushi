@@ -8,6 +8,8 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+export { ApiServer } from "./api.js";
+
 export { useMongoDB } from "./auth_mongo.js";
 
 export { usePostgres } from "./auth_postgres.js";
@@ -76,4 +78,5 @@ export {
 } from "./tools.js";
 
 export { Languages, translate, translateText } from "./translate.js";
+
 export { UserManager } from "./user_manager.js";
