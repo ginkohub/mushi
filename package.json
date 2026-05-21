@@ -4,7 +4,8 @@
   "description": "Wangsaf bot",
   "type": "module",
   "scripts": {
-    "dev": "node --watch-path=./src example.js",
+    "dev": "npm run build --prefix ui && node --watch-path=./src example.js",
+    "dev:ui": "npm run build:watch --prefix ui",
     "start": "node example.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "biome lint --write .",
@@ -40,6 +41,7 @@
     "pino": "^9.7.0",
     "qrcode": "^1.5.4",
     "rahad-all-downloader-v2": "^2.0.3",
+    "socket.io": "^4.8.3",
     "string-argv": "^0.3.2",
     "yt-dlp-wrap": "github:ginkohub/yt-dlp-wrap"
   },

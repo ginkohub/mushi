@@ -28,6 +28,7 @@ export function cleanName(name) {
 
 /**
  * @typedef {Object} PluginItem
+ * @property  {boolean} disabled
  * @property {string} name
  * @property {string} location
  * @property {number} estimate
@@ -53,6 +54,8 @@ export const RegistryEvents = Object.freeze({
 
   SCAN_START: "scan:start",
   SCAN_END: "scan:end",
+
+  REGISTRY_UPDATE: "registry:update",
 });
 
 /**
@@ -62,12 +65,19 @@ export const RegistryEvents = Object.freeze({
 export class PluginRegistry extends EventEmitter {
   /**
    * @param {string} pluginDir
+   * @param {import('./store.js').Store} [store]
    */
-  constructor(pluginDir) {
+  constructor(pluginDir, store) {
     super();
 
     /** @type {string} */
     this.pluginDir = pluginDir || path.resolve(process.cwd(), "plugins");
+
+    /** @type {import('./store.js').Store} */
+    this.store = store;
+
+    /** @type {import('./store.js').Store} */
+    this.pluginStore = store?.use("plugins");
 
     /** @type {Map<string, PluginItem>} */
     this.plugins = new Map();
@@ -92,6 +102,25 @@ export class PluginRegistry extends EventEmitter {
         this.removeByLocation(loc);
       },
     });
+  }
+
+  /**
+   * Set plugin disabled status globally
+   * @param {string} name
+   * @param {boolean} disabled
+   */
+  setDisabled(name, disabled) {
+    const item = this.plugins.get(name);
+    if (item) {
+      item.disabled = disabled;
+    }
+
+    if (this.pluginStore) {
+      const metadata = this.pluginStore.get(name) || {};
+      this.pluginStore.set(name, { ...metadata, disabled });
+    }
+
+    this.emit(RegistryEvents.REGISTRY_UPDATE);
   }
 
   /** TODO:: Able to stop watcher */
@@ -163,6 +192,13 @@ export class PluginRegistry extends EventEmitter {
       if (this.plugins.has(item.name)) {
         this.log.warn(`Duplicate name ${item.name}`);
       }
+
+      // Merge with stored metadata
+      if (this.pluginStore) {
+        const metadata = this.pluginStore.get(item.name) || {};
+        Object.assign(item, metadata);
+      }
+
       this.plugins.set(item.name, item);
       this.emit(RegistryEvents.PLUGIN_ADD, {
         name: item.name,
@@ -224,6 +260,7 @@ export class PluginRegistry extends EventEmitter {
               items[item.name] = {
                 cmd: plugin.cmd,
                 roles: plugin.roles,
+                disabled: !!item.disabled,
               };
             }
           }
@@ -241,6 +278,7 @@ export class PluginRegistry extends EventEmitter {
             items[item.name] = {
               cmd: imported.default.cmd,
               roles: imported.default.roles,
+              disabled: !!item.disabled,
             };
           }
         }

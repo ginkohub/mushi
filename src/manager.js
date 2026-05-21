@@ -63,7 +63,10 @@ export class BotManager extends EventEmitter {
     this.ready = this._init();
 
     /** @type {PluginRegistry} */
-    this.registry = new PluginRegistry(this.pluginDir);
+    this.registry = new PluginRegistry(
+      this.pluginDir,
+      this.store.use("registry"),
+    );
 
     if (opts?.registryListeners) {
       for (const [key, fn] of Object.entries(opts.registryListeners)) {
@@ -90,7 +93,7 @@ export class BotManager extends EventEmitter {
       try {
         const config = this.store.get(id);
         if (config && !this.bots.has(id)) {
-          this.addBot(config);
+          await this.addBot(config);
         }
       } catch (e) {
         this.log.error(`Failed to load config for instance ${id} from DB:`, e);
@@ -111,14 +114,25 @@ export class BotManager extends EventEmitter {
   /**
    * Add and initialize a new bot instance from config
    * @param {import('./client.js').ClientOpts} config
-   * @returns {import('./client.js').Client|undefined}
+   * @returns {Promise<import('./client.js').Client|undefined>}
    */
-  addBot(config) {
+  async addBot(config) {
+    await this.store.waitReady();
+
     if (this.bots.has(config.name)) {
       this.log.warn(
         `Bot instance ${config.name} already exists. Skipping initialization.`,
       );
       return this.bots.get(config.name);
+    }
+
+    /* Merge with existing config from store */
+    const existing = this.store.get(config.name);
+    if (existing) {
+      this.log.debug(
+        `Merging existing config from store for bot: ${config.name}`,
+      );
+      config = { ...config, ...existing };
     }
 
     config.handler = new Handler({
@@ -140,19 +154,16 @@ export class BotManager extends EventEmitter {
       delete savedConfig.socketConfig.logger;
     }
 
-    /** We use a promise here to not block the sync addBot but still ensure it saves */
-    this.store
-      .waitReady()
-      .then(() => {
-        this.store.set(config.name, savedConfig);
-        this.log.info(`Config saved to database for bot: ${config.name}`);
-      })
-      .catch((e) => {
-        this.log.error(
-          `Failed to save config to database for bot: ${config.name}`,
-          e,
-        );
-      });
+    /** Ensure it saves */
+    try {
+      this.store.set(config.name, savedConfig);
+      this.log.info(`Config saved to database for bot: ${config.name}`);
+    } catch (e) {
+      this.log.error(
+        `Failed to save config to database for bot: ${config.name}`,
+        e,
+      );
+    }
 
     return bot;
   }
@@ -167,7 +178,7 @@ export class BotManager extends EventEmitter {
       try {
         const config = this.store.get(id);
         if (config && !this.bots.has(id)) {
-          this.addBot(config);
+          await this.addBot(config);
         }
       } catch (e) {
         this.log.error(`Failed to load config for instance ${id} from DB:`, e);
@@ -181,7 +192,18 @@ export class BotManager extends EventEmitter {
    * @returns {Promise<void>}
    */
   async connectAll() {
+    await this.ready;
     for (const [id, bot] of this.bots) {
+      const config = this.store.get(id);
+      const shouldAutostart = config ? config.autostart !== false : true;
+
+      if (!shouldAutostart) {
+        this.log.info(
+          `Autostart disabled for bot: ${id}. Skipping connection.`,
+        );
+        continue;
+      }
+
       this.log.info(`Connecting bot: ${id}`);
       try {
         await bot.connect();
@@ -227,6 +249,7 @@ export class BotManager extends EventEmitter {
    */
   async removeBot(id) {
     await this.disconnectBot(id);
+    await this.store.waitReady();
     this.store.delete(id);
     this.log.info(`Bot ${id} removed from database.`);
   }
@@ -262,7 +285,8 @@ function parseItems(items) {
   for (const [key, val] of Object.entries(items)) {
     const roles = rolesToLevel(val.roles) || [];
     const rolesMax = roles.length > 0 ? Math.max(...roles) : 0;
-    parsedItems.push(`${key}:${getRoleLevelBadge(rolesMax)}`);
+    const status = val.disabled ? " [DISABLED]" : "";
+    parsedItems.push(`${key}:${getRoleLevelBadge(rolesMax)}${status}`);
   }
   return parsedItems;
 }

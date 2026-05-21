@@ -13,7 +13,7 @@ import pino from "pino";
 import { ClientEvents } from "./src/client.js";
 import { logger, manager } from "./src/index.js";
 
-const mainBot = manager.addBot({
+const mainBot = await manager.addBot({
   name: "example",
   method: process.env.METHOD || "otp",
   phone: process.env.PHONE || "",
@@ -29,4 +29,18 @@ mainBot.on(ClientEvents.CONNECTED, async () => {
   logger.info("Connected");
 });
 
-mainBot.connect();
+try {
+  /** @type {import('./src/api.js').ApiServer} */
+  const api = await manager.createApiServer({
+    port: 6867,
+  });
+  await api.start();
+} catch (e) {
+  logger.error(e);
+}
+
+if (mainBot.config?.autostart !== false) {
+  mainBot.connect();
+} else {
+  logger.info(`Bot '${mainBot.name}' autostart is disabled.`);
+}

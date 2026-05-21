@@ -96,6 +96,14 @@ export const ConnectionStatus = Object.freeze({
 });
 
 /**
+ * @typedef {Object} AuthData
+ * @property {string} name - Bot name
+ * @property {Method} method - Method it's using
+ * @property {string} code - Code that should be used
+ * @property {number} updatedAt - Last update timestamp
+ */
+
+/**
  * @typedef {Object} ClientOpts
  * @property {string} name
  * @property {string} phone
@@ -106,6 +114,7 @@ export const ConnectionStatus = Object.freeze({
  * @property {import('./handler.js').Handler} handler
  * @property {string[]} prefixes
  * @property {string[]} plugins
+ * @property  {boolean} autoStart
  */
 
 /**
@@ -133,6 +142,9 @@ export class Client extends EventEmitter {
 
     /** @type {string} */
     this.botDir = opts.botDir;
+
+    /** @type {ClientOpts} */
+    this.config = opts;
 
     /** @type {import('baileys').UserFacingSocketConfig} */
     this.socketConfig = {
@@ -182,6 +194,9 @@ export class Client extends EventEmitter {
 
     this.isAuthenticated = false;
     this.status = ConnectionStatus.DISCONNECTED;
+
+    /** @type {AuthData} */
+    this.authData = null;
 
     /** @type {boolean} */
     this.retry = true;
@@ -245,6 +260,16 @@ export class Client extends EventEmitter {
     this.log = clientLog;
 
     this.initDatabases();
+    await Promise.all([
+      this.store.waitReady(),
+      this.userManager.storage.waitReady(),
+      this.chatManager.storage.waitReady(),
+      this.contactCache.waitReady(),
+      this.groupCache.waitReady(),
+      this.timerCache.waitReady(),
+      this.settings.waitReady(),
+    ]);
+
     await this.initBot();
 
     this.handler.settings = this.settings;
@@ -451,6 +476,8 @@ export class Client extends EventEmitter {
       return;
     }
 
+    this.authData = null;
+
     this.status = ConnectionStatus.CONNECTING;
 
     if (this._reconnectTimer) {
@@ -462,7 +489,7 @@ export class Client extends EventEmitter {
       try {
         this.sock.ev.removeAllListeners();
         this.sock.end();
-      } catch { }
+      } catch {}
       this.sock = null;
     }
 
@@ -495,6 +522,12 @@ export class Client extends EventEmitter {
         const code = await this.sock.requestPairingCode(phone);
         if (code) {
           this.log.info(`Pairing Code (OTP): ${code}`);
+          this.authData = {
+            name: this.name,
+            method: this.method,
+            code,
+            updatedAt: Date.now(),
+          };
           this.emit(ClientEvents.AUTH_OTP, { name: this.name, code });
         } else {
           this.log.error("Failed to get pairing code");
@@ -519,6 +552,12 @@ export class Client extends EventEmitter {
           small: true,
         });
         this.log.info(`Scan this QR :\n${qrTerminal}`);
+        this.authData = {
+          name: this.name,
+          method: this.method,
+          code: qr,
+          updatedAt: Date.now(),
+        };
         this.emit(ClientEvents.AUTH_QRCODE, { name: this.name, qr });
       }
 
@@ -572,23 +611,35 @@ export class Client extends EventEmitter {
    */
   async disconnect() {
     this.retry = false;
+    const oldStatus = this.status;
     this.status = ConnectionStatus.DISCONNECTED;
-    this.log.info("Disconnecting and silencing bot...");
+    this.log.info(
+      `Disconnecting and silencing bot (Current State: ${oldStatus})...`,
+    );
+
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+
     if (this.sock) {
       try {
+        // Remove all listeners to prevent any further events during/after closing
         this.sock.ev.removeAllListeners();
-        this.sock.end();
+        // Forcefully close the connection
+        this.sock.end(new Error("Manual disconnection requested"));
       } catch (e) {
         this.log.error("Error during socket end:", e);
       }
+      this.sock = null;
     }
-
-    if (this._reconnectTimer) clearTimeout(this._reconnectTimer);
 
     if (this._updateTimer) {
       clearTimeout(this._updateTimer);
       this._scheduleUpdate(true);
     }
+
+    this.authData = null;
     this.emit(ClientEvents.DISCONNECTED);
 
     /* TODO: Should we remove all listener on disconnect ?

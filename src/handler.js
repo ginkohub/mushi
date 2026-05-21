@@ -53,6 +53,10 @@ export class Handler {
       if (this.isReady && this.registry.isReady) this.generate();
     });
 
+    this.registry.on(RegistryEvents.REGISTRY_UPDATE, () => {
+      if (this.isReady) this.generate();
+    });
+
     /** @type {string[]} */
     this.plugins = opts.plugins;
 
@@ -160,8 +164,10 @@ export class Handler {
     const temp_listeners = new Set();
     const temp_commands = new Map();
 
-    const names =
-      this.plugins?.length > 0 ? this.plugins : this.registry.plugins.keys();
+    const names = Array.from(
+      this.plugins?.length > 0 ? this.plugins : this.registry.plugins.keys(),
+    );
+
     const includeNames = [];
 
     for (const pluginName of names) {
@@ -171,6 +177,11 @@ export class Handler {
         this.log.warn(`Plugin ${pluginName} not found`);
         continue;
       }
+
+      if (item.disabled) {
+        continue;
+      }
+
       if (item.plugin.cmd) {
         for (const [cmd, data] of Object.entries(
           this.generateCMD(pluginName, item.plugin.cmd, item.plugin.noPrefix),

@@ -15,6 +15,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import QRCode from "qrcode";
+import { Server } from "socket.io";
+import { ConnectionStatus } from "./client.js";
 import { isBun, isDeno } from "./tools.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -53,6 +55,8 @@ export class ApiServer {
     this.app = express();
     /** @type {import('node:http').Server | null} */
     this.server = null;
+    /** @type {import('socket.io').Server | null} */
+    this.io = null;
 
     this._setupMiddleware();
     this._setupRoutes();
@@ -60,6 +64,35 @@ export class ApiServer {
 
   _setupMiddleware() {
     this.app.use(express.json());
+    this.app.use(express.static(join(__dirname, "..", "public")));
+  }
+
+  _setupSocket() {
+    if (!this.server) return;
+    this.io = new Server(this.server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
+    });
+
+    this.io.on("connection", (socket) => {
+      this.log.debug(`Client connected to WebSocket: ${socket.id}`);
+      socket.on("disconnect", () => {
+        this.log.debug(`Client disconnected from WebSocket: ${socket.id}`);
+      });
+    });
+
+    // Listen to global logs and emit to all clients
+    this.log.onLog((level, source, message, args) => {
+      this.io?.emit("log", {
+        timestamp: Date.now(),
+        level,
+        source,
+        message,
+        args,
+      });
+    });
   }
 
   _setupRoutes() {
@@ -109,11 +142,19 @@ export class ApiServer {
     api.get("/bots/:id/logs", (req, res) => {
       const id = req.params.id;
       const bot = this.manager.getBot(id);
-      if (!bot?.log) {
-        return res
-          .status(404)
-          .json({ error: "Bot not found or no logs available" });
+
+      if (!bot) {
+        // Check if bot exists in store but is just not active
+        if (this.manager.store.has(id)) {
+          return res.json([]);
+        }
+        return res.status(404).json({ error: "Bot not found in registry" });
       }
+
+      if (!bot.log) {
+        return res.json([]);
+      }
+
       const limit = parseInt(req.query.limit, 10) || 100;
       const level = req.query.level;
       let logs = bot.log.getRecent(limit);
@@ -121,6 +162,18 @@ export class ApiServer {
         logs = logs.filter((l) => l.level === level.toUpperCase());
       }
       res.json(logs);
+    });
+
+    // [GET] /api/bots/:id/auth - Get current auth data (QR/code)
+    api.get("/bots/:id/auth", (req, res) => {
+      const id = req.params.id;
+      const bot = this.manager.getBot(id);
+      if (!bot) {
+        return res.status(404).json({ error: "Bot not found" });
+      }
+      const data = bot.authData;
+      if (!data) return res.json({ status: "none" });
+      res.json({ ...data, updatedAt: Date.now() });
     });
 
     // [POST] /api/bots/:id/restart - Restart bot
@@ -169,6 +222,26 @@ export class ApiServer {
           .json({ error: "Phone number is required for 'otp' method" });
       }
       this.manager.store.set(id, newConfig);
+
+      // Apply changes to running bot instance if it exists
+      const bot = this.manager.getBot(id);
+      if (bot) {
+        // Update memory config
+        if (bot.config) {
+          bot.config = { ...bot.config, ...updates };
+        }
+
+        if (bot.handler) {
+          if (updates.prefixes) {
+            bot.handler.setPrefixes(updates.prefixes);
+          }
+          if (updates.plugins) {
+            bot.handler.plugins = updates.plugins;
+            bot.handler.generate();
+          }
+        }
+      }
+
       res.json({
         message: "Configuration updated",
         data: this._formatBotResponse(id, newConfig),
@@ -187,7 +260,12 @@ export class ApiServer {
             .status(400)
             .json({ error: "Phone number is required for 'otp' method" });
         }
-        const bot = this.manager.addBot(config);
+
+        // Ensure autostart is saved in the config (defaults to true if not provided)
+        config.autostart = config.autostart !== false;
+
+        const bot = await this.manager.addBot(config);
+
         if (req.body.start) {
           await this._initiateBotConnection(bot, res);
         } else {
@@ -221,7 +299,7 @@ export class ApiServer {
     // [POST] /api/bots/start-all - Start all registered bots
     api.post("/bots/start-all", async (_req, res) => {
       try {
-        await this.manager.loadAll();
+        await this.manager.connectAll();
         res.json({ message: "All bots connection sequence started" });
       } catch (e) {
         res.status(500).json({ error: e.message });
@@ -241,26 +319,12 @@ export class ApiServer {
     // [POST] /api/bots/:id/start - Start/Connect bot
     api.post("/bots/:id/start", async (req, res) => {
       const id = req.params.id;
-      const bot = this.manager.getBot(id);
+      let bot = this.manager.getBot(id);
 
       if (!bot) {
         const config = this.manager.store.get(id);
         if (!config) return res.status(404).json({ error: "Bot not found" });
-        if (config.method === "otp" && !config.phone) {
-          return res.status(400).json({
-            error:
-              "Phone number is required for 'otp' method. Please update configuration first.",
-          });
-        }
-        const newBot = this.manager.addBot(config);
-        return this._initiateBotConnection(newBot, res);
-      }
-
-      if (bot.method === "otp" && !bot.phone) {
-        return res.status(400).json({
-          error:
-            "Phone number is required for 'otp' method. Please update configuration first.",
-        });
+        bot = await this.manager.addBot(config);
       }
 
       await this._initiateBotConnection(bot, res);
@@ -315,8 +379,35 @@ export class ApiServer {
 
     // [GET] /api/plugins - List available plugins
     api.get("/plugins", (_req, res) => {
-      const plugins = Array.from(this.manager.registry.plugins.keys());
+      const plugins = Array.from(this.manager.registry.plugins.values()).map(
+        (item) => ({
+          name: item.name,
+          cmd: item.plugin.cmd,
+          desc: item.plugin.desc,
+          cat: item.plugin.cat,
+          roles: item.plugin.roles,
+          location: item.location,
+          estimate: item.estimate,
+          disabled: !!item.disabled,
+        }),
+      );
       res.json(plugins);
+    });
+
+    // [PATCH] /api/plugins/:name - Toggle plugin globally
+    api.patch("/plugins/:name", (req, res) => {
+      const name = req.params.name;
+      const { disabled } = req.body;
+
+      if (!this.manager.registry.plugins.has(name)) {
+        return res.status(404).json({ error: "Plugin not found" });
+      }
+
+      this.manager.registry.setDisabled(name, disabled);
+
+      res.json({
+        message: `Plugin ${name} ${disabled ? "disabled" : "enabled"} globally`,
+      });
     });
 
     // [GET] /api/health - Health check
@@ -409,6 +500,18 @@ export class ApiServer {
     });
 
     this.app.use("/api", api);
+
+    this.app.get("/{*path}", (_req, res) => {
+      res.sendFile(join(__dirname, "..", "public", "index.html"));
+    });
+  }
+
+  /**
+   * Check if bot has valid authentication credentials
+   */
+  _isAuthenticated(bot) {
+    const creds = bot?.socketConfig?.auth?.creds;
+    return !!(creds?.registered || creds?.platform);
   }
 
   /**
@@ -416,17 +519,21 @@ export class ApiServer {
    */
   _formatBotResponse(id, config) {
     const liveBot = this.manager.getBot(id);
+    const creds = liveBot?.socketConfig?.auth?.creds;
+    const authenticated = !!(creds?.registered || creds?.platform);
     return {
       id,
       name: config.name || id,
       phone: config.phone || "",
       method: config.method || "qr",
-      status: liveBot?.isConnected ? "connected" : "disconnected",
+      status: liveBot?.status || ConnectionStatus.DISCONNECTED,
+      authenticated,
       uptime: liveBot?.startedAt ? Date.now() - liveBot.startedAt : 0,
       createdAt: liveBot?.createdAt || config.createdAt || null,
       config: {
         prefixes: config.prefixes || [".", "/"],
         plugins: config.plugins || [],
+        autostart: config.autostart !== false,
       },
     };
   }
@@ -437,6 +544,27 @@ export class ApiServer {
   async _initiateBotConnection(bot, res) {
     if (bot.isConnected) {
       return res.json({ status: "connected", message: "Already connected" });
+    }
+
+    await bot.ready.catch(() => { });
+
+    if (this._isAuthenticated(bot)) {
+      try {
+        await bot.connect();
+        return res.json({
+          status: "connecting",
+          message: "Connecting with saved credentials",
+        });
+      } catch (e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+
+    if (bot.method === "otp" && !bot.phone) {
+      return res.status(400).json({
+        error:
+          "Phone number is required for 'otp' method. Please update configuration first.",
+      });
     }
 
     let sent = false;
@@ -494,8 +622,8 @@ export class ApiServer {
 
     if (this.autoLoadBots) {
       try {
-        await this.manager.loadAll();
-        this.log.info("Service initialized: all bots loaded from registry");
+        await this.manager.connectAll();
+        this.log.info("Service initialized: all bots connected from registry");
       } catch (e) {
         this.log.error(`Initialization failure: ${e.message}`);
       }
@@ -504,6 +632,7 @@ export class ApiServer {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.port, () => {
         this.log.info(`API server listening on port ${this.port}`);
+        this._setupSocket();
         resolve();
       });
     });
@@ -517,6 +646,11 @@ export class ApiServer {
     if (!this.server) {
       this.log.warn("API server is not running");
       return;
+    }
+
+    if (this.io) {
+      this.io.close();
+      this.io = null;
     }
 
     return new Promise((resolve, reject) => {
