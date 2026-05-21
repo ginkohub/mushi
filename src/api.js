@@ -8,15 +8,23 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Server } from "node:http";
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import os from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import QRCode from "qrcode";
+import { isBun, isDeno } from "./tools.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
+);
 
 /**
  * @typedef {Object} ApiServerOpts
  * @property {number} [port]
- * @property {string} [viewsDir]
- * @property {string} [staticDir]
  * @property {boolean} [autoLoadBots]
  * @property {import('./manager.js').BotManager} [manager]
  * @property {import('./logger.js').Logger} [logger]
@@ -30,8 +38,6 @@ export class ApiServer {
   /** @param {ApiServerOpts} opts */
   constructor(opts = {}) {
     this.port = opts.port || process.env.PORT || 3000;
-    this.viewsDir = opts.viewsDir || "./views";
-    this.staticDir = opts.staticDir || "public";
     this.autoLoadBots = opts.autoLoadBots !== false;
 
     this.manager = opts.manager;
@@ -45,29 +51,18 @@ export class ApiServer {
     }
 
     this.app = express();
-    /** @type {Server | null} */
+    /** @type {import('node:http').Server | null} */
     this.server = null;
 
     this._setupMiddleware();
-    this._setupViews();
     this._setupRoutes();
   }
 
   _setupMiddleware() {
     this.app.use(express.json());
-    this.app.use(express.static(this.staticDir));
-  }
-
-  _setupViews() {
-    this.app.set("view engine", "ejs");
-    this.app.set("views", this.viewsDir);
   }
 
   _setupRoutes() {
-    this.app.get("/", (_req, res) => {
-      res.render("index");
-    });
-
     const api = express.Router();
 
     // [GET] /api/bots - List all bots
@@ -349,14 +344,66 @@ export class ApiServer {
 
     // [GET] /api/system - System info
     api.get("/system", (_req, res) => {
-      const bots = Array.from(this.manager.bots.values());
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+      const usedMem = totalMem - freeMem;
+      const memoryUsage = process.memoryUsage();
+      const cpus = os.cpus();
+
+      const runtime = isBun
+        ? { name: "Bun", version: Bun.version }
+        : isDeno
+          ? { name: "Deno", version: Deno.version.deno }
+          : { name: "NodeJS", version: process.version };
+
+      let distro = os.platform();
+      if (os.platform() === "linux") {
+        try {
+          const osRelease = readFileSync("/etc/os-release", "utf8");
+          const match = osRelease.match(/^PRETTY_NAME="(.+)"$/m);
+          distro = match ? match[1] : os.release();
+        } catch {
+          distro = os.release();
+        }
+      }
+
+      let gpu = "N/A";
+      try {
+        if (os.platform() === "linux") {
+          const gpuInfo = execSync('lspci | grep -i "vga\\|3d\\|2d"')
+            .toString()
+            .trim();
+          const gpuModel = gpuInfo.split(":").pop().trim();
+          gpu = gpuModel.split("[")[1]?.split("]")[0] || "N/A";
+        }
+      } catch {
+        gpu = "N/A";
+      }
+
       res.json({
-        version: "1.0.0",
-        platform: process.platform,
-        nodeVersion: process.version,
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        activeBots: bots.length,
+        version: pkg.version,
+        platform: os.platform(),
+        os: distro,
+        kernel: `${os.release()} ${os.machine()}`,
+        uptime: os.uptime(),
+        cpu: cpus[0]?.model || "N/A",
+        cpuCores: cpus?.length || 0,
+        gpu,
+        memory: {
+          used: usedMem,
+          free: freeMem,
+          total: totalMem,
+        },
+        runtime: {
+          name: runtime.name,
+          version: runtime.version,
+          running: process.uptime(),
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+          external: memoryUsage.external,
+        },
+        activeBots: this.manager.bots.size,
         registeredBots: this.manager.store.keys().length,
       });
     });
