@@ -93,6 +93,7 @@ export default [
   {
     name: "games-susunkata",
     cmd: ["susunkata", "sk", "susunkata?"],
+    includes: ["games-susunkata-listener", "games-susunkata-updater"],
     cat: "games",
     tags: ["game"],
     desc: "Unscramble word game (Susun Kata)",

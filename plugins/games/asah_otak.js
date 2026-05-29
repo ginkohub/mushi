@@ -93,6 +93,7 @@ export default [
   {
     name: "games-asahotak",
     cmd: ["asahotak", "ao", "asahotak?"],
+    includes: ["games-asahotak-listener", "games-asahotak-updater"],
     cat: "games",
     tags: ["game"],
     desc: "Brain teaser game (Asah Otak)",

@@ -60,6 +60,11 @@ export default [
   {
     name: "std-userman-user",
     cmd: ["user"],
+    includes: [
+      "std-userman-role-add",
+      "std-userman-role-remove",
+      "std-userman-role-set",
+    ],
     cat: "user",
     tags: ["user", "role"],
     desc: "Get user info and sync with current data",

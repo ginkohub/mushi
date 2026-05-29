@@ -126,6 +126,7 @@ export default [
   {
     name: "games-tebakkata",
     cmd: ["tk", "tk?", "tebakkata", "tebakkata?"],
+    includes: ["games-tebakkata-listener", "games-tebakkata-updater"],
     cat: "games",
     tags: ["game"],
     desc: "Guess the Word game (Tebak Kata)",

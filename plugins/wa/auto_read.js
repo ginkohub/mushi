@@ -56,6 +56,7 @@ export default [
   {
     name: "wa-auto-read",
     cmd: ["aread", "aread+", "aread-"],
+    includes: ["wa-auto-read-listener"],
     cat: "whatsapp",
     desc: "Auto read message",
     events: [MESSAGES_UPSERT],

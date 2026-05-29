@@ -93,6 +93,7 @@ export default [
   {
     name: "games-caklontong",
     cmd: ["caklontong", "cl", "caklontong?"],
+    includes: ["games-caklontong-listener", "games-caklontong-updater"],
     cat: "games",
     tags: ["game"],
     desc: "Cak Lontong puzzle game",

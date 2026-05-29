@@ -219,6 +219,13 @@ export default [
   {
     name: "ai-gemini",
     cmd: ["gm", "gemini"],
+    includes: [
+      "ai-gemini-listener",
+      "ai-gemini-models",
+      "ai-gemini-key",
+      "ai-gemini-model",
+      "ai-gemini-prompt",
+    ],
     desc: "Gemini chat plugin",
     cat: "ai",
     events: [MESSAGES_UPSERT],

@@ -16,6 +16,7 @@ import { nameToLevel } from "./roles.js";
  * @property {import('./handler.js').Handler} [handler]
  * @property {import('baileys').WASocket} [sock]
  * @property {string} name
+ * @property {string[]} [includes]
  * @property {string|string[]} [cmd]
  * @property {string} [prefix]
  * @property {string} [desc]
@@ -47,6 +48,9 @@ export class Plugin {
 
     /** @type {string} */
     this.name = opts.name.trim().toLowerCase();
+
+    /** @type {string[]} */
+    this.includes = opts?.includes ?? [];
 
     /** @type {string|string[]|undefined}*/
     this.cmd = opts?.cmd;

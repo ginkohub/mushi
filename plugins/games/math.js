@@ -75,6 +75,7 @@ export default [
   {
     name: "games-math",
     cmd: ["math", "math?"],
+    includes: ["games-math-listener"],
     timeout: 120,
     cat: "games",
     tags: ["game"],

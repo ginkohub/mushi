@@ -163,14 +163,26 @@ export class Handler {
     const names =
       this.plugins?.length > 0 ? this.plugins : this.registry.plugins.keys();
     const includeNames = [];
+    const processed = new Set();
+    const queue = Array.from(names);
 
-    for (const pluginName of names) {
-      /** @type {import('./registry.js').PluginItem} */
+    while (queue.length > 0) {
+      const pluginName = queue.shift();
+      if (processed.has(pluginName)) continue;
+      processed.add(pluginName);
+
       const item = this.registry.getPlugin(pluginName);
       if (!item) {
         this.log.warn(`Plugin ${pluginName} not found`);
         continue;
       }
+
+      if (Array.isArray(item.plugin.includes)) {
+        for (const inc of item.plugin.includes) {
+          queue.push(inc);
+        }
+      }
+
       if (item.plugin.cmd) {
         for (const [cmd, data] of Object.entries(
           this.generateCMD(pluginName, item.plugin.cmd, item.plugin.noPrefix),
@@ -190,7 +202,6 @@ export class Handler {
     this.log.info(
       `${this.plugin_listeners.size} listeners ${this.plugin_commands.size} commands`,
     );
-    /* this.log.info(includeNames.join(", ")); */
   }
 
   /* INFO: Events handlers */

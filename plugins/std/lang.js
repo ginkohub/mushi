@@ -42,6 +42,7 @@ export default [
   {
     name: "std-lang",
     cmd: ["lang", "set.lang", "lang?", "set.lang?"],
+    includes: ["std-lang-chat", "std-lang-user"],
     cat: "system",
     tags: ["system", "lang"],
     desc: "Set the global bot language.",

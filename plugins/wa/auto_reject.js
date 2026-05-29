@@ -58,6 +58,7 @@ export default [
   {
     name: "wa-auto-reject",
     cmd: ["reject", "reject+", "reject-"],
+    includes: ["wa-auto-reject-listener"],
     cat: "whatsapp",
     desc: "Set auto reject message",
     events: [MESSAGES_UPSERT],
