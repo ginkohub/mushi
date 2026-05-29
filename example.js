@@ -10,12 +10,12 @@
 
 import pino from "pino";
 
-import { ClientEvents } from "./src/client.js";
+import { ClientEvents, Method } from "./src/client.js";
 import { logger, manager } from "./src/index.js";
 
 const mainBot = manager.addBot({
   name: "example",
-  method: process.env.METHOD || "otp",
+  method: process.env.METHOD || Method.QRCode,
   phone: process.env.PHONE || "",
   socketCofig: {
     browser: process.env.BROWSER || "Safari",
