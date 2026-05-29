@@ -15,7 +15,7 @@ import { translate } from "../../src/translate.js";
 const t = translate({
   en: {
     header: "*📃 User Information*",
-    name: "std-Name",
+    name: "Name",
     jid: "JID",
     lid: "LID",
     roles: "Roles",
@@ -35,7 +35,7 @@ const t = translate({
   },
   id: {
     header: "*📃 Informasi User*",
-    name: "std-Nama",
+    name: "Nama",
     jid: "JID",
     lid: "LID",
     roles: "Peran",
