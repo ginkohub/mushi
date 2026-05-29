@@ -76,13 +76,19 @@ export default [
 
       const texts = [t("header", {}, c), ""];
       for (const jid of targets) {
-        const name = c.getName(jid);
+        let name = c.getName(jid);
+        if (jid === c.senderJid && c.pushName) {
+          name = c.pushName;
+        }
         const updateData = { name, jid };
 
         const lid = await c.PNToLID(jid).catch(() => null);
         if (lid) {
           updateData.lid = lid;
-          const lidName = c.getName(lid);
+          let lidName = c.getName(lid);
+          if (jid === c.senderJid && c.pushName) {
+            lidName = c.pushName;
+          }
           if (lidName) updateData.name = lidName;
         }
 
