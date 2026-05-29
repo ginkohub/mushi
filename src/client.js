@@ -332,6 +332,7 @@ export class Client extends EventEmitter {
       });
 
       await c.init();
+      await this.updateData(c);
       await this.handler.handle(c);
     } catch (e) {
       this.log.error("handle", e);
@@ -650,10 +651,16 @@ export class Client extends EventEmitter {
 
         case Events.CONTACTS_UPDATE:
         case Events.CONTACTS_UPSERT: {
-          this.updateContact(c.sender, {
-            id: c.sender,
-            name: c.pushName,
-          });
+          const contact = c.event;
+          if (contact?.id) {
+            const name = contact.name ?? contact.notify ?? contact.verifiedName;
+            if (name) {
+              this.updateContact(contact.id, {
+                id: contact.id,
+                name: name,
+              });
+            }
+          }
           break;
         }
 
@@ -665,6 +672,17 @@ export class Client extends EventEmitter {
             c?.type !== "senderKeyDistributionMessage"
           ) {
             this.updateTimer(c.chat, c.expiration, c.eventName);
+          }
+
+          if (c.sender && c.pushName) {
+            if (c.user && c.user.name !== c.pushName) {
+              this.updateContact(c.sender, {
+                id: c.sender,
+                name: c.pushName,
+              });
+              c.user.name = c.pushName;
+              this.updateUser(c.sender, c.user);
+            }
           }
           break;
         }
