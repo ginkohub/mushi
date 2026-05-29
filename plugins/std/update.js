@@ -24,14 +24,12 @@ export default {
   roles: [Role.SUPERADMIN],
 
   exec: async (c) => {
-    /* waiting */
     await c.react("⌛");
-    const src = "git fetch ; git pull origin main:main";
+    let hasStashed = false;
     try {
       let isLocked = false;
       const force = c.argv?.f || c.argv?.force || false;
 
-      /* Remove lock files */
       const branch = execSync("git rev-parse --abbrev-ref HEAD")
         ?.toString()
         .trim();
@@ -49,23 +47,22 @@ export default {
 
       if (isLocked || force) {
         await c.react("🔒");
-
-        /* Stash local changes */
         execSync("git stash");
+        hasStashed = true;
       }
 
-      /* Execute shell command */
+      const src = `git fetch ; git pull origin ${branch}`;
       let stdout = execSync(src);
       stdout = stdout?.toString();
-
-      if (isLocked || force) {
-        /* Apply stashed changes */
-        execSync("git stash pop");
-      }
 
       if (stdout && stdout?.length > 0) {
         return await c.reply(
           { text: `${stdout.toString()}`.trim() },
+          { quoted: c.event },
+        );
+      } else {
+        return await c.reply(
+          { text: "Update completed successfully." },
           { quoted: c.event },
         );
       }
@@ -73,6 +70,13 @@ export default {
       await c.react("❌");
       await c.reply({ text: `${e}` }, { quoted: c.event });
     } finally {
+      if (hasStashed) {
+        try {
+          execSync("git stash pop");
+        } catch {
+          /* ignore */
+        }
+      }
       await c.react("");
     }
   },
