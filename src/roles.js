@@ -20,6 +20,7 @@ export const Role = Object.freeze({
   MODERATOR: "moderator",
   ADMIN: "admin",
   SUPERADMIN: "superadmin",
+  DEVELOPER: "developer",
   OWNER: "owner",
 });
 
@@ -35,6 +36,7 @@ export const RoleLevel = Object.freeze({
   [Role.MODERATOR]: 1000,
   [Role.ADMIN]: 10000,
   [Role.SUPERADMIN]: 100000,
+  [Role.DEVELOPER]: 500000,
   [Role.OWNER]: 1000000,
 });
 
@@ -50,6 +52,7 @@ export const RoleBadge = Object.freeze({
   [Role.MODERATOR]: "🛡️",
   [Role.ADMIN]: "⚙️",
   [Role.SUPERADMIN]: "🔑",
+  [Role.DEVELOPER]: "🛠️",
   [Role.OWNER]: "👑",
 });
 /**
