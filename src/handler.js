@@ -252,8 +252,9 @@ export class Handler {
 
             await item.plugin.exec(clone);
           } catch (e) {
-            const msg = e?.message || e?.status || String(e);
-            this.log.error("handler-handle-listen", msg);
+            this.log.error(
+              `handler-handle-listen [plugin: ${item.plugin.name}]: ${e.stack || e}`,
+            );
             if (item.plugin.onError) await item.plugin.onError(clone, e);
           }
         },
@@ -283,8 +284,9 @@ export class Handler {
                     await item.plugin.exec(clone);
                   }
                 } catch (e) {
-                  const msg = e?.message || e?.status || String(e);
-                  this.log.error("handler-handle-command", msg);
+                  this.log.error(
+                    `handler-handle-command [plugin: ${item.plugin.name}]: ${e.stack || e}`,
+                  );
                   if (item.plugin.onError) await item.plugin.onError(clone, e);
                 }
               })(),
