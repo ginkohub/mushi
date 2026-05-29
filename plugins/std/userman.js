@@ -27,10 +27,11 @@ const t = translate({
     added: "Added",
     stats: "Statistics",
     no_user: "No user specified. Tag or quote someone.",
-    no_role: "Please specify a role using -r or --role",
+    no_role: "Please specify a role (e.g. .role+ admin @user)",
     invalid_role: "Invalid role. Available roles: {val}",
     added_role: "Added role *{role}* to {count} user(s).",
     removed_role: "Removed role *{role}* from {count} user(s).",
+    set_role: "Set role to *{role}* for {count} user(s).",
   },
   id: {
     header: "*📃 Informasi User*",
@@ -46,10 +47,11 @@ const t = translate({
     added: "Ditambahkan",
     stats: "Statistik",
     no_user: "Tidak ada user yang ditentukan. Tag atau quote seseorang.",
-    no_role: "Silakan tentukan peran menggunakan -r atau --role",
+    no_role: "Silakan tentukan peran (misal: .role+ admin @user)",
     invalid_role: "Peran tidak valid. Peran tersedia: {val}",
     added_role: "Menambahkan peran *{role}* ke {count} user.",
     removed_role: "Menghapus peran *{role}* dari {count} user.",
+    set_role: "Mengatur peran menjadi *{role}* untuk {count} user.",
   },
 });
 
@@ -138,7 +140,17 @@ export default [
         if (jids[i].includes("@lid")) jids[i] = await c.LIDToPN(jids[i]);
       }
 
-      const role = c.argv?.r ?? c.argv?.role;
+      let role = c.argv?.r ?? c.argv?.role;
+      if (role) {
+        role = role.toLowerCase().trim();
+      } else if (c.argv?._) {
+        role = c.argv._.find((arg) =>
+          Object.values(Role).includes(arg?.toLowerCase()?.trim()),
+        )
+          ?.toLowerCase()
+          ?.trim();
+      }
+
       if (!role)
         return await c.reply({
           text: t("no_role", {}, c),
@@ -183,7 +195,17 @@ export default [
         if (jids[i].includes("@lid")) jids[i] = await c.LIDToPN(jids[i]);
       }
 
-      const role = c.argv?.r ?? c.argv?.role;
+      let role = c.argv?.r ?? c.argv?.role;
+      if (role) {
+        role = role.toLowerCase().trim();
+      } else if (c.argv?._) {
+        role = c.argv._.find((arg) =>
+          Object.values(Role).includes(arg?.toLowerCase()?.trim()),
+        )
+          ?.toLowerCase()
+          ?.trim();
+      }
+
       if (!role)
         return await c.reply({
           text: t("no_role", {}, c),
@@ -200,6 +222,107 @@ export default [
 
       await c.reply({
         text: t("removed_role", { role, count: jids.length }, c),
+      });
+    },
+  },
+  {
+    name: "std-userman-role-remove",
+    cmd: ["role-"],
+    cat: "user",
+    tags: ["user", "role"],
+    desc: "Remove role from quoted or mentioned user",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
+
+    exec: async (c) => {
+      const jids = c.parseJIDs();
+      if (jids.length === 0)
+        return await c.reply({
+          text: t("no_user", {}, c),
+        });
+
+      for (let i = 0; i < jids.length; i++) {
+        if (jids[i].includes("@lid")) jids[i] = await c.LIDToPN(jids[i]);
+      }
+
+      let role = c.argv?.r ?? c.argv?.role;
+      if (role) {
+        role = role.toLowerCase().trim();
+      } else if (c.argv?._) {
+        role = c.argv._.find((arg) =>
+          Object.values(Role).includes(arg?.toLowerCase()?.trim()),
+        )
+          ?.toLowerCase()
+          ?.trim();
+      }
+
+      if (!role)
+        return await c.reply({
+          text: t("no_role", {}, c),
+        });
+
+      for (const jid of jids) {
+        const user = c.client().userManager.getUser(jid);
+        if (user.roles.includes(role)) {
+          user.roles = user.roles.filter((r) => r !== role);
+          if (user.roles.length === 0) user.roles.push(Role.GUEST);
+          c.client().userManager.updateUser(jid, { roles: user.roles });
+        }
+      }
+
+      await c.reply({
+        text: t("removed_role", { role, count: jids.length }, c),
+      });
+    },
+  },
+  {
+    name: "std-userman-role-set",
+    cmd: ["role="],
+    cat: "user",
+    tags: ["user", "role"],
+    desc: "Set role (replace old roles) for quoted or mentioned user",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
+
+    exec: async (c) => {
+      const jids = c.parseJIDs();
+      if (jids.length === 0)
+        return await c.reply({
+          text: t("no_user", {}, c),
+        });
+
+      for (let i = 0; i < jids.length; i++) {
+        if (jids[i].includes("@lid")) jids[i] = await c.LIDToPN(jids[i]);
+      }
+
+      let role = c.argv?.r ?? c.argv?.role;
+      if (role) {
+        role = role.toLowerCase().trim();
+      } else if (c.argv?._) {
+        role = c.argv._.find((arg) =>
+          Object.values(Role).includes(arg?.toLowerCase()?.trim()),
+        )
+          ?.toLowerCase()
+          ?.trim();
+      }
+
+      if (!role)
+        return await c.reply({
+          text: t("no_role", {}, c),
+        });
+
+      if (!Object.values(Role).includes(role)) {
+        return await c.reply({
+          text: t("invalid_role", { val: Object.values(Role).join(", ") }, c),
+        });
+      }
+
+      for (const jid of jids) {
+        c.client().userManager.updateUser(jid, { roles: [role] });
+      }
+
+      await c.reply({
+        text: t("set_role", { role, count: jids.length }, c),
       });
     },
   },
