@@ -1,13 +1,3 @@
-/**
- * Copyright (C) 2025-2026 Ginko
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/
- *
- * This code is part of Ginko project (https://github.com/ginkohub)
- */
-
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
 import { Languages, translate, translateText } from "../../src/translate.js";
@@ -29,7 +19,6 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin} */
 export default {
   name: "std-tr",
   cmd: ["tr", "tr?", "translate"],
@@ -47,7 +36,11 @@ export default {
       return await c.reply({ text: `${t("available", {}, c)}\n\n${list}` });
     }
 
-    let to = "id";
+    let to =
+      c.user?.lang ||
+      c.chatData?.lang ||
+      c.client()?.settings.get("lang") ||
+      "id";
     let text = "";
 
     const args = c.args?.split(" ");
@@ -71,7 +64,13 @@ export default {
 
     try {
       c.react("⌛");
-      const result = await translateText(text, to);
+      let result;
+      try {
+        result = await translateText(text, to);
+      } catch (_) {
+        to = "id";
+        result = await translateText(text, to);
+      }
       await c.reply({ text: result }, { quoted: c.event });
       c.react("✅");
     } catch (e) {
