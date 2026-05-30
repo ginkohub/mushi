@@ -155,7 +155,7 @@ async function removeColorBackground(buffer, targetColor, threshold = 30) {
 }
 
 export default {
-  name: "std-sticker",
+  name: "std-conv-sticker",
   cmd: ["s", "sticker", "s?", "sticker?"],
   cat: "conv",
   tags: ["system", "utils"],
@@ -198,7 +198,9 @@ export default {
 
     try {
       let buffer = await c.downloadIt({ message: targetMsg }, "buffer", {});
-      if (!buffer) throw new Error("Failed to download media");
+      if (!buffer || buffer.length === 0) {
+        throw new Error("Failed to download media");
+      }
 
       const noBgArg = c.argv?.nobg || c.argv?.n;
       if (noBgArg !== undefined) {
@@ -235,9 +237,13 @@ export default {
         stickerType = StickerTypes.CROPPED;
       }
 
+      const packName = c.argv?.pack || c.argv?.p || "Mushi";
+
+      const authorName = c.argv?.author || c.argv?.a || c.pushName || "Mushi";
+
       const sticker = new Sticker(buffer, {
-        pack: "Mushishi",
-        author: c.pushName || "Mushi",
+        pack: packName,
+        author: authorName,
         type: stickerType,
         quality: 60,
       });
