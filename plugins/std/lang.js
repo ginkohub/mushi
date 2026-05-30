@@ -1,13 +1,3 @@
-/**
- * Copyright (C) 2025-2026 Ginko
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/
- *
- * This code is part of Ginko project (https://github.com/ginkohub)
- */
-
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";
 import { translate } from "../../src/translate.js";
@@ -23,6 +13,9 @@ const t = translate({
     current: "Current system language: *{lang}*",
     current_chat: "Current chat language: *{lang}*",
     current_user: "Your personal language: *{lang}*",
+    reset_success: "System language preference cleared (default: *id*).",
+    chat_reset: "Chat language preference cleared.",
+    user_reset: "Your personal language preference cleared.",
   },
   id: {
     admin_only: "Perintah ini hanya untuk admin grup atau admin bot.",
@@ -34,10 +27,12 @@ const t = translate({
     current: "Bahasa sistem saat ini: *{lang}*",
     current_chat: "Bahasa chat saat ini: *{lang}*",
     current_user: "Bahasa kamu saat ini: *{lang}*",
+    reset_success: "Preferensi bahasa sistem telah dihapus (bawaan: *id*).",
+    chat_reset: "Preferensi bahasa chat telah dihapus.",
+    user_reset: "Preferensi bahasa personal kamu telah dihapus.",
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
   {
     name: "std-lang",
@@ -52,7 +47,15 @@ export default [
     exec: async (c) => {
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.client()?.settings.get("lang");
+      const current = c.client()?.settings.get("lang") || "id";
+
+      if (lang === "reset" || lang === "delete" || lang === "clear") {
+        c.client()?.settings.delete("lang");
+        return await c.reply(
+          { text: t("reset_success", {}, c) },
+          { quoted: c.event },
+        );
+      }
 
       if (!lang || !available.includes(lang)) {
         const text = !lang
@@ -78,7 +81,8 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.chatData?.lang || c.client()?.settings.get("lang");
+      const current =
+        c.chatData?.lang || c.client()?.settings.get("lang") || "id";
 
       if (isQuestion || !lang) {
         return await c.reply({
@@ -91,6 +95,11 @@ export default [
         !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
       )
         return await c.reply({ text: t("admin_only", {}, c) });
+
+      if (lang === "reset" || lang === "delete" || lang === "clear") {
+        c.client().chatManager.updateChat(c.chat, { lang: null });
+        return await c.reply({ text: t("chat_reset", {}, c) });
+      }
 
       if (!available.includes(lang)) {
         return await c.reply({
@@ -114,12 +123,17 @@ export default [
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
       const available = ["en", "id"];
-      const current = c.user?.lang || c.client()?.settings.get("lang");
+      const current = c.user?.lang || c.client()?.settings.get("lang") || "id";
 
       if (isQuestion || !lang) {
         return await c.reply({
           text: `${t("current_user", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
         });
+      }
+
+      if (lang === "reset" || lang === "delete" || lang === "clear") {
+        c.client().userManager.updateUser(c.senderJid, { lang: null });
+        return await c.reply({ text: t("user_reset", {}, c) });
       }
 
       if (!available.includes(lang)) {
