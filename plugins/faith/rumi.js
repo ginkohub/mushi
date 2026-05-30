@@ -1,0 +1,169 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { MESSAGES_UPSERT } from "../../src/const.js";
+import { getFile } from "../../src/data.js";
+import { Role } from "../../src/roles.js";
+import { translate, translateText } from "../../src/translate.js";
+
+const t = translate({
+  en: {
+    help_title: "✨ *RUMI QUOTES*",
+    help_usage: "Use `.rumi` to get a random quote of Jalaluddin Rumi.",
+    help_update: "⚙️ *Admin:* `.rumi.update` to sync/download quotes.",
+    no_data: "❌ Quotes data not found! Use `{prefix}rumi.update` to download.",
+    error: "❌ Failed to get quote.",
+    sync_success: "✅ *Sync Success!*",
+    sync_stats: "Successfully loaded {count} quotes.",
+    sync_failed: "❌ *Sync Failed:* {error}",
+    translation: "🇬🇧 *Translation:*",
+  },
+  id: {
+    help_title: "✨ *KATA BIJAK RUMI*",
+    help_usage:
+      "Gunakan `.rumi` untuk mendapatkan kutipan acak Jalaluddin Rumi.",
+    help_update: "⚙️ *Admin:* `.rumi.update` untuk sinkronisasi kutipan.",
+    no_data:
+      "❌ Data kutipan tidak ditemukan! Gunakan `{prefix}rumi.update` untuk mengunduh.",
+    error: "❌ Gagal memuat kutipan.",
+    sync_success: "✅ *Sinkronisasi Berhasil!*",
+    sync_stats: "Berhasil memuat {count} kutipan.",
+    sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
+    translation: "🇮🇩 *Terjemahan:*",
+  },
+});
+
+const JSON_URL = "https://ginkohub.github.io/data/quotes.json";
+let quotes = [];
+
+function loadQuotes() {
+  try {
+    const path = getFile("quotes.json");
+    if (existsSync(path)) {
+      quotes = JSON.parse(readFileSync(path, "utf-8"));
+    }
+  } catch (e) {
+    console.error("Failed to load quotes.json:", e);
+  }
+}
+
+async function ensureQuotes() {
+  if (quotes.length > 0) return;
+  try {
+    const response = await fetch(JSON_URL);
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        quotes = data;
+        const path = getFile("quotes.json");
+        writeFileSync(path, JSON.stringify(data, null, 2));
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch quotes.json:", e);
+  }
+}
+
+loadQuotes();
+
+export default [
+  {
+    name: "faith-rumi",
+    cmd: ["rumi", "rumi?"],
+    includes: ["faith-rumi-updater"],
+    cat: "faith",
+    tags: ["info", "quotes"],
+    desc: "Get random quotes of Jalaluddin Rumi translated to Indonesian",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+    exec: async (c) => {
+      if (c.cmd.endsWith("?")) {
+        const helpText = [
+          t("help_title", {}, c),
+          "",
+          t("help_usage", {}, c),
+          t("help_update", {}, c),
+        ];
+        return await c.reply(
+          { text: helpText.join("\n") },
+          { quoted: c.event },
+        );
+      }
+
+      await ensureQuotes();
+
+      if (quotes.length === 0) {
+        return await c.reply(
+          { text: t("no_data", { prefix: c.prefix }, c) },
+          { quoted: c.event },
+        );
+      }
+
+      try {
+        const q = quotes[Math.floor(Math.random() * quotes.length)];
+        const originalText = [
+          "✨ *Rumi Quotes* ✨",
+          "",
+          `"${q.text}"`,
+          `— _*${q.author}*_`,
+        ].join("\n");
+
+        const resp = await c.reply({ text: originalText }, { quoted: c.event });
+
+        try {
+          const targetLang = c.user?.lang || c.chatData?.lang || "id";
+          const translated = await translateText(q.text, targetLang, "auto");
+
+          if (translated.toLowerCase().trim() !== q.text.toLowerCase().trim()) {
+            const label = t("translation", {}, c);
+            const formatted = [originalText, "", label, `"${translated}"`].join(
+              "\n",
+            );
+
+            await c.reply({ text: formatted, edit: resp.key });
+          }
+        } catch (_) {}
+      } catch (e) {
+        c.log().error(`rumi-error: ${e.stack || e}`);
+        await c.reply({ text: t("error", {}, c) }, { quoted: c.event });
+      }
+    },
+  },
+  {
+    name: "faith-rumi-updater",
+    cmd: ["rumi.update"],
+    cat: "faith",
+    tags: ["info", "admin"],
+    desc: "Sync quotes for Jalaluddin Rumi",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
+    exec: async (c) => {
+      await c.react("⌛");
+      try {
+        const response = await fetch(JSON_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format: Expected an array");
+        }
+
+        const path = getFile("quotes.json");
+        writeFileSync(path, JSON.stringify(data, null, 2));
+        quotes = data;
+
+        const stats = `${t("sync_success", {}, c)}\n\n${t("sync_stats", { count: data.length }, c)}`;
+
+        await c.reply({ text: stats }, { quoted: c.event });
+        await c.react("✅");
+      } catch (e) {
+        c.log().error(`rumi-sync-error: ${e.stack || e}`);
+        await c.reply(
+          { text: t("sync_failed", { error: e.message }, c) },
+          { quoted: c.event },
+        );
+        await c.react("❌");
+      }
+    },
+  },
+];
