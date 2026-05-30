@@ -2,24 +2,24 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";
 import { Role } from "../../src/roles.js";
-import { translate, translateText } from "../../src/translate.js";
+import { getFlag, translate, translateText } from "../../src/translate.js";
 
 const t = translate({
   en: {
     help_title: "✨ *RUMI QUOTES*",
-    help_usage: "Use `.rumi` to get a random quote of Jalaluddin Rumi.",
+    help_usage:
+      "Use `.rumi` for a random quote. Use `--tr [lang]` to translate.",
     help_update: "⚙️ *Admin:* `.rumi.update` to sync/download quotes.",
     no_data: "❌ Quotes data not found! Use `{prefix}rumi.update` to download.",
     error: "❌ Failed to get quote.",
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} quotes.",
     sync_failed: "❌ *Sync Failed:* {error}",
-    translation: "🇬🇧 *Translation:*",
   },
   id: {
     help_title: "✨ *KATA BIJAK RUMI*",
     help_usage:
-      "Gunakan `.rumi` untuk mendapatkan kutipan acak Jalaluddin Rumi.",
+      "Gunakan `.rumi` untuk kutipan acak. Gunakan `--tr [bahasa]` untuk terjemahan.",
     help_update: "⚙️ *Admin:* `.rumi.update` untuk sinkronisasi kutipan.",
     no_data:
       "❌ Data kutipan tidak ditemukan! Gunakan `{prefix}rumi.update` untuk mengunduh.",
@@ -27,7 +27,6 @@ const t = translate({
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} kutipan.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
-    translation: "🇮🇩 *Terjemahan:*",
   },
 });
 
@@ -99,28 +98,55 @@ export default [
 
       try {
         const q = quotes[Math.floor(Math.random() * quotes.length)];
-        const originalText = [
-          "✨ *Rumi Quotes* ✨",
-          "",
-          `"${q.text}"`,
-          `— _*${q.author}*_`,
-        ].join("\n");
+        const originalText = [`"${q.text}"`, `— _*${q.author}*_`].join("\n");
 
         const resp = await c.reply({ text: originalText }, { quoted: c.event });
 
-        try {
-          const targetLang = c.user?.lang || c.chatData?.lang || "id";
-          const translated = await translateText(q.text, targetLang, "auto");
+        const args = c.args?.split(/\s+/) || [];
+        const trIndex = args.findIndex((a) => a === "-t" || a === "--tr");
 
-          if (translated.toLowerCase().trim() !== q.text.toLowerCase().trim()) {
-            const label = t("translation", {}, c);
-            const formatted = [originalText, "", label, `"${translated}"`].join(
-              "\n",
-            );
+        if (trIndex !== -1) {
+          try {
+            const quotedJid = c.participant || (c.quotedMessage ? c.chat : null);
+            const quotedUser = quotedJid ? c.client().getUser(quotedJid) : null;
 
-            await c.reply({ text: formatted, edit: resp.key });
-          }
-        } catch (_) {}
+            let targetLang = args[trIndex + 1];
+            if (!targetLang || targetLang.startsWith("-")) {
+              targetLang =
+                quotedUser?.lang ||
+                c.user?.lang ||
+                c.chatData?.lang ||
+                c.client()?.settings.get("lang") ||
+                "id";
+            }
+
+            let translated = "";
+            try {
+              translated = await translateText(q.text, targetLang, "auto");
+            } catch (_) {
+              if (targetLang !== "id") {
+                targetLang = "id";
+                translated = await translateText(q.text, targetLang, "auto");
+              }
+            }
+
+            if (
+              translated &&
+              translated.toLowerCase().trim() !== q.text.toLowerCase().trim()
+            ) {
+              const flag = getFlag(targetLang);
+              const label = `${flag} :`;
+              const formatted = [
+                originalText,
+                "",
+                label,
+                `"${translated}"`,
+              ].join("\n");
+
+              await c.reply({ text: formatted, edit: resp.key });
+            }
+          } catch (_) {}
+        }
       } catch (e) {
         c.log().error(`rumi-error: ${e.stack || e}`);
         await c.reply({ text: t("error", {}, c) }, { quoted: c.event });
