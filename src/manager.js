@@ -78,6 +78,17 @@ export class BotManager extends EventEmitter {
         await this.stopAll();
       });
     });
+
+    process.on("uncaughtException", (err) => {
+      this.log.error("Uncaught Exception:", err?.stack || err?.message || err);
+    });
+
+    process.on("unhandledRejection", (reason) => {
+      this.log.error(
+        "Unhandled Rejection:",
+        reason?.stack || reason?.message || reason,
+      );
+    });
   }
 
   async _init() {
