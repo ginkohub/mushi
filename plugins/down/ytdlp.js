@@ -80,7 +80,7 @@ async function getYT() {
   return ytDlpPromise;
 }
 
-// Pre-initialize to speed up first use
+/* Pre-initialize to speed up first use */
 getYT().catch((e) => c.log().error("yt-dlp pre-initialization failed:", e));
 
 /**

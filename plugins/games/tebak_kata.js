@@ -118,7 +118,6 @@ function loadWords() {
   }
 }
 
-// Initial load
 loadWords();
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
@@ -253,7 +252,6 @@ export default [
         const path = getFile("tebak_kata.json");
         writeFileSync(path, JSON.stringify(newWordList, null, 2));
 
-        // Refresh local wordList
         wordList = newWordList;
 
         const stats =

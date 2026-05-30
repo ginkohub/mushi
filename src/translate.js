@@ -254,14 +254,12 @@ export async function translateText(text, to = "en", from = "auto") {
 
   const data = await response.json();
 
-  // The translation is in the first element of the first array
   return data[0].map((s) => s[0]).join("");
 }
 
 /**
  * Higher-order function to handle i18n translations with hierarchy:
  * User Preference > Chat Preference > Global Bot Setting > Fallback (English)
- *
  * @param {Record<string, Record<string, string>>} sets
  * @param {string} altLang
  * @returns {(key: string, replaces?: Record<string, string>, ctx?: import('./context.js').Ctx | string) => string}
@@ -273,7 +271,6 @@ export function translate(sets, altLang = "en") {
     if (typeof ctx === "string") {
       lang = ctx;
     } else if (ctx && typeof ctx === "object") {
-      // Check User pref, then Chat pref, then Global
       lang = ctx.user?.lang || ctx.chatData?.lang || "en";
     }
 

@@ -135,7 +135,8 @@ export default [
 
       const q = questions[Math.floor(Math.random() * questions.length)];
       const answer = q.jawaban.toLowerCase().trim();
-      const xpReward = Math.floor(Math.random() * 21) + 20; // 20-40 XP
+      /* random number of xp reward */
+      const xpReward = Math.floor(Math.random() * 21) + 20;
 
       const texts = [
         t("question_header", {}, c),
@@ -197,7 +198,6 @@ export default [
         const path = getFile("caklontong.json");
         writeFileSync(path, JSON.stringify(data, null, 2));
 
-        // Refresh local questions
         questions = data;
 
         const stats = `${t("sync_success", {}, c)}\n\n${t("sync_stats", { count: data.length }, c)}`;

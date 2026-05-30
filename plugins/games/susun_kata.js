@@ -85,7 +85,6 @@ function loadWords() {
   }
 }
 
-// Initial load
 loadWords();
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
@@ -135,7 +134,8 @@ export default [
 
       const q = wordList[Math.floor(Math.random() * wordList.length)];
       const answer = q.jawaban.toUpperCase().trim();
-      const xpReward = Math.floor(Math.random() * 21) + 10; // 10-30 XP
+      /* random number of xp reward */
+      const xpReward = Math.floor(Math.random() * 21) + 10;
 
       const texts = [
         t("question_header", {}, c),
@@ -196,7 +196,6 @@ export default [
         const path = getFile("susun_kata.json");
         writeFileSync(path, JSON.stringify(data, null, 2));
 
-        // Refresh local wordList
         wordList = data;
 
         const stats = `${t("sync_success", {}, c)}\n\n${t("sync_stats", { count: data.length }, c)}`;

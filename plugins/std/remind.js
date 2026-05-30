@@ -40,7 +40,7 @@ let checkInterval = null;
 function parseTime(input, timezone = "UTC") {
   const now = new Date();
 
-  // Relative time: 10m, 1h, 1d
+  /* Relative time: 10m, 1h, 1d */
   const relativeMatch = input.match(/^(\d+)([smjhd])$/i);
   if (relativeMatch) {
     const num = parseInt(relativeMatch[1], 10);
@@ -64,13 +64,13 @@ function parseTime(input, timezone = "UTC") {
     return now.getTime() + ms;
   }
 
-  // Absolute time: HH:mm
+  /* Absolute time: HH:mm */
   const absoluteMatch = input.match(/^(\d{1,2}):(\d{2})$/);
   if (absoluteMatch) {
     const hours = parseInt(absoluteMatch[1], 10);
     const minutes = parseInt(absoluteMatch[2], 10);
 
-    // Create date in target timezone
+    /* Create date in target timezone */
     const targetDate = new Date(
       new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
@@ -86,13 +86,13 @@ function parseTime(input, timezone = "UTC") {
 
     targetDate.setHours(hours, minutes, 0, 0);
 
-    // If time has passed today, set for tomorrow
+    /* If time has passed today, set for tomorrow */
     if (targetDate.getTime() <= now.getTime()) {
       targetDate.setDate(targetDate.getDate() + 1);
     }
 
-    // Convert back to UTC timestamp
-    // This is tricky in JS without libraries, but since we are in the same env:
+    /* Convert back to UTC timestamp
+    This is tricky in JS without libraries, but since we are in the same env */
     const diff =
       Date.now() -
       new Date(
@@ -165,7 +165,7 @@ function startReminderChecker(c) {
     } catch (e) {
       c.log().error(`Reminder checker error: ${e.stack || e}`);
     }
-  }, 10000); // Check every 10 seconds
+  }, 10000);
 }
 
 export default [

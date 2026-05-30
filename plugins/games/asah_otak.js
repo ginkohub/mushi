@@ -85,7 +85,6 @@ function loadQuestions() {
   }
 }
 
-// Initial load
 loadQuestions();
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
@@ -196,7 +195,6 @@ export default [
         const path = getFile("asah_otak.json");
         writeFileSync(path, JSON.stringify(data, null, 2));
 
-        // Refresh local questions
         questions = data;
 
         const stats = `${t("sync_success", {}, c)}\n\n ${t("sync_stats", { count: data.length }, c)}`;

@@ -147,7 +147,7 @@ export class Client extends EventEmitter {
     /** @type {import('./handler.js').Handler} */
     this.handler = opts.handler;
 
-    this.log = null; // clientLog;
+    this.log = null;
 
     /** @type {import('./store.js').Store} */
     this.store = null;
@@ -463,7 +463,7 @@ export class Client extends EventEmitter {
       try {
         this.sock.ev.removeAllListeners();
         this.sock.end();
-      } catch { }
+      } catch {}
       this.sock = null;
     }
 
