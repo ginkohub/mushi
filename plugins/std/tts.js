@@ -100,7 +100,6 @@ export default {
         {
           audio: Buffer.from(buffer),
           mimetype: "audio/mpeg",
-          ptt: true,
         },
         { quoted: c.event },
       );
