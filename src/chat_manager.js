@@ -12,10 +12,12 @@ import { jidNormalizedUser } from "baileys";
 import { StoreJson } from "./store.js";
 
 /**
- * @typedef {Object} Chat
+ * @property {Object} Chat
  * @property {string} [jid]
  * @property {string} [lang]
+ * @property {string} [tz]
  * @property {boolean} [welcome]
+
  * @property {Record<string, any>} [settings]
  * @property {number} addedAt
  */
@@ -63,6 +65,7 @@ export class ChatManager {
       chat = {
         jid: jid,
         lang: undefined,
+        tz: undefined,
         welcome: false,
         settings: {},
         addedAt: Date.now(),
