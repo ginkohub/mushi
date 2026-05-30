@@ -321,9 +321,10 @@ export class Ctx {
     }
 
     /** @type {string} */
-    this.senderJid = this.sender?.includes("@lid")
-      ? await this.LIDToPN(this.sender)
-      : this.sender;
+    this.senderJid =
+      (this.sender?.includes("@lid")
+        ? await this.LIDToPN(this.sender)
+        : this.sender) || this.sender;
 
     /** @type {boolean} */
     this.isViewOnce =
