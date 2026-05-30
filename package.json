@@ -40,7 +40,9 @@
     "pino": "^9.7.0",
     "qrcode": "^1.5.4",
     "rahad-all-downloader-v2": "^2.0.3",
+    "sharp": "^0.34.5",
     "string-argv": "^0.3.2",
+    "wa-sticker-formatter": "^4.4.4",
     "yt-dlp-wrap": "github:ginkohub/yt-dlp-wrap"
   },
   "devDependencies": {
