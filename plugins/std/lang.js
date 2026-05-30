@@ -5,11 +5,10 @@ import { translate } from "../../src/translate.js";
 const t = translate({
   en: {
     admin_only: "This command is for group admins or bot admins only.",
-    usage: "Usage: {cmd} [lang]\nAvailable: en, id",
+    usage: "Usage: {cmd} [lang]\nExample: {cmd} id",
     success: "System language set to: *{lang}*",
     chat_success: "Chat language set to: *{lang}*",
     user_success: "Your personal language set to: *{lang}*",
-    invalid: "Invalid language. Available: en, id",
     current: "Current system language: *{lang}*",
     current_chat: "Current chat language: *{lang}*",
     current_user: "Your personal language: *{lang}*",
@@ -19,11 +18,10 @@ const t = translate({
   },
   id: {
     admin_only: "Perintah ini hanya untuk admin grup atau admin bot.",
-    usage: "Penggunaan: {cmd} [bahasa]\nTersedia: en, id",
+    usage: "Penggunaan: {cmd} [bahasa]\nContoh: {cmd} id",
     success: "Bahasa sistem diatur ke: *{lang}*",
     chat_success: "Bahasa chat diatur ke: *{lang}*",
     user_success: "Bahasa kamu telah diatur ke: *{lang}*",
-    invalid: "Bahasa tidak valid. Tersedia: en, id",
     current: "Bahasa sistem saat ini: *{lang}*",
     current_chat: "Bahasa chat saat ini: *{lang}*",
     current_user: "Bahasa kamu saat ini: *{lang}*",
@@ -46,7 +44,6 @@ export default [
 
     exec: async (c) => {
       const lang = c.args?.trim()?.toLowerCase();
-      const available = ["en", "id"];
       const current = c.client()?.settings.get("lang") || "id";
 
       if (lang === "reset" || lang === "delete" || lang === "clear") {
@@ -57,11 +54,8 @@ export default [
         );
       }
 
-      if (!lang || !available.includes(lang)) {
-        const text = !lang
-          ? `${t("current", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`
-          : t("invalid", {}, c);
-
+      if (!lang) {
+        const text = `${t("current", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`;
         return await c.reply({ text }, { quoted: c.event });
       }
 
@@ -80,7 +74,6 @@ export default [
     exec: async (c) => {
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
-      const available = ["en", "id"];
       const current =
         c.chatData?.lang || c.client()?.settings.get("lang") || "id";
 
@@ -101,12 +94,6 @@ export default [
         return await c.reply({ text: t("chat_reset", {}, c) });
       }
 
-      if (!available.includes(lang)) {
-        return await c.reply({
-          text: t("invalid", {}, c),
-        });
-      }
-
       c.client().chatManager.updateChat(c.chat, { lang });
       await c.reply({ text: t("chat_success", { lang }, c) });
     },
@@ -122,7 +109,6 @@ export default [
     exec: async (c) => {
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
-      const available = ["en", "id"];
       const current = c.user?.lang || c.client()?.settings.get("lang") || "id";
 
       if (isQuestion || !lang) {
@@ -134,12 +120,6 @@ export default [
       if (lang === "reset" || lang === "delete" || lang === "clear") {
         c.client().userManager.updateUser(c.senderJid, { lang: null });
         return await c.reply({ text: t("user_reset", {}, c) });
-      }
-
-      if (!available.includes(lang)) {
-        return await c.reply({
-          text: t("invalid", {}, c),
-        });
       }
 
       c.client().userManager.updateUser(c.senderJid, { lang });
