@@ -164,7 +164,7 @@ const decodeVideoUrl = (str) => {
 async function getCookies() {
   try {
     const response = await browser.get("https://www.instagram.com/", {
-      headers: browser.DEFAULT,
+      headers: browser.DEFAULT_HEADERS,
     });
     const cookies = response.headers["set-cookie"];
     if (!cookies) return "";
@@ -184,7 +184,7 @@ export async function downloadTikTok(url) {
   try {
     const { data: pageData } = await browser.get(
       `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`,
-      { headers: browser.DEFAULT },
+      { headers: browser.DEFAULT_HEADERS },
     );
 
     if (pageData.code !== 0) {
@@ -283,7 +283,7 @@ export async function downloadInstagram(url) {
       postData,
       {
         headers: {
-          ...browser.INSTAGRAM,
+          ...browser.INSTAGRAM_HEADERS,
           Cookie: cookies,
           "Content-Type": "application/x-www-form-urlencoded",
           "X-CSRFToken": cookies.match(/csrftoken=([^;]+)/)?.[1] || "",
@@ -358,7 +358,7 @@ export async function downloadThreads(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT,
+        ...browser.DEFAULT_HEADERS,
         Accept: "text/html,application/xhtml+xml",
         "Sec-Fetch-Mode": "navigate",
       },
@@ -430,7 +430,7 @@ export async function downloadPinterest(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT,
+        ...browser.DEFAULT_HEADERS,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
       },
@@ -506,7 +506,7 @@ async function downloadCapCut(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT,
+        ...browser.DEFAULT_HEADERS,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Sec-Fetch-Mode": "navigate",
@@ -566,7 +566,7 @@ async function downloadCapCut(url) {
               };
             }
           }
-        } catch {}
+        } catch { }
       }
     }
 
@@ -702,8 +702,8 @@ export async function download(url) {
     const urlLower = (mediaUrl || "").toLowerCase();
     mediaType =
       urlLower.includes(".mp4") ||
-      urlLower.includes("/video/") ||
-      urlLower.includes(".m3u8")
+        urlLower.includes("/video/") ||
+        urlLower.includes(".m3u8")
         ? "video"
         : "image";
   } else if (/capcut\.com/.test(url)) {
