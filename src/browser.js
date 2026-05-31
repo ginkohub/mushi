@@ -325,7 +325,9 @@ export async function downloadInstagram(url) {
  */
 export async function downloadLikee(url) {
   try {
-    const { data: html } = await browser.get(url, { headers: HEADERS.DEFAULT });
+    const { data: html } = await browser.get(url, {
+      headers: HEADERS.DEFAULT_HEADERS,
+    });
 
     const videoMatch =
       html.match(/"video_url":"([^"]+)"/) || html.match(/"playUrl":"([^"]+)"/);
