@@ -164,7 +164,7 @@ const decodeVideoUrl = (str) => {
 async function getCookies() {
   try {
     const response = await browser.get("https://www.instagram.com/", {
-      headers: browser.DEFAULT_HEADERS,
+      headers: Browser.DEFAULT_HEADERS,
     });
     const cookies = response.headers["set-cookie"];
     if (!cookies) return "";
@@ -184,7 +184,7 @@ export async function downloadTikTok(url) {
   try {
     const { data: pageData } = await browser.get(
       `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`,
-      { headers: browser.DEFAULT_HEADERS },
+      { headers: Browser.DEFAULT_HEADERS },
     );
 
     if (pageData.code !== 0) {
@@ -283,7 +283,7 @@ export async function downloadInstagram(url) {
       postData,
       {
         headers: {
-          ...browser.INSTAGRAM_HEADERS,
+          ...Browser.INSTAGRAM_HEADERS,
           Cookie: cookies,
           "Content-Type": "application/x-www-form-urlencoded",
           "X-CSRFToken": cookies.match(/csrftoken=([^;]+)/)?.[1] || "",
@@ -326,7 +326,7 @@ export async function downloadInstagram(url) {
 export async function downloadLikee(url) {
   try {
     const { data: html } = await browser.get(url, {
-      headers: HEADERS.DEFAULT_HEADERS,
+      headers: Browser.DEFAULT_HEADERS,
     });
 
     const videoMatch =
@@ -360,7 +360,7 @@ export async function downloadThreads(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT_HEADERS,
+        ...Browser.DEFAULT_HEADERS,
         Accept: "text/html,application/xhtml+xml",
         "Sec-Fetch-Mode": "navigate",
       },
@@ -432,7 +432,7 @@ export async function downloadPinterest(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT_HEADERS,
+        ...Browser.DEFAULT_HEADERS,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
       },
@@ -508,7 +508,7 @@ async function downloadCapCut(url) {
   try {
     const { data: html } = await browser.get(url, {
       headers: {
-        ...browser.DEFAULT_HEADERS,
+        ...Browser.DEFAULT_HEADERS,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Sec-Fetch-Mode": "navigate",
@@ -557,7 +557,7 @@ async function downloadCapCut(url) {
           if (pageData?.shareToken) {
             const apiUrl = `https://www.capcut.com/api/template/detail?template_id=${pageData.template_id || ""}&share_token=${pageData.shareToken}&platform=copy_link&region=US&language=en`;
             const { data: apiData } = await browser.get(apiUrl, {
-              headers: browser.DEFAULT,
+              headers: Browser.DEFAULT_HEADERS,
             });
             if (apiData?.data?.video_info) {
               videoInfo = {
