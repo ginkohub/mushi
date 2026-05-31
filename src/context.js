@@ -181,18 +181,13 @@ export class Ctx {
       this.key = this.event?.key;
 
       /** @type {string} */
-      this.id = this.event?.key.id;
+      this.id = this.key?.id;
 
       /** @type {boolean} */
-      this.fromMe = this.event?.key.fromMe;
-      this.chat = this.event?.key.remoteJid;
+      this.fromMe = this.key?.fromMe;
+      this.chat = this.key?.remoteJid;
       this.sender =
-        this.event?.key.participant ||
-        (this.fromMe
-          ? this.meLID
-          : this.chat?.endsWith("@g.us")
-            ? this.remoteJid
-            : this.chat);
+        this.key?.participant || (this.fromMe ? this.meLID : this.chat);
     }
 
     if (this.event?.message) {
