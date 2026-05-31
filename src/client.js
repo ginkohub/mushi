@@ -139,7 +139,6 @@ export class Client extends EventEmitter {
       syncFullHistory: false,
       browser: Browsers.macOS("Safari"),
       logger: pino({ level: "error" }),
-      version: [2, 3000, 1038162681],
     };
 
     Object.assign(this.socketConfig, opts.socketConfig);
@@ -463,7 +462,7 @@ export class Client extends EventEmitter {
       try {
         this.sock.ev.removeAllListeners();
         this.sock.end();
-      } catch {}
+      } catch { }
       this.sock = null;
     }
 
