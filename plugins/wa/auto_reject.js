@@ -40,9 +40,9 @@ export default [
     events: [CALL],
 
     midware: midwareAnd(
-      (ctx) => ({ success: !ctx.isStatus }),
-      (ctx) => ({ success: !ctx.fromMe }),
-      (_) => ({ success: c.client()?.settings.get(AUTO_REJECT_KEY) }),
+      (c) => ({ success: !c.isStatus }),
+      (c) => ({ success: !c.fromMe }),
+      (c) => ({ success: c.client()?.settings.get(AUTO_REJECT_KEY) }),
     ),
 
     exec: async (c) => {
