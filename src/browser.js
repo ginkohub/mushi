@@ -70,7 +70,7 @@ class Browser {
       const setCookie = response.headers.get("set-cookie");
       if (setCookie) headersObj["set-cookie"] = setCookie;
 
-      return { data, headers: headersObj };
+      return { data, headers: headersObj, url: response.url };
     } finally {
       clearTimeout(timeout);
     }
@@ -114,13 +114,14 @@ class Browser {
   }
 
   async getJson(url, options = {}) {
+    const { headers, ...restOptions } = options;
     return this.get(url, {
       headers: {
         ...Browser.DEFAULT_HEADERS,
         Accept: "application/json",
-        ...options.headers,
+        ...headers,
       },
-      ...options,
+      ...restOptions,
     });
   }
 }
@@ -212,8 +213,8 @@ export async function downloadFacebook(url) {
   try {
     let targetUrl = url;
     if (url.includes("fb.watch") || url.includes("share/v/")) {
-      const { data: redirectData } = await browser.get(url);
-      targetUrl = redirectData?.request?.uri?.href || url;
+      const { url: finalUrl } = await browser.get(url);
+      targetUrl = finalUrl || url;
     }
 
     const fbHeaders = {
@@ -568,7 +569,7 @@ async function downloadCapCut(url) {
               };
             }
           }
-        } catch { }
+        } catch {}
       }
     }
 
@@ -704,8 +705,8 @@ export async function download(url) {
     const urlLower = (mediaUrl || "").toLowerCase();
     mediaType =
       urlLower.includes(".mp4") ||
-        urlLower.includes("/video/") ||
-        urlLower.includes(".m3u8")
+      urlLower.includes("/video/") ||
+      urlLower.includes(".m3u8")
         ? "video"
         : "image";
   } else if (/capcut\.com/.test(url)) {
