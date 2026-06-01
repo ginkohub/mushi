@@ -160,7 +160,12 @@ export class Plugin {
     }
 
     if (this.midware) {
-      return new Reason(await this.midware(ctx));
+      const res = await this.midware(ctx);
+      return res instanceof Reason
+        ? res
+        : {
+            success: !!res,
+          };
     }
     return reason;
   }
