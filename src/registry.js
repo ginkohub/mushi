@@ -9,7 +9,7 @@
  */
 
 import { EventEmitter } from "node:events";
-import { readdirSync, statSync } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import logger from "./logger.js";
@@ -93,7 +93,6 @@ export class PluginRegistry extends EventEmitter {
     });
   }
 
-  /** TODO:: Able to stop watcher */
   /**
    * Stop watching directory for changes
    * @return {Promise<void>}
@@ -122,7 +121,7 @@ export class PluginRegistry extends EventEmitter {
     const walk = async (currentDir) => {
       let files = [];
       try {
-        files = readdirSync(currentDir);
+        files = await readdir(currentDir);
       } catch (e) {
         this.log.error("registry-walk", e);
         return;
@@ -132,7 +131,8 @@ export class PluginRegistry extends EventEmitter {
         const loc = path.join(currentDir, file);
 
         try {
-          if (statSync(loc)?.isDirectory() && !file?.startsWith(".")) {
+          const stloc = await stat(loc);
+          if (stloc?.isDirectory() && !file?.startsWith(".")) {
             await walk(loc);
           } else {
             if (loc.endsWith(".js")) await this.loadFile(loc);
