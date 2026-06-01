@@ -60,11 +60,14 @@ export function genHEX(n) {
  * @returns {string} The CRC32 hash as an uppercase hexadecimal string.
  */
 export function hashCRC32(str) {
-  let crc = 0;
+  let crc = 0xffffffff;
   for (let i = 0; i < str.length; i++) {
-    crc = (crc >>> 1) ^ (str.charCodeAt(i) & 1 ? 0xedb88320 : 0);
+    crc ^= str.charCodeAt(i) & 0xff;
+    for (let j = 0; j < 8; j++) {
+      crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+    }
   }
-  return (crc >>> 0).toString(16).toUpperCase();
+  return (crc ^ (0xffffffff >>> 0)).toString(16).toUpperCase();
 }
 
 /**
