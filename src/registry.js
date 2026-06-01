@@ -10,7 +10,6 @@
 
 import { EventEmitter } from "node:events";
 import { readdirSync, statSync } from "node:fs";
-import { platform } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import logger from "./logger.js";
@@ -193,9 +192,7 @@ export class PluginRegistry extends EventEmitter {
       }
 
       const original = location;
-      if (platform() === "win32") {
-        location = pathToFileURL(location).href;
-      }
+      location = pathToFileURL(location).href;
 
       const start = Date.now();
       const imported = await import(`${location}?t=${Date.now()}`);
