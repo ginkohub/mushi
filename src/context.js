@@ -129,10 +129,16 @@ export class Ctx {
     /** @type {string} */
     this.prefix = "";
 
+    const rawTimestamp = this.event?.messageTimestamp;
+    const convertedTime =
+      rawTimestamp &&
+        typeof rawTimestamp === "object" &&
+        typeof rawTimestamp?.toNumber === "function"
+        ? rawTimestamp.toNumber()
+        : Number(rawTimestamp || 0);
+
     /** @type {number} */
-    this.timestamp = this.event?.messageTimestamp
-      ? this.event.messageTimestamp * 1000
-      : Date.now();
+    this.timestamp = convertedTime > 0 ? convertedTime * 1000 : Date.now();
 
     /** @type {string} */
     this.me = jidNormalizedUser(this.bot.id);
@@ -275,11 +281,12 @@ export class Ctx {
       this.fromMe = true;
     }
 
-    if (this.participant) {
-      /** @type {boolean} */
-      this.mentionMe =
-        this.participant === this.me || this.participant === this.meLID;
-    }
+    /** @type {boolean} */
+    this.mentionMe =
+      this.mentionedJid?.includes(this.me) ||
+      this.mentionedJid?.includes(this.meLID) ||
+      [this.me, this.meLID].includes(this.participant) ||
+      false;
 
     if (this.key) this.key.fromMe = this.fromMe;
 
@@ -290,7 +297,7 @@ export class Ctx {
     this.isStatus = this.chat === "status@broadcast";
 
     if (this.isGroup) {
-      const data = await this.client()?.getGroupMetadata(this.chat);
+      const data = await this.client()?.getGroupMetadataAsync(this.chat);
       if (data && Array.isArray(data?.participants)) {
         /** @type {'lid' | 'pn'} */
         this.addressingMode = data.addressingMode;
@@ -463,6 +470,9 @@ export class Ctx {
 
       /** @type {string} - Contains prefix+cmd */
       this.pattern = splitted[0];
+
+      const prefixes = this.handler()?.getPrefixes();
+      this.prefix = prefixes?.find((p) => this.pattern.startsWith(p)) || "";
 
       /** @type {string} - Cmd no prefixed */
       this.cmd = this.pattern?.slice(this.prefix?.length ?? 1);

@@ -817,9 +817,7 @@ export class Client extends EventEmitter {
                 for (const add of c.mentionedJid || []) {
                   const part = { id: add, admin: null };
                   data.participants.push(part);
-                  updated = !c.mentionedJid?.some((jid) =>
-                    jid.endsWith("@lid"),
-                  );
+                  updated = c.mentionedJid?.some((jid) => jid.endsWith("@lid"));
                 }
                 break;
               }
@@ -896,13 +894,32 @@ export class Client extends EventEmitter {
   }
 
   /**
-   * Get group metadata by given jid
+   * Get group metadata by given jid (synchronously from cache)
+   * @param {string} jid
+   * @returns {import('baileys').GroupMetadata|undefined}
+   */
+  getGroupMetadata(jid) {
+    const data = this.groupCache.get(jid);
+    if (!data) {
+      this.runTask(`get-group-metadata_${jid}`, async () => {
+        try {
+          await this.updateGroupMetadata(jid);
+        } catch (e) {
+          this.log.error("get-group-metadata", jid, e);
+        }
+      });
+    }
+    return data;
+  }
+
+  /**
+   * Get group metadata by given jid asynchronously (awaits fetch if not cached)
    * @param {string} jid
    * @returns {Promise<import('baileys').GroupMetadata|undefined>}
    */
-  async getGroupMetadata(jid) {
-    const data = this.groupCache.get(jid);
-    if (!data)
+  async getGroupMetadataAsync(jid) {
+    let data = this.groupCache.get(jid);
+    if (!data) {
       await this.runTask(`get-group-metadata_${jid}`, async () => {
         try {
           await this.updateGroupMetadata(jid);
@@ -910,6 +927,8 @@ export class Client extends EventEmitter {
           this.log.error("get-group-metadata", jid, e);
         }
       });
+      data = this.groupCache.get(jid);
+    }
     return data;
   }
 
@@ -1041,27 +1060,30 @@ export class Client extends EventEmitter {
 
       if (!options.messageId) options.messageId = genHEX(32);
 
-      const ephemeral = this.getTimer(jid);
-      for (const key in content) {
-        if (!content[key]) continue;
-        if (typeof content[key] === "object") {
-          if (!content[key]?.contextInfo) {
-            content[key].contextInfo = { expiration: ephemeral };
-          } else {
-            content[key].contextInfo.expiration = ephemeral;
+      /** @type {import('baileys').proto.IMessage} */
+      let finalContent = { ...content };
+      if (finalContent.conversation && ephemeral > 0) {
+        finalContent = {
+          extendedTextMessage: {
+            text: finalContent.conversation,
+            contextInfo: { expiration: ephemeral },
+          },
+        };
+      } else {
+        for (const key in finalContent) {
+          if (!finalContent[key]) continue;
+          if (typeof finalContent[key] === "object") {
+            finalContent[key] = {
+              ...finalContent[key],
+              contextInfo: {
+                ...finalContent[key].contextInfo,
+                expiration: ephemeral,
+              },
+            };
           }
         }
-
-        if (content?.conversation && ephemeral > 0) {
-          content = {
-            extendedTextMessage: {
-              text: content.conversation,
-              contextInfo: { expiration: ephemeral },
-            },
-          };
-        }
       }
-      return await this.sock.relayMessage(jid, content, options);
+      return await this.sock.relayMessage(jid, finalContent, options);
     } catch (e) {
       this.log.error("relay-message", e);
       this.emit(ClientEvents.ERROR, {
