@@ -290,7 +290,7 @@ export class Ctx {
     this.isStatus = this.chat === "status@broadcast";
 
     if (this.isGroup) {
-      const data = this.client()?.getGroupMetadata(this.chat);
+      const data = await this.client()?.getGroupMetadata(this.chat);
       if (data && Array.isArray(data?.participants)) {
         /** @type {'lid' | 'pn'} */
         this.addressingMode = data.addressingMode;

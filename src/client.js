@@ -898,12 +898,12 @@ export class Client extends EventEmitter {
   /**
    * Get group metadata by given jid
    * @param {string} jid
-   * @returns {import('baileys').GroupMetadata|undefined}
+   * @returns {Promise<import('baileys').GroupMetadata|undefined>}
    */
-  getGroupMetadata(jid) {
+  async getGroupMetadata(jid) {
     const data = this.groupCache.get(jid);
     if (!data)
-      this.runTask(`get-group-metadata_${jid}`, async () => {
+      await this.runTask(`get-group-metadata_${jid}`, async () => {
         try {
           await this.updateGroupMetadata(jid);
         } catch (e) {
