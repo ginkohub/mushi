@@ -16,7 +16,7 @@ import {
   statSync,
   unlinkSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import path, { dirname, join } from "node:path";
 
 /**
  * @readonly
@@ -230,7 +230,9 @@ export class Logger {
 
     if (!existsSync(dir)) return;
     const files = readdirSync(dir)
-      .filter((f) => f.startsWith(base.split("/").pop()) && f.endsWith(".log"))
+      .filter(
+        (f) => f.startsWith(base.split(path.sep).pop()) && f.endsWith(".log"),
+      )
       .map((f) => ({
         name: f,
         path: join(dir, f),
