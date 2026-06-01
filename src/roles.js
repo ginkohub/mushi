@@ -128,7 +128,7 @@ export function isAtLeast(existRole, requiredRole) {
   const requiredLevel =
     typeof requiredRole === "string" ? nameToLevel(requiredRole) : requiredRole;
 
-  if (!existLevel || !requiredLevel) return false;
+  if (existLevel == null || requiredLevel == null) return false;
   return existLevel >= requiredLevel;
 }
 
