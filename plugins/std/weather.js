@@ -104,7 +104,8 @@ export default {
           "User-Agent": "MushiBot/0.0.2",
         },
       });
-      if (!weatherRes.ok) throw new Error(`Weather fetch failed: ${weatherRes.status}`);
+      if (!weatherRes.ok)
+        throw new Error(`Weather fetch failed: ${weatherRes.status}`);
       const weatherData = await weatherRes.json();
 
       const current = weatherData.current;

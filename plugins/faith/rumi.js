@@ -107,7 +107,8 @@ export default [
 
         if (trIndex !== -1) {
           try {
-            const quotedJid = c.participant || (c.quotedMessage ? c.chat : null);
+            const quotedJid =
+              c.participant || (c.quotedMessage ? c.chat : null);
             const quotedUser = quotedJid ? c.client().getUser(quotedJid) : null;
 
             let targetLang = args[trIndex + 1];

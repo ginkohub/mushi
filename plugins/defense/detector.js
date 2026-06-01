@@ -127,7 +127,7 @@ export const ActionMap = {
         );
         let possible = false;
         if (c.isGroup) {
-          const meta = c.client()?.getGroupMetadata(c.chat);
+          const meta = await c.client()?.getGroupMetadataAsync(c.chat);
           /* check if bot are admin */
           possible =
             meta?.participants?.some(
@@ -182,7 +182,7 @@ export const ActionMap = {
       try {
         let possible = false;
         if (c.isGroup) {
-          const meta = c.client()?.getGroupMetadata(c.chat);
+          const meta = await c.client()?.getGroupMetadataAsync(c.chat);
           /* check if bot are admin */
           possible =
             meta?.participants?.some(
