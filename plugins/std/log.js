@@ -113,7 +113,8 @@ export default {
           data.push("⚡");
 
           const dataCMD = c.handler()?.getCMD(c.pattern);
-          if (!dataCMD?.plugin?.check(c)) data.push("❌");
+          const resCheck = await dataCMD?.plugin?.check(c);
+          if (!resCheck?.success) data.push("❌");
         }
 
         if (c.id && c.type !== "senderKeyDistributionMessage") {
