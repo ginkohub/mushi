@@ -1084,7 +1084,7 @@ export class Client extends EventEmitter {
 
     return await this.sendMessage(jid, {
       document: {
-        file: filePath,
+        url: filePath,
       },
       fileName: opts.filename,
       caption: opts.caption,
