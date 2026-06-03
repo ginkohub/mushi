@@ -15,14 +15,13 @@ import { translate } from "../../src/translate.js";
 const t = translate({
   en: {
     usage: "Usage: {cmd} [value]",
-    cmd_on: "Commands are enabled in this chat ✅",
-    cmd_off: "Commands are disabled in this chat ❌",
+    active: "ON ✅",
+    inactive: "OFF ❌",
     cmd_status: "Command status: *{val}*",
-    enabled: "enabled",
-    disabled: "disabled",
-    welcome_on: "Welcome message enabled in this chat ✅",
-    welcome_off: "Welcome message disabled in this chat ❌",
     welcome_status: "Welcome message status: *{val}*",
+    nb: "NB :",
+    deactivating: "  *{pattern}-* _to disable_",
+    activating: "  *{pattern}+* _to enable_",
     current_chat: "Current chat {key}: *{val}*",
     chat_success: "Chat {key} set to: *{val}*",
     chat_reset: "Chat {key} preference cleared.",
@@ -31,14 +30,13 @@ const t = translate({
   },
   id: {
     usage: "Penggunaan: {cmd} [nilai]",
-    cmd_on: "Perintah telah diaktifkan di chat ini ✅",
-    cmd_off: "Perintah telah dinonaktifkan di chat ini ❌",
+    active: "NYALA ✅",
+    inactive: "MATI ❌",
     cmd_status: "Status perintah: *{val}*",
-    enabled: "aktif",
-    disabled: "nonaktif",
-    welcome_on: "Pesan selamat datang diaktifkan di chat ini ✅",
-    welcome_off: "Pesan selamat datang dinonaktifkan di chat ini ❌",
     welcome_status: "Status pesan selamat datang: *{val}*",
+    nb: "Catatan :",
+    deactivating: "  *{pattern}-* _untuk menonaktifkan_",
+    activating: "  *{pattern}+* _untuk mengaktifkan_",
     current_chat: "{key} chat saat ini: *{val}*",
     chat_success: "{key} chat diatur ke: *{val}*",
     chat_reset: "Preferensi {key} chat telah dihapus.",
@@ -63,94 +61,82 @@ function isValidTimezone(tz) {
 export default [
   {
     name: "std-chatman-cmd",
-    cmd: ["cmd"],
+    cmd: ["chat.cmd", "chat.cmd+", "chat.cmd-"],
     cat: "system",
     tags: ["admin", "chat"],
-    desc: "Show command execution status in this chat.",
+    desc: "Manage command execution status in this chat.",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
 
     exec: async (c) => {
-      const val = c.chatData?.allowCommand
-        ? t("enabled", {}, c)
-        : t("disabled", {}, c);
-      await c.reply({ text: t("cmd_status", { val }, c) });
-    },
-  },
-  {
-    name: "std-chatman-cmd-on",
-    cmd: ["cmd+"],
-    cat: "system",
-    tags: ["admin", "chat"],
-    desc: "Enable command execution in this chat.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
+      let pattern = c.pattern;
+      const tail = pattern.slice(-1);
 
-    exec: async (c) => {
-      if (!isAdminOrAbove(c)) return;
-      c.client().chatManager.updateChat(c.chat, { allowCommand: true });
-      await c.reply({ text: t("cmd_on", {}, c) });
-    },
-  },
-  {
-    name: "std-chatman-cmd-off",
-    cmd: ["cmd-"],
-    cat: "system",
-    tags: ["admin", "chat"],
-    desc: "Disable command execution in this chat.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
+      switch (tail) {
+        case "+": {
+          if (!isAdminOrAbove(c)) return;
+          c.client().chatManager.updateChat(c.chat, { allowCommand: true });
+          pattern = pattern.slice(0, -1);
+          break;
+        }
+        case "-": {
+          if (!isAdminOrAbove(c)) return;
+          c.client().chatManager.updateChat(c.chat, { allowCommand: false });
+          pattern = pattern.slice(0, -1);
+          break;
+        }
+      }
 
-    exec: async (c) => {
-      if (!isAdminOrAbove(c)) return;
-      c.client().chatManager.updateChat(c.chat, { allowCommand: false });
-      await c.reply({ text: t("cmd_off", {}, c) });
+      const isActive = c.chatData?.allowCommand === true;
+      const texts = [
+        t("cmd_status", { val: isActive ? t("active") : t("inactive") }),
+        "",
+        "",
+        t("nb"),
+        t("deactivating", { pattern }),
+        t("activating", { pattern }),
+      ];
+      await c.reply({ text: texts.join("\n") }, { quoted: c.event });
     },
   },
   {
     name: "std-chatman-welcome",
-    cmd: ["welcome"],
+    cmd: ["chat.welcome", "chat.welcome+", "chat.welcome-"],
     cat: "system",
     tags: ["admin", "chat"],
-    desc: "Show welcome message status in this chat.",
+    desc: "Manage welcome message status in this chat.",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
 
     exec: async (c) => {
-      const val = c.chatData?.welcome
-        ? t("enabled", {}, c)
-        : t("disabled", {}, c);
-      await c.reply({ text: t("welcome_status", { val }, c) });
-    },
-  },
-  {
-    name: "std-chatman-welcome-on",
-    cmd: ["welcome+"],
-    cat: "system",
-    tags: ["admin", "chat"],
-    desc: "Enable welcome message in this chat.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
+      let pattern = c.pattern;
+      const tail = pattern.slice(-1);
 
-    exec: async (c) => {
-      if (!isAdminOrAbove(c)) return;
-      c.client().chatManager.updateChat(c.chat, { welcome: true });
-      await c.reply({ text: t("welcome_on", {}, c) });
-    },
-  },
-  {
-    name: "std-chatman-welcome-off",
-    cmd: ["welcome-"],
-    cat: "system",
-    tags: ["admin", "chat"],
-    desc: "Disable welcome message in this chat.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
+      switch (tail) {
+        case "+": {
+          if (!isAdminOrAbove(c)) return;
+          c.client().chatManager.updateChat(c.chat, { welcome: true });
+          pattern = pattern.slice(0, -1);
+          break;
+        }
+        case "-": {
+          if (!isAdminOrAbove(c)) return;
+          c.client().chatManager.updateChat(c.chat, { welcome: false });
+          pattern = pattern.slice(0, -1);
+          break;
+        }
+      }
 
-    exec: async (c) => {
-      if (!isAdminOrAbove(c)) return;
-      c.client().chatManager.updateChat(c.chat, { welcome: false });
-      await c.reply({ text: t("welcome_off", {}, c) });
+      const isActive = c.chatData?.welcome === true;
+      const texts = [
+        t("welcome_status", { val: isActive ? t("active") : t("inactive") }),
+        "",
+        "",
+        t("nb"),
+        t("deactivating", { pattern }),
+        t("activating", { pattern }),
+      ];
+      await c.reply({ text: texts.join("\n") }, { quoted: c.event });
     },
   },
   {
@@ -197,8 +183,7 @@ export default [
     exec: async (c) => {
       const isQuestion = c.cmd.endsWith("?");
       const tz = c.args?.trim();
-      const current =
-        c.chatData?.tz || c.client()?.settings.get("tz") || "UTC";
+      const current = c.chatData?.tz || c.client()?.settings.get("tz") || "UTC";
 
       if (isQuestion || !tz) {
         return await c.reply({
