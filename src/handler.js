@@ -271,7 +271,7 @@ export class Handler {
         },
       );
 
-      if (c.pattern?.length > 0 && this.isSafeForCMD(c)) {
+      if (c.pattern?.length > 0 && (c.chatData?.allowCommand || c.fromMe) && this.isSafeForCMD(c)) {
         const pattern = c.pattern.toLowerCase();
         const cmd = this.plugin_commands.get(pattern);
         if (cmd) {

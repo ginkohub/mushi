@@ -17,6 +17,7 @@ import { StoreJson } from "./store.js";
  * @property {string} [lang]
  * @property {string} [tz]
  * @property {boolean} [welcome]
+ * @property {boolean} [allowCommand]
 
  * @property {Record<string, any>} [settings]
  * @property {number} addedAt
@@ -67,6 +68,7 @@ export class ChatManager {
         lang: undefined,
         tz: undefined,
         welcome: false,
+        allowCommand: false,
         settings: {},
         addedAt: Date.now(),
       };
