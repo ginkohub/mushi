@@ -71,6 +71,15 @@ process.on("beforeExit", async () => {
 });
 
 /**
+ * Sanitize table name
+ * @param {string} name - table name
+ * @returns {string} - sanitized table name
+ */
+export function sanitizeTableName(name) {
+  return name.replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
+/**
  * @class StoreJson
  * @description Store data in JSON file
  */
@@ -279,7 +288,9 @@ export class StoreSQLite {
     this.autoSave = opts?.autoSave ?? false;
     this.saveName = opts?.saveName;
     this.expiration = opts?.expiration ?? 0;
-    this.tableName = opts?.tableName ?? "data";
+    this.tableName = opts?.tableName
+      ? sanitizeTableName(opts.tableName)
+      : "data";
     this.ready = this._init();
   }
 
@@ -327,7 +338,7 @@ export class StoreSQLite {
     );
   }
 
-  save() {}
+  save() { }
 
   /**
    * Set data
@@ -407,7 +418,7 @@ export class StoreSQLite {
       saveName: this.saveName,
       autoSave: this.autoSave,
       expiration: this.expiration,
-      tableName: tableName,
+      tableName: sanitizeTableName(tableName),
     });
   }
 }
