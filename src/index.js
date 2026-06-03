@@ -32,6 +32,7 @@ export {
   Client,
   ClientEvents,
   ConnectionStatus,
+  createClient,
   Method,
   useStore,
 } from "./client.js";
@@ -85,4 +86,4 @@ export {
 
 export { Languages, translate, translateText } from "./translate.js";
 
-export { UserManager } from "./user_manager.js";
+export { User, UserManager } from "./user_manager.js";

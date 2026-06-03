@@ -196,10 +196,8 @@ export default [
 
       for (const jid of jids) {
         const user = c.client().userManager.getUser(jid);
-        if (!user.roles.includes(role)) {
-          user.roles.push(role);
-          c.client().userManager.updateUser(jid, { roles: user.roles });
-        }
+        user.addRole(role);
+        c.client().userManager.updateUser(jid, user);
       }
 
       await c.reply({
@@ -245,11 +243,8 @@ export default [
 
       for (const jid of jids) {
         const user = c.client().userManager.getUser(jid);
-        if (user.roles.includes(role)) {
-          user.roles = user.roles.filter((r) => r !== role);
-          if (user.roles.length === 0) user.roles.push(Role.GUEST);
-          c.client().userManager.updateUser(jid, { roles: user.roles });
-        }
+        user.removeRole(role);
+        c.client().userManager.updateUser(jid, user);
       }
 
       await c.reply({
@@ -295,11 +290,8 @@ export default [
 
       for (const jid of jids) {
         const user = c.client().userManager.getUser(jid);
-        if (user.roles.includes(role)) {
-          user.roles = user.roles.filter((r) => r !== role);
-          if (user.roles.length === 0) user.roles.push(Role.GUEST);
-          c.client().userManager.updateUser(jid, { roles: user.roles });
-        }
+        user.removeRole(role);
+        c.client().userManager.updateUser(jid, user);
       }
 
       await c.reply({

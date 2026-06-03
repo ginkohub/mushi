@@ -145,11 +145,8 @@ export class Plugin {
         const pluginRoles = this.roles.map((r) =>
           typeof r === "string" ? nameToLevel(r) : r,
         );
-        const userRoles = user?.roles?.map((r) =>
-          typeof r === "string" ? nameToLevel(r) : r,
-        );
         const minLevelPlugin = Math.min(...pluginRoles);
-        const maxLevelUser = Math.max(...userRoles);
+        const maxLevelUser = user.getHighestRoleLevel();
         if (minLevelPlugin > maxLevelUser) {
           return reason
             .setBad()

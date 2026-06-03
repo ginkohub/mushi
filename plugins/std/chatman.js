@@ -46,7 +46,7 @@ const t = translate({
 });
 
 const isAdminOrAbove = (c) =>
-  c.isAdmin || c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN]);
+  c.isAdmin || c.user?.hasRole(Role.ADMIN);
 
 function isValidTimezone(tz) {
   try {

@@ -47,7 +47,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
@@ -78,7 +78,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
@@ -109,7 +109,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
@@ -140,7 +140,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
@@ -171,7 +171,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
@@ -194,7 +194,7 @@ export default [
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
       if (
         !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
+        !c.user?.hasRole(Role.ADMIN)
       )
         return await c.reply({ text: t("admin_only", {}, c) });
 
