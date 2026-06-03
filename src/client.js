@@ -680,9 +680,7 @@ export class Client extends EventEmitter {
                 id: c.sender,
                 name: c.pushName,
               });
-              const updatedUser = { ...c.user, name: c.pushName };
-              c.user = updatedUser;
-              this.updateUser(c.sender, updatedUser);
+              c.user = this.updateUser(c.sender, { name: c.pushName });
             }
           }
           break;
