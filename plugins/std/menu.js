@@ -76,7 +76,7 @@ export default {
   cmd: ["menu", "menu?"],
   cat: "info",
   desc: "Show the menu of commands",
-  roles: [Role.GUEST],
+  roles: [Role.USER],
   exec: async (c) => {
     const prefix = c.prefix;
     const isDetail = c.pattern.endsWith("?");
@@ -138,11 +138,11 @@ export default {
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
         `${t("prefix", {}, c)} ` +
-          c
-            .handler()
-            ?.getPrefixes()
-            ?.map((p) => `\`${p}\``)
-            .join(", "),
+        c
+          .handler()
+          ?.getPrefixes()
+          ?.map((p) => `\`${p}\``)
+          .join(", "),
         `${t("lang", {}, c)} ${globalLang} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
 

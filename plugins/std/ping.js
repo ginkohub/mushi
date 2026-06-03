@@ -33,7 +33,7 @@ export default {
   tags: ["system"],
   desc: "Ping the bot and get the response time.",
   events: [MESSAGES_UPSERT],
-  roles: [Role.GUEST],
+  roles: [Role.USER],
   exec: async (c) => {
     const current = Date.now();
     let latency = current - c.timestamp;

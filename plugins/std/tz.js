@@ -122,7 +122,7 @@ export default [
     tags: ["user", "tz"],
     desc: "Set your personal timezone preference.",
     events: [MESSAGES_UPSERT],
-    roles: [Role.GUEST],
+    roles: [Role.USER],
     exec: async (c) => {
       const isQuestion = c.cmd.endsWith("?");
       const tz = c.args?.trim();

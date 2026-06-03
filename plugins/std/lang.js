@@ -105,7 +105,7 @@ export default [
     tags: ["user", "lang"],
     desc: "Set your personal language preference.",
     events: [MESSAGES_UPSERT],
-    roles: [Role.GUEST],
+    roles: [Role.USER],
     exec: async (c) => {
       const isQuestion = c.cmd.endsWith("?");
       const lang = c.args?.trim()?.toLowerCase();
