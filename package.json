@@ -28,7 +28,6 @@
   "dependencies": {
     "@ginkohub/speedtest-js": "^0.0.2",
     "@google/genai": "^1.9.0",
-    "@img/sharp-wasm32": "^0.34.5",
     "baileys": "github:ginkohub/baileys#v7.0.0-rc.12",
     "better-sqlite3": "^11.10.0",
     "chokidar": "^4.0.3",
@@ -45,6 +44,9 @@
     "string-argv": "^0.3.2",
     "wa-sticker-formatter": "^4.4.4",
     "yt-dlp-wrap": "github:ginkohub/yt-dlp-wrap"
+  },
+  "optionalDependencies": {
+    "@img/sharp-wasm32": "^0.34.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.14"
