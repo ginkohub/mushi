@@ -97,16 +97,16 @@ export class Ctx {
    * @param {CtxOpts} opts
    */
   constructor(opts) {
-    /** @returns {import('./handler.js').Handler} */
+    /** @type {() => import('./handler.js').Handler} */
     this.handler = () => opts.handler;
 
-    /** @returns {import('./client.js').Client} */
+    /** @type {() => import('./client.js').Client} */
     this.client = () => opts.client;
 
-    /** @returns {import('./logger.js').Logger} */
+    /** @type {() => import('./logger.js').Logger} */
     this.log = () => opts.client?.log;
 
-    /** @returns {import('baileys').WASocket} */
+    /** @type {() => import('baileys').WASocket} */
     this.sock = () => opts.client.sock;
 
     /** @type {import('./const.js').Events} */
