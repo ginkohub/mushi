@@ -589,6 +589,7 @@ export class Client extends EventEmitter {
       clearTimeout(this._updateTimer);
       this._scheduleUpdate(true);
     }
+    this.log.flush();
     this.emit(ClientEvents.DISCONNECTED);
 
     /* TODO: Should we remove all listener on disconnect ?

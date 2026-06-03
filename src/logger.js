@@ -50,6 +50,15 @@ export class Logger {
   /** @type {LogEntry[]} */
   #logs = [];
 
+  /** @type {LogEntry[]} */
+  #buffer = [];
+
+  /** @type {ReturnType<typeof setTimeout>|null} */
+  #flushTimer = null;
+
+  /** @type {boolean} */
+  #dirChecked = false;
+
   /** @type {number} */
   #maxLogs;
 
@@ -162,11 +171,60 @@ export class Logger {
     }
 
     if (this.#filePath) {
-      this.#writeFile(entry);
+      this.#buffer.push(entry);
+      this.#scheduleFlush();
     }
 
     if (this.#onLog) {
       this.#onLog(level, source, message, args);
+    }
+  }
+
+  #scheduleFlush() {
+    if (this.#flushTimer) return;
+    this.#flushTimer = setTimeout(() => {
+      this.#flushTimer = null;
+      this.#flush();
+    }, 1000);
+    this.#flushTimer?.unref?.();
+  }
+
+  #flush() {
+    if (this.#buffer.length === 0) return;
+
+    const entries = this.#buffer.splice(0);
+    const now = new Date();
+    const date = now.toISOString().split("T")[0];
+
+    /* Daily rotation */
+    if (this.#lastDate && this.#lastDate !== date) {
+      this.#rotateFiles();
+    }
+    this.#lastDate = date;
+
+    /* Dir check (lazy) */
+    if (!this.#dirChecked) {
+      const dir = dirname(this.#filePath);
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
+      this.#dirChecked = true;
+    }
+
+    /* Size check */
+    if (this.#maxSize > 0 && existsSync(this.#filePath)) {
+      const stats = statSync(this.#filePath);
+      if (stats.size >= this.#maxSize) {
+        this.#rotateFiles();
+      }
+    }
+
+    const lines = entries.map((e) => `${JSON.stringify(e)}\n`).join("");
+
+    try {
+      appendFileSync(this.#filePath, lines, "utf-8");
+    } catch (e) {
+      console.error("Failed to write log:", e);
     }
   }
 
@@ -184,42 +242,6 @@ export class Logger {
       console: this.#console,
       prefix: this.#prefix ? `${this.#prefix}:${label}` : label,
     });
-  }
-
-  /**
-   * @param {LogEntry} entry
-   */
-  #writeFile(entry) {
-    const now = new Date();
-    const date = now.toISOString().split("T")[0];
-
-    /* Daily rotation */
-    if (this.#lastDate && this.#lastDate !== date) {
-      this.#rotateFiles();
-      this.#lastDate = date;
-    }
-    this.#lastDate = date;
-
-    const dir = dirname(this.#filePath);
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-
-    const line = `${JSON.stringify(entry)}\n`;
-
-    /* Check size limit */
-    if (this.#maxSize > 0 && existsSync(this.#filePath)) {
-      const stats = statSync(this.#filePath);
-      if (stats.size >= this.#maxSize) {
-        this.#rotateFiles();
-      }
-    }
-
-    try {
-      appendFileSync(this.#filePath, line, "utf-8");
-    } catch (e) {
-      console.error("Failed to write log:", e);
-    }
   }
 
   #rotateFiles() {
@@ -256,7 +278,16 @@ export class Logger {
     this.#maxFiles = maxFiles;
   }
 
+  flush() {
+    if (this.#flushTimer) {
+      clearTimeout(this.#flushTimer);
+      this.#flushTimer = null;
+    }
+    this.#flush();
+  }
+
   stopFile() {
+    this.flush();
     this.#filePath = null;
   }
 
