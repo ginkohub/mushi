@@ -32,6 +32,12 @@ const t = translate({
     added_role: "Added role *{role}* to {count} user(s).",
     removed_role: "Removed role *{role}* from {count} user(s).",
     set_role: "Set role to *{role}* for {count} user(s).",
+    usage: "Usage: {cmd} [value]",
+    current_user: "Your personal {key}: *{val}*",
+    user_success: "Your personal {key} set to: *{val}*",
+    user_reset: "Your personal {key} preference cleared.",
+    invalid_tz:
+      "❌ Invalid timezone! Example: `Asia/Jakarta`, `Europe/London`, `UTC`.",
   },
   id: {
     header: "*📃 Informasi User*",
@@ -52,8 +58,23 @@ const t = translate({
     added_role: "Menambahkan peran *{role}* ke {count} user.",
     removed_role: "Menghapus peran *{role}* dari {count} user.",
     set_role: "Mengatur peran menjadi *{role}* untuk {count} user.",
+    usage: "Penggunaan: {cmd} [nilai]",
+    current_user: "{key} personal kamu: *{val}*",
+    user_success: "{key} personal kamu diatur ke: *{val}*",
+    user_reset: "Preferensi {key} personal kamu telah dihapus.",
+    invalid_tz:
+      "❌ Timezone tidak valid! Contoh: `Asia/Jakarta`, `Europe/London`, `UTC`.",
   },
 });
+
+function isValidTimezone(tz) {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** @type {import('../../src/plugin.js').Plugin[]} */
 export default [
@@ -335,6 +356,68 @@ export default [
       await c.reply({
         text: t("set_role", { role, count: jids.length }, c),
       });
+    },
+  },
+  {
+    name: "std-userman-lang",
+    cmd: ["user.lang", "user.lang?"],
+    cat: "user",
+    tags: ["user", "lang"],
+    desc: "Set your personal language preference.",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+
+    exec: async (c) => {
+      const isQuestion = c.cmd.endsWith("?");
+      const lang = c.args?.trim()?.toLowerCase();
+      const current = c.user?.lang || c.client()?.settings.get("lang") || "id";
+
+      if (isQuestion || !lang) {
+        return await c.reply({
+          text: `${t("current_user", { key: "lang", val: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
+        });
+      }
+
+      if (lang === "reset" || lang === "delete" || lang === "clear") {
+        c.client().userManager.updateUser(c.senderJid, { lang: null });
+        return await c.reply({ text: t("user_reset", { key: "lang" }, c) });
+      }
+
+      c.client().userManager.updateUser(c.senderJid, { lang });
+      await c.reply({ text: t("user_success", { key: "lang", val: lang }, c) });
+    },
+  },
+  {
+    name: "std-userman-tz",
+    cmd: ["user.tz", "user.tz?"],
+    cat: "user",
+    tags: ["user", "tz"],
+    desc: "Set your personal timezone preference.",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+
+    exec: async (c) => {
+      const isQuestion = c.cmd.endsWith("?");
+      const tz = c.args?.trim();
+      const current = c.user?.tz || c.client()?.settings.get("tz") || "UTC";
+
+      if (isQuestion || !tz) {
+        return await c.reply({
+          text: `${t("current_user", { key: "tz", val: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
+        });
+      }
+
+      if (tz === "reset" || tz === "delete" || tz === "clear") {
+        c.client().userManager.updateUser(c.senderJid, { tz: null });
+        return await c.reply({ text: t("user_reset", { key: "tz" }, c) });
+      }
+
+      if (!isValidTimezone(tz)) {
+        return await c.reply({ text: t("invalid_tz", {}, c) });
+      }
+
+      c.client().userManager.updateUser(c.senderJid, { tz });
+      await c.reply({ text: t("user_success", { key: "tz", val: tz }, c) });
     },
   },
 ];

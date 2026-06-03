@@ -4,30 +4,16 @@ import { translate } from "../../src/translate.js";
 
 const t = translate({
   en: {
-    admin_only: "This command is for group admins or bot admins only.",
     usage: "Usage: {cmd} [lang]\nExample: {cmd} id",
     success: "System language set to: *{lang}*",
-    chat_success: "Chat language set to: *{lang}*",
-    user_success: "Your personal language set to: *{lang}*",
     current: "Current system language: *{lang}*",
-    current_chat: "Current chat language: *{lang}*",
-    current_user: "Your personal language: *{lang}*",
     reset_success: "System language preference cleared (default: *id*).",
-    chat_reset: "Chat language preference cleared.",
-    user_reset: "Your personal language preference cleared.",
   },
   id: {
-    admin_only: "Perintah ini hanya untuk admin grup atau admin bot.",
     usage: "Penggunaan: {cmd} [bahasa]\nContoh: {cmd} id",
     success: "Bahasa sistem diatur ke: *{lang}*",
-    chat_success: "Bahasa chat diatur ke: *{lang}*",
-    user_success: "Bahasa kamu telah diatur ke: *{lang}*",
     current: "Bahasa sistem saat ini: *{lang}*",
-    current_chat: "Bahasa chat saat ini: *{lang}*",
-    current_user: "Bahasa kamu saat ini: *{lang}*",
     reset_success: "Preferensi bahasa sistem telah dihapus (bawaan: *id*).",
-    chat_reset: "Preferensi bahasa chat telah dihapus.",
-    user_reset: "Preferensi bahasa personal kamu telah dihapus.",
   },
 });
 
@@ -35,7 +21,7 @@ export default [
   {
     name: "std-lang",
     cmd: ["lang", "set.lang", "lang?", "set.lang?"],
-    includes: ["std-lang-chat", "std-lang-user"],
+    includes: [],
     cat: "system",
     tags: ["system", "lang"],
     desc: "Set the global bot language.",
@@ -61,69 +47,6 @@ export default [
 
       c.client()?.settings.set("lang", lang);
       await c.reply({ text: t("success", { lang }, c) }, { quoted: c.event });
-    },
-  },
-  {
-    name: "std-lang-chat",
-    cmd: ["lang.chat", "chatlang", "lang.chat?", "chatlang?"],
-    cat: "system",
-    tags: ["admin", "chat", "lang"],
-    desc: "Set the default language for this chat.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
-    exec: async (c) => {
-      const isQuestion = c.cmd.endsWith("?");
-      const lang = c.args?.trim()?.toLowerCase();
-      const current =
-        c.chatData?.lang || c.client()?.settings.get("lang") || "id";
-
-      if (isQuestion || !lang) {
-        return await c.reply({
-          text: `${t("current_chat", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
-        });
-      }
-
-      if (
-        !c.isAdmin &&
-        !c.client().userManager.rolesEnough(c.senderJid, [Role.ADMIN])
-      )
-        return await c.reply({ text: t("admin_only", {}, c) });
-
-      if (lang === "reset" || lang === "delete" || lang === "clear") {
-        c.client().chatManager.updateChat(c.chat, { lang: null });
-        return await c.reply({ text: t("chat_reset", {}, c) });
-      }
-
-      c.client().chatManager.updateChat(c.chat, { lang });
-      await c.reply({ text: t("chat_success", { lang }, c) });
-    },
-  },
-  {
-    name: "std-lang-user",
-    cmd: ["lang.user", "mylang", "lang.user?", "mylang?"],
-    cat: "user",
-    tags: ["user", "lang"],
-    desc: "Set your personal language preference.",
-    events: [MESSAGES_UPSERT],
-    roles: [Role.USER],
-    exec: async (c) => {
-      const isQuestion = c.cmd.endsWith("?");
-      const lang = c.args?.trim()?.toLowerCase();
-      const current = c.user?.lang || c.client()?.settings.get("lang") || "id";
-
-      if (isQuestion || !lang) {
-        return await c.reply({
-          text: `${t("current_user", { lang: current }, c)}\n\n${t("usage", { cmd: c.prefix + c.cmd.replace("?", "") }, c)}`,
-        });
-      }
-
-      if (lang === "reset" || lang === "delete" || lang === "clear") {
-        c.client().userManager.updateUser(c.senderJid, { lang: null });
-        return await c.reply({ text: t("user_reset", {}, c) });
-      }
-
-      c.client().userManager.updateUser(c.senderJid, { lang });
-      await c.reply({ text: t("user_success", { lang }, c) });
     },
   },
 ];
