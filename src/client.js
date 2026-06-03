@@ -1113,3 +1113,13 @@ export class Client extends EventEmitter {
     });
   }
 }
+
+/**
+ * @param {ClientOpts} opts
+ * @returns {Client}
+ */
+export async function createClient(opts) {
+  const client = new Client(opts);
+  await client.init();
+  return client;
+}
