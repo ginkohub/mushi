@@ -25,7 +25,7 @@ const JIDBy = {
   Text: 2,
 };
 
-const skipMessageTypes = ["messageContextInfo"];
+const skipMessageTypes = ["messageContextInfo", "senderKeyDistributionMessage"];
 
 const TextExtractors = {
   conversation: (m) => m,
@@ -206,6 +206,9 @@ export class Ctx {
 
       /** @type {string} */
       this.type = ext.type;
+
+      /** @type {string[]} */
+      this.types = Object.keys(this.event?.message) || [];
 
       /** @type {string} */
       this.text = ext.text;
