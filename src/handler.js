@@ -249,10 +249,10 @@ export class Handler {
           /** @type {import('./registry.js').PluginItem} */
           const item = this.registry.getPlugin(id);
           if (!item) return;
-          try {
-            const clone = c.clone();
-            clone.plugin = () => item.plugin;
+          const clone = c.clone();
+          clone.plugin = () => item.plugin;
 
+          try {
             /** @type {import('./reason.js').Reason} */
             const checked = await item.plugin.check(clone);
             if (!checked?.success) {
@@ -271,7 +271,11 @@ export class Handler {
         },
       );
 
-      if (c.pattern?.length > 0 && (c.chatData?.allowCommand || c.fromMe) && this.isSafeForCMD(c)) {
+      if (
+        c.pattern?.length > 0 &&
+        (c.chatData?.allowCommand || c.fromMe) &&
+        this.isSafeForCMD(c)
+      ) {
         const pattern = c.pattern.toLowerCase();
         const cmd = this.plugin_commands.get(pattern);
         if (cmd) {
