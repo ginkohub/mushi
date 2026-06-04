@@ -208,7 +208,7 @@ export class Ctx {
       this.type = ext.type;
 
       /** @type {string[]} */
-      this.types = Object.keys(this.event?.message) || [];
+      this.types = Object.keys(this.event?.message);
 
       /** @type {string} */
       this.text = ext.text;
