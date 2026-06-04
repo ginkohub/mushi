@@ -1057,8 +1057,9 @@ export class Client extends EventEmitter {
     try {
       if (!content) throw new Error("content not provided");
       if (!options) options = {};
-
       if (!options.messageId) options.messageId = genHEX(32);
+
+      const ephemeral = this.getTimer(jid);
 
       /** @type {import('baileys').proto.IMessage} */
       let finalContent = { ...content };
