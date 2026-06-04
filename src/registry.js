@@ -180,7 +180,7 @@ export class PluginRegistry extends EventEmitter {
     if (!location.endsWith(".js")) return;
 
     try {
-      const filename = location.split("/").pop();
+      const filename = path.basename(location);
 
       if (
         filename &&
@@ -191,16 +191,16 @@ export class PluginRegistry extends EventEmitter {
         return;
       }
 
-      const original = location;
-      location = pathToFileURL(location).href;
+      const osPath = location;
+      const fileUrl = pathToFileURL(location).href;
 
       const start = Date.now();
-      const imported = await import(`${location}?t=${Date.now()}`);
+      const imported = await import(`${fileUrl}?t=${Date.now()}`);
       const estimate = Date.now() - start;
 
       if (!imported) return;
 
-      this.removeByLocation(original);
+      this.removeByLocation(osPath);
 
       /** @type {Record<string, any>} */
       const items = {};
@@ -212,7 +212,7 @@ export class PluginRegistry extends EventEmitter {
               /** @type {PluginItem} */
               const item = {
                 name: plugin.name,
-                location,
+                location: osPath,
                 estimate,
                 plugin: new Plugin(plugin),
               };
@@ -229,7 +229,7 @@ export class PluginRegistry extends EventEmitter {
             /** @type {PluginItem} */
             const item = {
               estimate,
-              location,
+              location: osPath,
               name: imported.default.name,
               plugin: new Plugin(imported.default),
             };
@@ -243,7 +243,7 @@ export class PluginRegistry extends EventEmitter {
         }
       }
 
-      this.emit(RegistryEvents.PLUGIN_LOAD, { location, estimate, items });
+      this.emit(RegistryEvents.PLUGIN_LOAD, { location: osPath, estimate, items });
     } catch (e) {
       this.log.error("registry-load", location, e);
       this.emit(RegistryEvents.PLUGIN_ERROR, { location, error: e });
