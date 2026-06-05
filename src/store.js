@@ -300,9 +300,9 @@ export class StoreSQLite {
 
   async _init() {
     if (!connectionList[this.saveName])
-      connectionList[this.saveName] = await createSQLite(this.saveName);
+      connectionList[this.saveName] = createSQLite(this.saveName);
 
-    this.db = connectionList[this.saveName];
+    this.db = await connectionList[this.saveName];
     this.db.exec("PRAGMA journal_mode=WAL");
     this.db.exec("PRAGMA foreign_keys=ON");
     this.load();
