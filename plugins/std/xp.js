@@ -89,7 +89,7 @@ export default [
         .map((u, i) =>
           t(
             "lb_format",
-            { rank: i + 1, name: u.name, xp: u.xp, tail: i === 0 ? "👑" : "" },
+            { rank: i + 1, name: u.name, xp: u.xp, tail: i === 0 ? " 👑" : "" },
             c,
           ),
         )
