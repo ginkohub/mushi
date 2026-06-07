@@ -229,7 +229,6 @@ export class UserManager {
   }
 
   /**
-   * Check if user has required roles
    * @param {string} jid
    * @param {(number|string)[]} requiredRoles
    * @returns {boolean}
@@ -239,5 +238,15 @@ export class UserManager {
     const user = this.getUser(jid);
     if (!user?.roles?.length) return false;
     return rolesEnough(user.roles, requiredRoles);
+  }
+
+  /**
+   * Delete user data
+   * @param {string} jid
+   * @returns {void}
+   */
+  deleteUser(jid) {
+    const id = jidNormalizedUser(jid);
+    this.storage.delete(id);
   }
 }
