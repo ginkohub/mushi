@@ -17,7 +17,7 @@ const mainBot = manager.addBot({
   name: "example",
   method: process.env.METHOD || Method.QRCode,
   phone: process.env.PHONE || "",
-  socketCofig: {
+  socketConfig: {
     browser: process.env.BROWSER || "Safari",
     logger: pino({ level: "fatal" }),
     syncFullHistory: false,
