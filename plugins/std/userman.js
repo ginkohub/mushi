@@ -36,6 +36,7 @@ const t = translate({
     current_user: "Your personal {key}: *{val}*",
     user_success: "Your personal {key} set to: *{val}*",
     user_reset: "Your personal {key} preference cleared.",
+    deleted_user: "Deleted data for {count} user(s).",
     invalid_tz:
       "❌ Invalid timezone! Example: `Asia/Jakarta`, `Europe/London`, `UTC`.",
   },
@@ -62,6 +63,7 @@ const t = translate({
     current_user: "{key} personal kamu: *{val}*",
     user_success: "{key} personal kamu diatur ke: *{val}*",
     user_reset: "Preferensi {key} personal kamu telah dihapus.",
+    deleted_user: "Menghapus data untuk {count} user.",
     invalid_tz:
       "❌ Timezone tidak valid! Contoh: `Asia/Jakarta`, `Europe/London`, `UTC`.",
   },
@@ -85,6 +87,7 @@ export default [
       "std-userman-role-add",
       "std-userman-role-remove",
       "std-userman-role-set",
+      "std-userman-del",
     ],
     cat: "user",
     tags: ["user", "role"],
@@ -150,6 +153,35 @@ export default [
       }
 
       await c.reply({ text: texts.join("\n").trim() }, { quoted: c.event });
+    },
+  },
+  {
+    name: "std-userman-del",
+    cmd: ["user.del", "user.delete"],
+    cat: "user",
+    tags: ["admin", "user"],
+    desc: "Delete user data",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.ADMIN],
+
+    exec: async (c) => {
+      const jids = c.parseJIDs();
+      if (jids.length === 0)
+        return await c.reply({
+          text: t("no_user", {}, c),
+        });
+
+      for (let i = 0; i < jids.length; i++) {
+        if (jids[i].includes("@lid")) jids[i] = await c.LIDToPN(jids[i]);
+      }
+
+      for (const jid of jids) {
+        c.client().userManager.deleteUser(jid);
+      }
+
+      await c.reply({
+        text: t("deleted_user", { count: jids.length }, c),
+      });
     },
   },
   {
