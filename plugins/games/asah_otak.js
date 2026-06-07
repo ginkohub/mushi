@@ -27,7 +27,7 @@ const t = translate({
     no_data: "❌ Riddle data not found! Use `{prefix}ao.update` (Admin).",
     question_header: "🧠 *ASAH OTAK*",
     question_time: "⏱️ *Time:* 45 seconds",
-    question_reward: "🎁 *Reward:* 15-35 XP",
+    question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was: *{answer}*",
@@ -50,7 +50,7 @@ const t = translate({
       "❌ Data soal tidak ditemukan! Gunakan `{prefix}ao.update` (Admin).",
     question_header: "🧠 *ASAH OTAK*",
     question_time: "⏱️ *Waktu:* 45 detik",
-    question_reward: "🎁 *Hadiah:* 15-35 XP",
+    question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah: *{answer}*",
@@ -134,7 +134,8 @@ export default [
 
       const q = questions[Math.floor(Math.random() * questions.length)];
       const answer = q.jawaban.toLowerCase().trim();
-      const xpReward = Math.floor(Math.random() * 21) + 15; // 15-35 XP
+      /* 10 XP per letter */
+      const xpReward = answer.length * 10;
 
       const texts = [
         t("question_header", {}, c),
@@ -142,7 +143,7 @@ export default [
         `"${q.pertanyaan}"`,
         "",
         t("question_time", {}, c),
-        t("question_reward", {}, c),
+        t("question_reward", { xp: xpReward }, c),
         "",
         t("question_note", {}, c),
         t("question_reply", {}, c),

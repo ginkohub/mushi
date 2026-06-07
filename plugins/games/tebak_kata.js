@@ -20,9 +20,9 @@ const t = translate({
     help_desc: "Guess the word based on the clues provided!",
     help_usage: "Use `.tk [level]` to start.",
     help_levels: "*Levels & Initials:*",
-    help_level_e: "🟢 `e` / `easy` : 1-6 characters (5-15 XP)",
-    help_level_m: "🟡 `m` / `medium` : 7-9 characters (15-30 XP)",
-    help_level_h: "🔴 `h` / `hard` : 10+ characters (30-60 XP)",
+    help_level_e: "🟢 `e` / `easy` : 1-6 characters",
+    help_level_m: "🟡 `m` / `medium` : 7-9 characters",
+    help_level_h: "🔴 `h` / `hard` : 10+ characters",
     help_example: "💡 *Example:* `.tk m` or `.tk h`",
     help_important: "⚠️ *Important:*",
     help_reply: "- Must *Reply/Quote* the question to answer.",
@@ -34,7 +34,7 @@ const t = translate({
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Clues: *{clues}*",
     question_time: "⏱️ *Time:* 45 seconds",
-    question_reward: "🎁 *Reward:* {min}-{max} XP",
+    question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was *{answer}*",
@@ -51,9 +51,9 @@ const t = translate({
     help_desc: "Tebaklah kata berdasarkan petunjuk yang diberikan!",
     help_usage: "Gunakan perintah `.tk [level]` untuk memulai.",
     help_levels: "*Daftar Level & Inisial:*",
-    help_level_e: "🟢 `e` / `easy` : 1-6 huruf (5-15 XP)",
-    help_level_m: "🟡 `m` / `medium` : 7-9 huruf (15-30 XP)",
-    help_level_h: "🔴 `h` / `hard` : 10+ huruf (30-60 XP)",
+    help_level_e: "🟢 `e` / `easy` : 1-6 huruf",
+    help_level_m: "🟡 `m` / `medium` : 7-9 huruf",
+    help_level_h: "🔴 `h` / `hard` : 10+ huruf",
     help_example: "💡 *Contoh:* `.tk m` atau `.tk h`",
     help_important: "⚠️ *Penting:*",
     help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
@@ -65,7 +65,7 @@ const t = translate({
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Petunjuk: *{clues}*",
     question_time: "⏱️ *Waktu:* 45 detik",
-    question_reward: "🎁 *Hadiah:* {min}-{max} XP",
+    question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah *{answer}*",
@@ -90,9 +90,9 @@ let wordList = {
 };
 
 const LEVELS = {
-  easy: { xp: [5, 15] },
-  medium: { xp: [15, 30] },
-  hard: { xp: [30, 60] },
+  easy: {},
+  medium: {},
+  hard: {},
 };
 
 const LEVEL_ALIAS = {
@@ -182,16 +182,15 @@ export default [
       const answer = item.jawaban.toUpperCase();
       const clues = item.pertanyaan;
 
-      const xpReward =
-        Math.floor(Math.random() * (levelInfo.xp[1] - levelInfo.xp[0] + 1)) +
-        levelInfo.xp[0];
+      /* 10 XP per letter */
+      const xpReward = answer.length * 10;
 
       const texts = [
         t("question_header", { level: selectedLevel.toUpperCase() }, c),
         t("question_query", { clues }, c),
         "",
         t("question_time", {}, c),
-        t("question_reward", { min: levelInfo.xp[0], max: levelInfo.xp[1] }, c),
+        t("question_reward", { xp: xpReward }, c),
         "",
         t("question_note", {}, c),
         t("question_reply", {}, c),

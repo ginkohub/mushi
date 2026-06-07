@@ -27,7 +27,7 @@ const t = translate({
     no_data: "❌ Word data not found! Use `{prefix}sk.update` (Admin).",
     question_header: "🧩 *SUSUN KATA*",
     question_time: "⏱️ *Time:* 45 seconds",
-    question_reward: "🎁 *Reward:* 10-30 XP",
+    question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was: *{answer}*",
@@ -50,7 +50,7 @@ const t = translate({
       "❌ Data soal tidak ditemukan! Gunakan `{prefix}sk.update` (Admin).",
     question_header: "🧩 *SUSUN KATA*",
     question_time: "⏱️ *Waktu:* 45 detik",
-    question_reward: "🎁 *Hadiah:* 10-30 XP",
+    question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah: *{answer}*",
@@ -134,8 +134,8 @@ export default [
 
       const q = wordList[Math.floor(Math.random() * wordList.length)];
       const answer = q.jawaban.toUpperCase().trim();
-      /* random number of xp reward */
-      const xpReward = Math.floor(Math.random() * 21) + 10;
+      /* 10 XP per letter */
+      const xpReward = answer.length * 10;
 
       const texts = [
         t("question_header", {}, c),
@@ -143,7 +143,7 @@ export default [
         `*${q.pertanyaan}*`,
         "",
         t("question_time", {}, c),
-        t("question_reward", {}, c),
+        t("question_reward", { xp: xpReward }, c),
         "",
         t("question_note", {}, c),
         t("question_reply", {}, c),

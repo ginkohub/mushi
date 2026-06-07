@@ -25,7 +25,7 @@ const t = translate({
     question_header: "🧮 [ Level: *{level}* ]",
     question_query: "What is the result of *{a} {op} {b}*?",
     question_time: "⏱️ *Time:* 30 seconds",
-    question_reward: "🎁 *Reward:* {min}-{max} XP",
+    question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\n\nThe answer was *{answer}*",
@@ -44,7 +44,7 @@ const t = translate({
     question_header: "🧮 [ Level: *{level}* ]",
     question_query: "Berapakah hasil dari *{a} {op} {b}*?",
     question_time: "⏱️ *Waktu:* 30 detik",
-    question_reward: "🎁 *Hadiah:* {min}-{max} XP",
+    question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\n\nJawabannya adalah *{answer}*",
@@ -57,10 +57,10 @@ const t = translate({
 const sessions = new Map();
 
 const LEVELS = {
-  easy: { range: 50, mult: 10, xp: [5, 15] },
-  medium: { range: 200, mult: 20, xp: [15, 30] },
-  hard: { range: 1000, mult: 50, xp: [30, 60] },
-  impossible: { range: 5000, mult: 100, xp: [100, 200] },
+  easy: { range: 50, mult: 10, xp: 20 },
+  medium: { range: 200, mult: 20, xp: 40 },
+  hard: { range: 1000, mult: 50, xp: 60 },
+  impossible: { range: 5000, mult: 100, xp: 150 },
 };
 
 const LEVEL_ALIAS = {
@@ -92,10 +92,10 @@ export default [
           t("help_usage", {}, c),
           "",
           t("help_levels", {}, c),
-          "🟢 `e` / `easy` : 5-15 XP",
-          "🟡 `m` / `medium` : 15-30 XP",
-          "🔴 `h` / `hard` : 30-60 XP",
-          "💀 `i` / `impossible` : 100-200 XP",
+          "🟢 `e` / `easy` : 20 XP",
+          "🟡 `m` / `medium` : 40 XP",
+          "🔴 `h` / `hard` : 60 XP",
+          "💀 `i` / `impossible` : 150 XP",
           "",
           t("help_example", {}, c),
           "",
@@ -133,16 +133,14 @@ export default [
         answer = op === "+" ? a + b : a - b;
       }
 
-      const xpReward =
-        Math.floor(Math.random() * (level.xp[1] - level.xp[0] + 1)) +
-        level.xp[0];
+      const xpReward = level.xp;
 
       const texts = [
         t("question_header", { level: selectedLevel.toUpperCase() }, c),
         t("question_query", { a, op, b }, c),
         "",
         t("question_time", {}, c),
-        t("question_reward", { min: level.xp[0], max: level.xp[1] }, c),
+        t("question_reward", { xp: xpReward }, c),
         "",
         t("question_note", {}, c),
         t("question_reply", {}, c),
