@@ -20,7 +20,7 @@ const t = translate({
     xp_level: "Level: *{level}*",
     lb_title: "🏆 *XP Leaderboard*",
     lb_empty: "No one has XP yet!",
-    lb_format: "{rank}. *{name}* - {xp} XP",
+    lb_format: "{rank}. *{name}* - {xp} XP{tail}",
   },
   id: {
     xp_title: "🌟 *XP Pengguna*",
@@ -29,7 +29,7 @@ const t = translate({
     xp_level: "Level: *{level}*",
     lb_title: "🏆 *Papan Peringkat XP*",
     lb_empty: "Belum ada yang punya XP!",
-    lb_format: "{rank}. *{name}* - {xp} XP",
+    lb_format: "{rank}. *{name}* - {xp} XP{tail}",
   },
 });
 
@@ -68,7 +68,6 @@ export default [
     exec: async (c) => {
       const userManager = c.client().userManager;
       const keys = Array.from(userManager.storage.keys());
-      
       const users = keys
         .map((key) => {
           const u = userManager.getUser(key);
@@ -88,7 +87,11 @@ export default [
 
       const list = users
         .map((u, i) =>
-          t("lb_format", { rank: i + 1, name: u.name, xp: u.xp }, c),
+          t(
+            "lb_format",
+            { rank: i + 1, name: u.name, xp: u.xp, tail: i === 0 ? "👑" : "" },
+            c,
+          ),
         )
         .join("\n");
 
