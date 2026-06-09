@@ -8,6 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+/**
+ * Credits to Ookla Speedtest (speedtest.net) for speed test infrastructure.
+ */
+
 import { SpeedTestService } from "@ginkohub/speedtest-js";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { Role } from "../../src/roles.js";

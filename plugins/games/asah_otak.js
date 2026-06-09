@@ -8,6 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+/**
+ * Credits to MichaelAgam23 for game data (https://github.com/MichaelAgam23/metadata).
+ */
+
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { MESSAGES_UPSERT } from "../../src/const.js";
 import { getFile } from "../../src/data.js";

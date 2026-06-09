@@ -8,6 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+/**
+ * Credits to Google Gemini AI (https://ai.google.dev) for generative AI capabilities.
+ */
+
 import { GoogleGenAI } from "@google/genai";
 
 /**

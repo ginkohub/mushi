@@ -8,6 +8,10 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+/**
+ * Credits to yt-dlp (https://github.com/yt-dlp/yt-dlp) for YouTube audio downloading.
+ */
+
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YtDlpWrap from "yt-dlp-wrap";
