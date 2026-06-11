@@ -205,14 +205,14 @@ export function shouldUsePolling(path) {
   /* Detect docker */
   try {
     if (existsSync("/.dockerenv")) return true;
-  } catch {}
+  } catch { }
 
   /* Detect WSL */
   if (PLATFORM === Platforms.LINUX) {
     try {
       const release = os.release().toLowerCase();
       if (release.includes("microsoft")) return true;
-    } catch {}
+    } catch { }
   }
 
   /* Detect Network shared drive Linux */
@@ -229,7 +229,7 @@ export function shouldUsePolling(path) {
         out.includes("nfs")
       )
         return true;
-    } catch {}
+    } catch { }
   }
   return false;
 }
@@ -292,9 +292,9 @@ export async function watchDir(
   dir,
   {
     recursive = true,
-    onChange = () => {},
-    onAdd = () => {},
-    onRemove = () => {},
+    onChange = () => { },
+    onAdd = () => { },
+    onRemove = () => { },
   },
 ) {
   if (watchers.has(dir)) {
@@ -361,4 +361,12 @@ export async function closeWatchers(...dirs) {
       logger.error(e);
     }
   }
+}
+
+/**
+ * @param {string} s
+ * @returns {string[]}
+ */
+export function parseURLs(s) {
+  return s?.match(/https?:\/\/[^\s.,;:!?)'";]+/g) || [];
 }
