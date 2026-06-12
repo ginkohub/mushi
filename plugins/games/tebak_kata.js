@@ -176,15 +176,15 @@ export default [
       const answer = item.jawaban.toUpperCase();
       const clues = item.pertanyaan;
 
-      /* 10 XP per letter */
-      const xpReward = answer.length * 10;
+      const xpMultiplier = selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;
+      const xpReward = answer.length * xpMultiplier;
 
       const texts = [
         t("question_header", { level: selectedLevel.toUpperCase() }, c),
         t("question_query", { clues }, c),
         "",
         t("question_time", {}, c),
-        t("question_reward", { xp: xpReward }, c),
+        `🎁 *Reward:* ${xpMultiplier}xp++`,
         "",
         t("question_note", {}, c),
         t("question_reply", {}, c),
