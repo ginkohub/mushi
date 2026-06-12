@@ -368,5 +368,8 @@ export async function closeWatchers(...dirs) {
  * @returns {string[]}
  */
 export function parseURLs(s) {
-  return s?.match(/https?:\/\/[^\s.,;:!?)'";]+/g) || [];
+  if (!s) return [];
+  const raw = s.match(/https?:\/\/[^\s<>"']+/g);
+  if (!raw) return [];
+  return raw.map((u) => u.replace(/[.,;:!?)]+$/, ""));
 }
