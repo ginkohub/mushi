@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { levelToName, Role } from "../../src/roles.js";
-import { formatElapse } from "../../src/tools.js";
-import { translate } from "../../src/translate.js";
+import { formatElapse, levelToName, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -80,7 +78,7 @@ export default {
   exec: async (c) => {
     const prefix = c.prefix;
     const isDetail = c.pattern.endsWith("?");
-    const texts = [];
+    const texts = ["https://github.com/ginkohub/mushi", ""];
     const withDesc = c.argv?.desc || c.argv?.d;
     const userKeys = c.args?.toLowerCase().split(/\s+/).filter(Boolean);
 
@@ -207,18 +205,6 @@ export default {
       await c.reply(
         {
           text: texts.join("\n"),
-          contextInfo: {
-            externalAdReply: {
-              title: t("ad_title", {}, c),
-              body: t("ad_body", {}, c),
-              renderLargerThumbnail: true,
-              mediaType: 1,
-              thumbnailUrl:
-                "https://opengraph.githubassets.com/new/ginkohub/mushi",
-              sourceUrl: "https://github.com/ginkohub/mushi",
-              mediaUrl: "https://github.com/ginkohub/mushi",
-            },
-          },
         },
         { quoted: c.event },
       );
