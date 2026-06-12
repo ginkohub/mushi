@@ -33,6 +33,7 @@ const t = translate({
     timeout: "⌛ *Game Timeout!* The game has ended due to inactivity.",
     turn_msg: "👉 *Turn:* {turn}",
     bot_thinking: "🤖 *Bot is thinking...*",
+    stopped: "🛑 *Game stopped*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
   },
   id: {
     help_title: "❌ *TIC-TAC-TOE (TTT)* ⭕",
@@ -59,10 +60,12 @@ const t = translate({
     timeout: "⌛ *Waktu Habis!* Permainan berakhir karena tidak ada aktivitas.",
     turn_msg: "👉 *Giliran:* {turn}",
     bot_thinking: "🤖 *Bot sedang berpikir...*",
+    stopped: "🛑 *Game dihentikan*",
   },
 });
 
 const sessions = new Map();
+const STOP_WORDS = new Set(["stop", "nyerah"]);
 
 const WIN_PATTERNS = [
   [0, 1, 2],
@@ -251,6 +254,14 @@ export default [
 
       if (!session.boardIds.has(c.stanzaId)) return;
       const senderJid = c.senderJid;
+
+      const text = c.text?.toLowerCase().trim();
+      if (STOP_WORDS.has(text)) {
+        clearTimeout(session.timeout);
+        sessions.delete(c.chat);
+        return await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+      }
+
       const move = parseInt(c.text?.trim(), 10) - 1;
 
       if (senderJid !== session.turn) {

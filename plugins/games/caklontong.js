@@ -36,7 +36,8 @@ const t = translate({
     sync_stats: "Successfully loaded {count} riddles.",
     sync_failed: "❌ *Sync Failed:* {error}",
     correct:
-      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*\n\n_{desc}_",
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*\n\n_{desc}_\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
+    stopped: "🛑 *Game stopped*",
   },
   id: {
     help_title: "🍟 *GAME CAK LONTONG*",
@@ -59,15 +60,19 @@ const t = translate({
     sync_stats: "Berhasil memuat {count} soal.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
     correct:
-      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*\n\n_{desc}_",
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*\n\n_{desc}_\n\nBalas _lagi/lanjut/again/next_ untuk main lagi, atau _stop/nyerah_ untuk berhenti",
+    stopped: "🛑 *Permainan dihentikan*",
   },
 });
 
 const JSON_URL =
   "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/caklontong.json";
 
-/** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, desc: string }>} */
+/** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, desc: string, done: boolean, resultId: string }>} */
 const sessions = new Map();
+
+const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
+const STOP_WORDS = new Set(["stop", "nyerah"]);
 
 /** @type {{soal: string, jawaban: string, deskripsi: string}[]} */
 let questions = [];
@@ -88,6 +93,52 @@ function loadQuestions() {
 
 // Initial load
 loadQuestions();
+
+function startGame(c) {
+  if (questions.length === 0) {
+    c.reply({ text: t("no_data", { prefix: c.prefix }, c) }, { quoted: c.event });
+    return;
+  }
+
+  const q = questions[Math.floor(Math.random() * questions.length)];
+  const answer = q.jawaban.toLowerCase().trim();
+  const xpReward = answer.length * 10;
+
+  const texts = [
+    t("question_header", {}, c),
+    "",
+    `"${q.soal}"`,
+    "",
+    t("question_time", {}, c),
+    t("question_reward", { xp: xpReward }, c),
+    "",
+    t("question_note", {}, c),
+    t("question_reply", {}, c),
+  ];
+
+  c.reply({ text: texts.join("\n") }, { quoted: c.event }).then((resp) => {
+    if (!resp) return;
+    const timeout = setTimeout(() => {
+      const s = sessions.get(c.chat);
+      if (!s || s.done) return;
+      s.done = true;
+      c.reply(
+        { text: t("timeout", { answer: q.jawaban, desc: q.deskripsi }, c) },
+        { quoted: c.event },
+      ).then((r) => { if (r) s.resultId = r.key.id; });
+    }, 45000);
+
+    sessions.set(c.chat, {
+      answer,
+      timeout,
+      xp: xpReward,
+      questionId: resp.key.id,
+      desc: q.deskripsi,
+      done: false,
+      resultId: "",
+    });
+  });
+}
 
 /** @type {import('#mushi').Plugin[]} */
 export default [
@@ -120,61 +171,15 @@ export default [
         );
       }
 
-      if (sessions.has(c.chat)) {
+      const existing = sessions.get(c.chat);
+      if (existing && !existing.done) {
         return await c.reply(
           { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
 
-      if (questions.length === 0) {
-        return await c.reply(
-          { text: t("no_data", { prefix: c.prefix }, c) },
-          { quoted: c.event },
-        );
-      }
-
-      const q = questions[Math.floor(Math.random() * questions.length)];
-      const answer = q.jawaban.toLowerCase().trim();
-      /* 10 XP per letter */
-      const xpReward = answer.length * 10;
-
-      const texts = [
-        t("question_header", {}, c),
-        "",
-        `"${q.soal}"`,
-        "",
-        t("question_time", {}, c),
-        t("question_reward", { xp: xpReward }, c),
-        "",
-        t("question_note", {}, c),
-        t("question_reply", {}, c),
-      ];
-
-      const resp = await c.reply(
-        { text: texts.join("\n") },
-        { quoted: c.event },
-      );
-
-      const timeout = setTimeout(() => {
-        if (sessions.has(c.chat)) {
-          sessions.delete(c.chat);
-          c.reply(
-            {
-              text: t("timeout", { answer: q.jawaban, desc: q.deskripsi }, c),
-            },
-            { quoted: c.event },
-          );
-        }
-      }, 45000);
-
-      sessions.set(c.chat, {
-        answer,
-        timeout,
-        xp: xpReward,
-        questionId: resp.key.id,
-        desc: q.deskripsi,
-      });
+      startGame(c);
     },
   },
   {
@@ -221,42 +226,60 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!sessions.has(c.chat) || c.isCMD) return;
-
       const session = sessions.get(c.chat);
 
-      if (c.stanzaId !== session.questionId) return;
+      if (!session.done) {
+        if (c.stanzaId !== session.questionId) return;
 
-      const userAnswer = c.text?.toLowerCase().trim();
+        const userAnswer = c.text?.toLowerCase().trim();
 
-      if (userAnswer === session.answer) {
-        clearTimeout(session.timeout);
-        sessions.delete(c.chat);
+        if (userAnswer === session.answer) {
+          clearTimeout(session.timeout);
+          session.done = true;
 
-        const xp = session.xp;
-        const user = c.user;
-        if (user) {
-          user.xp += xp;
-          c.client().userManager.updateUser(c.senderJid, user);
+          const xp = session.xp;
+          const user = c.user;
+          if (user) {
+            user.xp += xp;
+            c.client().userManager.updateUser(c.senderJid, user);
+          }
+
+          const result = await c.reply(
+            {
+              text: t(
+                "correct",
+                {
+                  user: c.senderJid.split("@")[0],
+                  answer: session.answer.toUpperCase(),
+                  xp,
+                  desc: session.desc,
+                },
+                c,
+              ),
+              mentions: [c.senderJid],
+            },
+            { quoted: c.event },
+          );
+          if (result) session.resultId = result.key.id;
+        } else if (STOP_WORDS.has(userAnswer)) {
+          clearTimeout(session.timeout);
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        } else {
+          return await c.react("❌");
         }
-
-        return await c.reply(
-          {
-            text: t(
-              "correct",
-              {
-                user: c.senderJid.split("@")[0],
-                answer: session.answer.toUpperCase(),
-                xp,
-                desc: session.desc,
-              },
-              c,
-            ),
-            mentions: [c.senderJid],
-          },
-          { quoted: c.event },
-        );
       } else {
-        return await c.react("❌");
+        const text = c.text?.toLowerCase().trim();
+        if (c.stanzaId !== session.resultId) return;
+
+        if (REPLAY_WORDS.has(text)) {
+          await c.react("🔄");
+          sessions.delete(c.chat);
+          startGame(c);
+        } else if (STOP_WORDS.has(text)) {
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        }
       }
     },
   },

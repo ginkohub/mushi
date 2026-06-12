@@ -35,7 +35,6 @@ const t = translate({
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Clues: *{clues}*",
     question_time: "⏱️ *Time:* 45 seconds",
-    question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was *{answer}*",
@@ -45,7 +44,8 @@ const t = translate({
     sync_saved: "Data saved and reloaded!",
     sync_failed: "❌ *Sync Failed:* {error}",
     correct:
-      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
+    stopped: "🛑 *Game stopped*",
   },
   id: {
     help_title: "🧩 *TEBAK KATA*",
@@ -66,7 +66,6 @@ const t = translate({
     question_header: "🧩 [ Level: *{level}* ]",
     question_query: "Petunjuk: *{clues}*",
     question_time: "⏱️ *Waktu:* 45 detik",
-    question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah *{answer}*",
@@ -76,12 +75,16 @@ const t = translate({
     sync_saved: "Data disimpan dan dimuat ulang!",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
     correct:
-      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*\n\nBalas _lagi/lanjut/again/next_ untuk main lagi, atau _stop/nyerah_ untuk berhenti",
+    stopped: "🛑 *Permainan dihentikan*",
   },
 });
 
-/** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
+/** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, level: string, done: boolean, resultId: string }>} */
 const sessions = new Map();
+
+const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
+const STOP_WORDS = new Set(["stop", "nyerah"]);
 
 /** @type {Record<string, {pertanyaan: string, jawaban: string}[]>} */
 let wordList = {
@@ -114,6 +117,55 @@ function loadWords() {
 }
 
 loadWords();
+
+function startGame(c, level) {
+  const selectedLevel = LEVEL_ALIAS[level] || level || "easy";
+  const words = wordList[selectedLevel] || wordList.easy;
+
+  if (!words || words.length === 0) {
+    c.reply({ text: t("no_data", { prefix: c.prefix }, c) }, { quoted: c.event });
+    return;
+  }
+
+  const item = words[Math.floor(Math.random() * words.length)];
+  const answer = item.jawaban.toUpperCase();
+  const clues = item.pertanyaan;
+
+  const xpMultiplier = selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;
+  const xpReward = answer.length * xpMultiplier;
+
+  const texts = [
+    t("question_header", { level: selectedLevel.toUpperCase() }, c),
+    t("question_query", { clues }, c),
+    "",
+    t("question_time", {}, c),
+    `🎁 *Reward:* ${xpMultiplier}xp++`,
+    "",
+    t("question_note", {}, c),
+    t("question_reply", {}, c),
+  ];
+
+  c.reply({ text: texts.join("\n") }, { quoted: c.event }).then((resp) => {
+    if (!resp) return;
+    const timeout = setTimeout(() => {
+      const s = sessions.get(c.chat);
+      if (!s || s.done) return;
+      s.done = true;
+      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event })
+        .then((r) => { if (r) s.resultId = r.key.id; });
+    }, 45000);
+
+    sessions.set(c.chat, {
+      answer: answer.toLowerCase().trim(),
+      timeout,
+      xp: xpReward,
+      questionId: resp.key.id,
+      level: selectedLevel,
+      done: false,
+      resultId: "",
+    });
+  });
+}
 
 /** @type {import('#mushi').Plugin[]} */
 export default [
@@ -155,64 +207,15 @@ export default [
         );
       }
 
-      if (sessions.has(c.chat)) {
+      const existing = sessions.get(c.chat);
+      if (existing && !existing.done) {
         return await c.reply(
           { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
 
-      const selectedLevel = LEVEL_ALIAS[levelArg] || levelArg || "easy";
-      const words = wordList[selectedLevel] || wordList.easy;
-
-      if (!words || words.length === 0) {
-        return await c.reply(
-          { text: t("no_data", { prefix: c.prefix }, c) },
-          { quoted: c.event },
-        );
-      }
-
-      const item = words[Math.floor(Math.random() * words.length)];
-      const answer = item.jawaban.toUpperCase();
-      const clues = item.pertanyaan;
-
-      const xpMultiplier = selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;
-      const xpReward = answer.length * xpMultiplier;
-
-      const texts = [
-        t("question_header", { level: selectedLevel.toUpperCase() }, c),
-        t("question_query", { clues }, c),
-        "",
-        t("question_time", {}, c),
-        `🎁 *Reward:* ${xpMultiplier}xp++`,
-        "",
-        t("question_note", {}, c),
-        t("question_reply", {}, c),
-      ];
-
-      const resp = await c.reply(
-        { text: texts.join("\n") },
-        { quoted: c.event },
-      );
-
-      const timeout = setTimeout(() => {
-        if (sessions.has(c.chat)) {
-          sessions.delete(c.chat);
-          c.reply(
-            {
-              text: t("timeout", { answer }, c),
-            },
-            { quoted: c.event },
-          );
-        }
-      }, 45000);
-
-      sessions.set(c.chat, {
-        answer: answer.toLowerCase().trim(),
-        timeout,
-        xp: xpReward,
-        questionId: resp.key.id,
-      });
+      startGame(c, levelArg);
     },
   },
   {
@@ -278,41 +281,58 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!sessions.has(c.chat) || c.isCMD) return;
-
       const session = sessions.get(c.chat);
 
-      if (c.stanzaId !== session.questionId) return;
+      if (!session.done) {
+        if (c.stanzaId !== session.questionId) return;
+        const userAnswer = c.text?.toLowerCase().trim();
 
-      const userAnswer = c.text?.toLowerCase().trim();
+        if (userAnswer === session.answer) {
+          clearTimeout(session.timeout);
+          session.done = true;
 
-      if (userAnswer === session.answer) {
-        clearTimeout(session.timeout);
-        sessions.delete(c.chat);
+          const xp = session.xp;
+          const user = c.user;
+          if (user) {
+            user.xp += xp;
+            c.client().userManager.updateUser(c.senderJid, user);
+          }
 
-        const xp = session.xp;
-        const user = c.user;
-        if (user) {
-          user.xp += xp;
-          c.client().userManager.updateUser(c.senderJid, user);
+          const result = await c.reply(
+            {
+              text: t(
+                "correct",
+                {
+                  user: c.senderJid.split("@")[0],
+                  answer: session.answer.toUpperCase(),
+                  xp,
+                },
+                c,
+              ),
+              mentions: [c.senderJid],
+            },
+            { quoted: c.event },
+          );
+          if (result) session.resultId = result.key.id;
+        } else if (STOP_WORDS.has(userAnswer)) {
+          clearTimeout(session.timeout);
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        } else {
+          return await c.react("❌");
         }
-
-        return await c.reply(
-          {
-            text: t(
-              "correct",
-              {
-                user: c.senderJid.split("@")[0],
-                answer: session.answer.toUpperCase(),
-                xp,
-              },
-              c,
-            ),
-            mentions: [c.senderJid],
-          },
-          { quoted: c.event },
-        );
       } else {
-        return await c.react("❌");
+        const text = c.text?.toLowerCase().trim();
+        if (c.stanzaId !== session.resultId) return;
+
+        if (REPLAY_WORDS.has(text)) {
+          await c.react("🔄");
+          sessions.delete(c.chat);
+          startGame(c, session.level);
+        } else if (STOP_WORDS.has(text)) {
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        }
       }
     },
   },

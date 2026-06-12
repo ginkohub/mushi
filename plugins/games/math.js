@@ -28,7 +28,8 @@ const t = translate({
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\n\nThe answer was *{answer}*",
     correct:
-      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*",
+      "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
+    stopped: "🛑 *Game stopped*",
   },
   id: {
     help_title: "🧮 *MATH GAME - CARA BERMAIN*",
@@ -47,12 +48,16 @@ const t = translate({
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\n\nJawabannya adalah *{answer}*",
     correct:
-      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*",
+      "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*\n\nBalas _lagi/lanjut/again/next_ untuk main lagi, atau _stop/nyerah_ untuk berhenti",
+    stopped: "🛑 *Permainan dihentikan*",
   },
 });
 
-/** @type {Map<string, { answer: number, timeout: NodeJS.Timeout, xp: number, questionId: string }>} */
+/** @type {Map<string, { answer: number, timeout: NodeJS.Timeout, xp: number, questionId: string, level: string, done: boolean, resultId: string }>} */
 const sessions = new Map();
+
+const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
+const STOP_WORDS = new Set(["stop", "nyerah"]);
 
 const LEVELS = {
   easy: { range: 50, mult: 10, xp: 20 },
@@ -67,6 +72,59 @@ const LEVEL_ALIAS = {
   h: "hard",
   i: "impossible",
 };
+
+function startGame(c, levelName) {
+  const selectedLevel = LEVEL_ALIAS[levelName] || levelName || "easy";
+  const level = LEVELS[selectedLevel] || LEVELS.easy;
+
+  const operators = ["+", "-", "*"];
+  const op = operators[Math.floor(Math.random() * operators.length)];
+  let a, b, answer;
+
+  if (op === "*") {
+    a = Math.floor(Math.random() * level.mult) + 1;
+    b = Math.floor(Math.random() * level.mult) + 1;
+    answer = a * b;
+  } else {
+    a = Math.floor(Math.random() * level.range) + 1;
+    b = Math.floor(Math.random() * level.range) + 1;
+    answer = op === "+" ? a + b : a - b;
+  }
+
+  const xpReward = level.xp;
+
+  const texts = [
+    t("question_header", { level: selectedLevel.toUpperCase() }, c),
+    t("question_query", { a, op, b }, c),
+    "",
+    t("question_time", {}, c),
+    t("question_reward", { xp: xpReward }, c),
+    "",
+    t("question_note", {}, c),
+    t("question_reply", {}, c),
+  ];
+
+  c.reply({ text: texts.join("\n") }, { quoted: c.event }).then((resp) => {
+    if (!resp) return;
+    const timeout = setTimeout(() => {
+      const s = sessions.get(c.chat);
+      if (!s || s.done) return;
+      s.done = true;
+      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event })
+        .then((r) => { if (r) s.resultId = r.key.id; });
+    }, 30000);
+
+    sessions.set(c.chat, {
+      answer,
+      timeout,
+      xp: xpReward,
+      questionId: resp.key.id,
+      level: selectedLevel,
+      done: false,
+      resultId: "",
+    });
+  });
+}
 
 /** @type {import('#mushi').Plugin[]} */
 export default [
@@ -107,61 +165,15 @@ export default [
         );
       }
 
-      if (sessions.has(c.chat)) {
+      const existing = sessions.get(c.chat);
+      if (existing && !existing.done) {
         return await c.reply(
           { text: t("session_active", {}, c) },
           { quoted: c.event },
         );
       }
 
-      const selectedLevel = LEVEL_ALIAS[levelArg] || levelArg || "easy";
-      const level = LEVELS[selectedLevel] || LEVELS.easy;
-
-      const operators = ["+", "-", "*"];
-      const op = operators[Math.floor(Math.random() * operators.length)];
-      let a, b, answer;
-
-      if (op === "*") {
-        a = Math.floor(Math.random() * level.mult) + 1;
-        b = Math.floor(Math.random() * level.mult) + 1;
-        answer = a * b;
-      } else {
-        a = Math.floor(Math.random() * level.range) + 1;
-        b = Math.floor(Math.random() * level.range) + 1;
-        answer = op === "+" ? a + b : a - b;
-      }
-
-      const xpReward = level.xp;
-
-      const texts = [
-        t("question_header", { level: selectedLevel.toUpperCase() }, c),
-        t("question_query", { a, op, b }, c),
-        "",
-        t("question_time", {}, c),
-        t("question_reward", { xp: xpReward }, c),
-        "",
-        t("question_note", {}, c),
-        t("question_reply", {}, c),
-      ];
-
-      const resp = await c.reply(
-        { text: texts.join("\n") },
-        { quoted: c.event },
-      );
-
-      const timeout = setTimeout(() => {
-        if (sessions.has(c.chat)) {
-          sessions.delete(c.chat);
-          c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event });
-        }
-      }, 30000);
-
-      sessions.set(c.chat, {
-        answer,
-        timeout,
-        xp: xpReward,
-        questionId: resp.key.id,
-      });
+      startGame(c, levelArg);
     },
   },
   {
@@ -170,41 +182,60 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!sessions.has(c.chat) || c.isCMD) return;
-
       const session = sessions.get(c.chat);
 
-      if (c.stanzaId !== session.questionId) return;
+      if (!session.done) {
+        if (c.stanzaId !== session.questionId) return;
 
-      const userAnswer = parseInt(c.text, 10);
+        const userAnswer = parseInt(c.text, 10);
+        const text = c.text?.toLowerCase().trim();
 
-      if (userAnswer === session.answer) {
-        clearTimeout(session.timeout);
-        sessions.delete(c.chat);
+        if (userAnswer === session.answer) {
+          clearTimeout(session.timeout);
+          session.done = true;
 
-        const xp = session.xp;
-        const user = c.user;
-        if (user) {
-          user.xp += xp;
-          c.client().userManager.updateUser(c.senderJid, user);
+          const xp = session.xp;
+          const user = c.user;
+          if (user) {
+            user.xp += xp;
+            c.client().userManager.updateUser(c.senderJid, user);
+          }
+
+          const result = await c.reply(
+            {
+              text: t(
+                "correct",
+                {
+                  user: c.senderJid.split("@")[0],
+                  answer: session.answer,
+                  xp,
+                },
+                c,
+              ),
+              mentions: [c.senderJid],
+            },
+            { quoted: c.event },
+          );
+          if (result) session.resultId = result.key.id;
+        } else if (STOP_WORDS.has(text)) {
+          clearTimeout(session.timeout);
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        } else {
+          return await c.react("❌");
         }
-
-        return await c.reply(
-          {
-            text: t(
-              "correct",
-              {
-                user: c.senderJid.split("@")[0],
-                answer: session.answer,
-                xp,
-              },
-              c,
-            ),
-            mentions: [c.senderJid],
-          },
-          { quoted: c.event },
-        );
       } else {
-        return await c.react("❌");
+        const text = c.text?.toLowerCase().trim();
+        if (c.stanzaId !== session.resultId) return;
+
+        if (REPLAY_WORDS.has(text)) {
+          await c.react("🔄");
+          sessions.delete(c.chat);
+          startGame(c, session.level);
+        } else if (STOP_WORDS.has(text)) {
+          sessions.delete(c.chat);
+          await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        }
       }
     },
   },
