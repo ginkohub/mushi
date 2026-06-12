@@ -35,6 +35,7 @@
     "express": "^5.2.1",
     "googleapis": "^153.0.0",
     "instagram-url-direct": "^2.0.7",
+    "link-preview-js": "^3.2.0",
     "minimist": "^1.2.8",
     "mongodb": "^6.17.0",
     "pg": "^8.16.3",
@@ -51,5 +52,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.14"
+  },
+  "imports":{
+    "#mushi/*": "./src/*",
+    "#mushi": "./src/index.js"
   }
 }
