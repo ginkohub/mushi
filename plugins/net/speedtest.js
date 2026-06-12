@@ -13,9 +13,7 @@
  */
 
 import { SpeedTestService } from "@ginkohub/speedtest-js";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const service = new SpeedTestService();
 let clientInfo;
@@ -50,7 +48,7 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "net-speedtest",
   cmd: ["speed"],
@@ -58,7 +56,7 @@ export default {
   desc: "Speedtest.",
   events: [MESSAGES_UPSERT],
   roles: [Role.PREMIUM],
-  /** @param {import('../../src/context.js').Ctx} c */
+  /** @param {import('#mushi').Ctx} c */
   exec: async (c) => {
     if (!bestServer) bestServer = await service.findBestServer();
     if (!clientInfo) clientInfo = await service.fetchClientInfo();

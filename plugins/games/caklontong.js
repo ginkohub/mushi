@@ -13,10 +13,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { getFile } from "../../src/data.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { getFile, MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -92,7 +89,7 @@ function loadQuestions() {
 // Initial load
 loadQuestions();
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "games-caklontong",

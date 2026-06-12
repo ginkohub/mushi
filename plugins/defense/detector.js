@@ -8,8 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Events } from "../../src/const.js";
-import { translate } from "../../src/translate.js";
+import { Events, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -69,7 +68,7 @@ export const Actions = {
 
 const DO_ALL = true;
 
-/** @typedef {(c: import('../../src/context.js').Ctx, r: Result) => any} Action */
+/** @typedef {(c: import('#mushi').Ctx, r: Result) => any} Action */
 /** @type {Record<Actions, Action>} */
 export const ActionMap = {
   log: async (c, r) => {
@@ -227,7 +226,7 @@ class Result {
   }
 
   /**
-   * @param {import('../../src/context.js').Ctx} c
+   * @param {import('#mushi').Ctx} c
    * @param {...Actions[]} acts
    */
   async process(c, ...acts) {
@@ -252,7 +251,7 @@ class Result {
   }
 }
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "defense-listener",
@@ -290,7 +289,7 @@ export default [
   },
 ];
 
-/** @typedef {(c: import('../../src/context.js').Ctx) => Result } Detector */
+/** @typedef {(c: import('#mushi').Ctx) => Result } Detector */
 /** @type {Detector[]} */
 const listDetectors = [
   (c) => {

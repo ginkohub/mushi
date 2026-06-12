@@ -8,22 +8,24 @@
  * This code is part of Ginko project (https://github.com/ginkohub/mushi)
  */
 
-import { MESSAGES_UPSERT } from "../../../src/const.js";
-import { extractTextContext } from "../../../src/context.js";
-import { Role } from "../../../src/roles.js";
-import { formatMD } from "../../../src/tools.js";
-import { translate } from "../../../src/translate.js";
+import {
+  extractTextContext,
+  formatMD,
+  MESSAGES_UPSERT,
+  Role,
+  translate,
+} from "#mushi";
 import { Gemini } from "./gemini.js";
 
-/** @type {Map<string, import('../../../src/store.js').Store>} - To store ID */
+/** @type {Map<string, import('#mushi').Store>} - To store ID */
 const geminiStores = new Map();
 
 /** @type {Map<string, import('./gemini.js').Gemini>} - To store Gemini client */
 const geminiClients = new Map();
 
 /**
- * @param {import('../../../src/context.js').Ctx} c
- * @returns {Promise<import('../../../src/store.js').Store|null>}
+ * @param {import('#mushi').Ctx} c
+ * @returns {Promise<import('#mushi').Store|null>}
  */
 async function getGeminiStore(c) {
   const clientName = c.client()?.name;
@@ -38,7 +40,7 @@ async function getGeminiStore(c) {
 }
 
 /**
- * @param {import('../../../src/context.js').Ctx} c
+ * @param {import('#mushi').Ctx} c
  * @returns {Promise<Gemini|null>}
  */
 async function getGeminiClient(c) {
@@ -102,7 +104,7 @@ const t = translate({
 });
 
 /**
- * @param {import('../../../src/context.js').Ctx} c
+ * @param {import('#mushi').Ctx} c
  */
 async function processChat(c) {
   let query = c.isCMD ? c.args : c.text;
@@ -214,7 +216,7 @@ async function processChat(c) {
   }
 }
 
-/** @type {import('../../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "ai-gemini",

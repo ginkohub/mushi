@@ -15,8 +15,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YtDlpWrap from "yt-dlp-wrap";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
+import { MESSAGES_UPSERT, Role } from "#mushi";
 
 const BIN_DIR = resolve("./bin");
 const YTDLP_PATHS = [
@@ -62,7 +61,7 @@ async function getYT() {
   return ytDlpPromise;
 }
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "down-play",
   cmd: ["play"],

@@ -8,10 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { formatElapse } from "../../src/tools.js";
-import { translate } from "../../src/translate.js";
+import { formatElapse, MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -24,7 +21,7 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-ping",
   cmd: ["ping", "p"],

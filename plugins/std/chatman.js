@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -45,8 +43,7 @@ const t = translate({
   },
 });
 
-const isAdminOrAbove = (c) =>
-  c.isAdmin || c.user?.hasRole(Role.ADMIN);
+const isAdminOrAbove = (c) => c.isAdmin || c.user?.hasRole(Role.ADMIN);
 
 function isValidTimezone(tz) {
   try {
@@ -57,7 +54,7 @@ function isValidTimezone(tz) {
   }
 }
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "std-chatman-cmd",

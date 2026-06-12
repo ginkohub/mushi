@@ -13,10 +13,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { getFile } from "../../src/data.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { getFile, MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -93,12 +90,6 @@ let wordList = {
   hard: [],
 };
 
-const LEVELS = {
-  easy: {},
-  medium: {},
-  hard: {},
-};
-
 const LEVEL_ALIAS = {
   e: "easy",
   m: "medium",
@@ -124,7 +115,7 @@ function loadWords() {
 
 loadWords();
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "games-tebakkata",
@@ -172,7 +163,6 @@ export default [
       }
 
       const selectedLevel = LEVEL_ALIAS[levelArg] || levelArg || "easy";
-      const levelInfo = LEVELS[selectedLevel] || LEVELS.easy;
       const words = wordList[selectedLevel] || wordList.easy;
 
       if (!words || words.length === 0) {

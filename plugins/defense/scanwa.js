@@ -10,9 +10,7 @@
 
 import zlib from "node:zlib";
 import AdmZip from "adm-zip";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const ScannerType = Object.freeze({
   SEARCH: "search",
@@ -249,8 +247,8 @@ async function runScan(tarballUrl, options = {}) {
     selectedMethods.length === 0
       ? scanners.all()
       : selectedMethods
-        .map((s) => (typeof s === "string" ? scanners.get(s) : s))
-        .filter(Boolean);
+          .map((s) => (typeof s === "string" ? scanners.get(s) : s))
+          .filter(Boolean);
 
   onPhase?.("download");
   const res = await fetch(tarballUrl);
@@ -389,7 +387,7 @@ function extractTargets(text) {
   return { repos, pkgs };
 }
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-scanwa",
   cmd: ["sscan"],

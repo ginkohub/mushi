@@ -11,10 +11,15 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import os from "node:os";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { formatBytes, formatElapse, isBun, isDeno } from "../../src/tools.js";
-import { translate } from "../../src/translate.js";
+import {
+  formatBytes,
+  formatElapse,
+  isBun,
+  isDeno,
+  MESSAGES_UPSERT,
+  Role,
+  translate,
+} from "#mushi";
 
 const t = translate({
   en: {
@@ -101,7 +106,7 @@ function getGpu() {
   }
 }
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-info",
   cmd: ["info", "i"],

@@ -26,7 +26,7 @@ import { GoogleGenAI } from "@google/genai";
  * @property {string} apiKey - API key for the Gemini AI model
  * @property {string} modelName - Name of the Gemini AI model to use
  * @property {string} systemInstruction - System instruction for the Gemini AI model
- * @property {import("../../../src/store.js").Store} settings - Settings store
+ * @property {import("#mushi").Store} settings - Settings store
  */
 
 /**
@@ -56,7 +56,7 @@ export class Gemini {
    * @param {GeminiOpts} opts - Options for the Gemini AI model
    */
   constructor(opts) {
-    /** @type {import('../../../src/store.js').Store} */
+    /** @type {import('#mushi').Store} */
     this.settings = opts?.settings;
 
     /** @type {any} */

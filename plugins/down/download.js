@@ -8,10 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import browser from "../../src/browser.js";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import browser, { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -41,7 +38,7 @@ const t = translate({
 /**
  * Formats a video caption with metadata.
  * @param {any} result
- * @param {import('../../src/context.js').Ctx} c
+ * @param {import('#mushi').Ctx} c
  * @returns {string}
  */
 function formatCaption(result, c) {
@@ -73,7 +70,7 @@ function formatCaption(result, c) {
 const REGEX_LINKS =
   /https?:\/\/(www\.)?(instagram\.com|tiktok\.com|vt\.tiktok\.com|youtube\.com|youtu\.be|threads\.net|facebook\.com|fb\.watch|pin\.it|pinterest\.com|capcut\.com|likee\.video|l\.likee)\/[^\s]+/g;
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "down-main",
   cmd: ["down", "dl"],

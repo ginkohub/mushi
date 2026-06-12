@@ -68,7 +68,7 @@ const emoMap = {
   whatsapp: "💬",
 };
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-menu",
   cmd: ["menu", "menu?"],
@@ -82,7 +82,7 @@ export default {
     const withDesc = c.argv?.desc || c.argv?.d;
     const userKeys = c.args?.toLowerCase().split(/\s+/).filter(Boolean);
 
-    /** @type {Map<string, import('../../src/plugin.js').Plugin>} */
+    /** @type {Map<string, import('#mushi').Plugin>} */
     const plugins = new Map();
 
     if (userKeys?.length > 0) {
@@ -136,11 +136,11 @@ export default {
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
         `${t("prefix", {}, c)} ` +
-        c
-          .handler()
-          ?.getPrefixes()
-          ?.map((p) => `\`${p}\``)
-          .join(", "),
+          c
+            .handler()
+            ?.getPrefixes()
+            ?.map((p) => `\`${p}\``)
+            .join(", "),
         `${t("lang", {}, c)} ${globalLang} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
 

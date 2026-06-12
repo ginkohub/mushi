@@ -8,11 +8,15 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { CALL, MESSAGES_UPSERT } from "../../src/const.js";
-import { midwareAnd } from "../../src/midware.js";
-import { Role } from "../../src/roles.js";
-import { delay, randomNumber } from "../../src/tools.js";
-import { translate } from "../../src/translate.js";
+import {
+  CALL,
+  delay,
+  MESSAGES_UPSERT,
+  midwareAnd,
+  Role,
+  randomNumber,
+  translate,
+} from "#mushi";
 
 const AUTO_REJECT_KEY = "auto_reject";
 
@@ -31,7 +35,7 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "wa-auto-reject-listener",

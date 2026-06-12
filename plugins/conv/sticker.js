@@ -10,10 +10,7 @@
 
 import sharp from "sharp";
 import { Sticker, StickerTypes } from "wa-sticker-formatter";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { extractTextContext } from "../../src/context.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { extractTextContext, MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {

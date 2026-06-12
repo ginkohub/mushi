@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Events } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { Events, Role, translate } from "#mushi";
 import { allowed } from "./detector.js";
 
 const KEY_DEFENSE_ALLOW_STATUS = "defense_allow_status";
@@ -48,7 +46,7 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "defense-sample",

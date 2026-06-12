@@ -15,9 +15,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YtDlpWrap from "yt-dlp-wrap";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -90,7 +88,7 @@ getYT().catch((e) => c.log().error("yt-dlp pre-initialization failed:", e));
 /**
  * Formats a video caption with metadata.
  * @param {any} video
- * @param {import('../../src/context.js').Ctx} c
+ * @param {import('#mushi').Ctx} c
  * @returns {string}
  */
 function formatCaption(video, c) {
@@ -114,7 +112,7 @@ async function downloadVideo(ytDlp, link) {
   return await ytDlp.getBuffer(link, ["-f", "best[ext=mp4]/best"]);
 }
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "down-ytdlp",
   cmd: ["ytdlp"],

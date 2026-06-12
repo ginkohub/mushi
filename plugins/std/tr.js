@@ -8,9 +8,13 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { Languages, translate, translateText } from "../../src/translate.js";
+import {
+  Languages,
+  MESSAGES_UPSERT,
+  Role,
+  translate,
+  translateText,
+} from "#mushi";
 
 const t = translate({
   en: {

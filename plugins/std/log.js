@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { Events } from "../../src/const.js";
-import { BotDetector } from "../../src/detector.js";
-import { formatElapse } from "../../src/tools.js";
+import { BotDetector, Events, formatElapse } from "#mushi";
 
 const storeID = [];
 function hasID(c) {
@@ -59,7 +57,7 @@ const skipEvents = [
   Events.CHATS_UPSERT,
 ];
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-log",
   desc: "Logs the message to the console",

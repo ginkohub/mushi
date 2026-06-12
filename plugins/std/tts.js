@@ -8,13 +8,11 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+import { Languages, MESSAGES_UPSERT, Role, translate } from "#mushi";
+
 /**
  * Credits to Google Translate TTS for text-to-speech API.
  */
-
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { Languages, translate } from "../../src/translate.js";
 
 const t = translate({
   en: {

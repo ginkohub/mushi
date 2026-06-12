@@ -8,9 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
-import { translate } from "../../src/translate.js";
+import { MESSAGES_UPSERT, Role, translate } from "#mushi";
 
 const t = translate({
   en: {
@@ -33,7 +31,7 @@ const t = translate({
   },
 });
 
-/** @type {import('../../src/plugin.js').Plugin[]} */
+/** @type {import('#mushi').Plugin[]} */
 export default [
   {
     name: "wa-group-kick",
@@ -45,10 +43,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
@@ -76,10 +71,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
@@ -107,10 +99,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
@@ -138,10 +127,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
@@ -169,10 +155,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
       if (!c.isBotAdmin) return await c.reply({ text: t("bot_admin", {}, c) });
 
@@ -192,10 +175,7 @@ export default [
     roles: [Role.USER],
     exec: async (c) => {
       if (!c.isGroup) return await c.reply({ text: t("group_only", {}, c) });
-      if (
-        !c.isAdmin &&
-        !c.user?.hasRole(Role.ADMIN)
-      )
+      if (!c.isAdmin && !c.user?.hasRole(Role.ADMIN))
         return await c.reply({ text: t("admin_only", {}, c) });
 
       const metadata = await c.client().getGroupMetadataAsync(c.chat);

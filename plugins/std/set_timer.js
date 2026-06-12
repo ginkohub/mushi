@@ -8,9 +8,9 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { MESSAGES_UPSERT } from "../../src/const.js";
+import { MESSAGES_UPSERT } from "#mushi";
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-timer",
   cmd: ["timer"],

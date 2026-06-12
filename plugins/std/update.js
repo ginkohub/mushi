@@ -10,10 +10,9 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, unlinkSync } from "node:fs";
-import { MESSAGES_UPSERT } from "../../src/const.js";
-import { Role } from "../../src/roles.js";
+import { MESSAGES_UPSERT, Role } from "#mushi";
 
-/** @type {import('../../src/plugin.js').Plugin} */
+/** @type {import('#mushi').Plugin} */
 export default {
   name: "std-update",
   cmd: ["update"],
