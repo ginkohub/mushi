@@ -13,6 +13,7 @@ import { midwareAnd, midwareOr } from "./midware.js";
 import { Reason } from "./reason.js";
 
 /**
+ * updated 2026-06-13 20:13
  * @constant {string[]} onlyOfficial
  * @description A list of message types that are often associated with unofficial or modified WhatsApp clients.
  */
@@ -20,6 +21,7 @@ const onlyOfficial = [
   "buttonsMessage",
   "botInvokeMessage",
   "interactiveResponseMessage",
+  "botForwardedMessage",
 ];
 
 /**
