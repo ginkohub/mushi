@@ -1,13 +1,7 @@
 # Direcotries
-data/
 tmp/
 temp/
-store/
-tools/
 node_modules/
 
 # Files
 .env
-*-lock.*
-*.test.*
-.*
