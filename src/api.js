@@ -21,6 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
   readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
 );
+const API_KEY = process.env.MUSHI_API_KEY;
 
 /**
  * @typedef {Object} ApiServerOpts
@@ -60,6 +61,15 @@ export class ApiServer {
 
   _setupMiddleware() {
     this.app.use(express.json());
+    this.app.use((req, res, next) => {
+      if (!API_KEY) return next();
+      if (req.path === "/api/health") return next();
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith("Bearer ") || auth.slice(7) !== API_KEY) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      next();
+    });
   }
 
   _setupRoutes() {
