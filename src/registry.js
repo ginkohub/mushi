@@ -243,7 +243,11 @@ export class PluginRegistry extends EventEmitter {
         }
       }
 
-      this.emit(RegistryEvents.PLUGIN_LOAD, { location: osPath, estimate, items });
+      this.emit(RegistryEvents.PLUGIN_LOAD, {
+        location: osPath,
+        estimate,
+        items,
+      });
     } catch (e) {
       this.log.error("registry-load", location, e);
       this.emit(RegistryEvents.PLUGIN_ERROR, { location, error: e });
