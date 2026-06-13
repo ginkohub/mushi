@@ -712,7 +712,7 @@ export class Client extends EventEmitter {
           if (c?.event?.isOnline) {
             await delay(3000);
             try {
-              this.runTask("update-data-fetch-blocklist", async () => {
+              await this.runTask("update-data-fetch-blocklist", async () => {
                 this.blockList = new Set(
                   (await this.sock.fetchBlocklist()) || [],
                 );
