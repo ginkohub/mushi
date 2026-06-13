@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import QRCode from "qrcode";
+import { ClientEvents } from "./client.js";
 import { isBun, isDeno } from "./tools.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -468,12 +469,12 @@ export class ApiServer {
     };
 
     const cleanup = () => {
-      bot.off("qr", qrHandler);
-      bot.off("code", codeHandler);
+      bot.off(ClientEvents.AUTH_QRCODE, qrHandler);
+      bot.off(ClientEvents.AUTH_OTP, codeHandler);
     };
 
-    bot.on("qr", qrHandler);
-    bot.on("code", codeHandler);
+    bot.on(ClientEvents.AUTH_QRCODE, qrHandler);
+    bot.on(ClientEvents.AUTH_OTP, codeHandler);
 
     try {
       await bot.connect();
