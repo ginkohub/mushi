@@ -13,7 +13,7 @@ import pino from "pino";
 import { ClientEvents, Method } from "./src/client.js";
 import { logger, manager } from "./src/index.js";
 
-const mainBot = manager.addBot({
+const mainBot = await manager.addBot({
   name: "example",
   method: process.env.METHOD || Method.QRCode,
   phone: process.env.PHONE || "",

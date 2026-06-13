@@ -197,7 +197,7 @@ export class ApiServer {
             .status(400)
             .json({ error: "Phone number is required for 'otp' method" });
         }
-        const bot = this.manager.addBot(config);
+        const bot = await this.manager.addBot(config);
         if (req.body.start) {
           await this._initiateBotConnection(bot, res);
         } else {
@@ -262,7 +262,7 @@ export class ApiServer {
               "Phone number is required for 'otp' method. Please update configuration first.",
           });
         }
-        const newBot = this.manager.addBot(config);
+        const newBot = await this.manager.addBot(config);
         return this._initiateBotConnection(newBot, res);
       }
 

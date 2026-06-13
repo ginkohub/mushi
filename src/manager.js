@@ -101,7 +101,7 @@ export class BotManager extends EventEmitter {
       try {
         const config = this.store.get(id);
         if (config && !this.bots.has(id)) {
-          this.addBot(config);
+          await this.addBot(config);
         }
       } catch (e) {
         this.log.error(`Failed to load config for instance ${id} from DB:`, e);
@@ -122,9 +122,9 @@ export class BotManager extends EventEmitter {
   /**
    * Add and initialize a new bot instance from config
    * @param {import('./client.js').ClientOpts} config
-   * @returns {import('./client.js').Client|undefined}
+   * @returns {Promise<import('./client.js').Client>}
    */
-  addBot(config) {
+  async addBot(config) {
     if (this.bots.has(config.name)) {
       this.log.warn(
         `Bot instance ${config.name} already exists. Skipping initialization.`,
@@ -140,10 +140,10 @@ export class BotManager extends EventEmitter {
 
     config.botDir = config.botDir || path.join(this.baseDir, config.name);
     const bot = new Client(config);
+    await bot.init();
 
     this.bots.set(config.name, bot);
 
-    /** Save config to SQLite */
     const savedConfig = { ...config };
     delete savedConfig.handler;
     delete savedConfig.logger;
@@ -151,7 +151,6 @@ export class BotManager extends EventEmitter {
       delete savedConfig.socketConfig.logger;
     }
 
-    /** We use a promise here to not block the sync addBot but still ensure it saves */
     this.store
       .waitReady()
       .then(() => {
@@ -178,7 +177,7 @@ export class BotManager extends EventEmitter {
       try {
         const config = this.store.get(id);
         if (config && !this.bots.has(id)) {
-          this.addBot(config);
+          await this.addBot(config);
         }
       } catch (e) {
         this.log.error(`Failed to load config for instance ${id} from DB:`, e);

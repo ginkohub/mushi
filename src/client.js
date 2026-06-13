@@ -190,9 +190,6 @@ export class Client extends EventEmitter {
 
     /** @type {Set<string>} */
     this.blockList = new Set();
-
-    this.ready = this.init();
-    this.ready.catch((e) => rootLogger?.error(e));
   }
 
   /**
@@ -466,7 +463,7 @@ export class Client extends EventEmitter {
       this.sock = null;
     }
 
-    await this.ready;
+    await this.init();
     this.emit(ClientEvents.READY);
 
     this.startedAt = Date.now();
