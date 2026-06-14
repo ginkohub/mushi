@@ -96,7 +96,10 @@ loadQuestions();
 
 function startGame(c) {
   if (questions.length === 0) {
-    c.reply({ text: t("no_data", { prefix: c.prefix }, c) }, { quoted: c.event });
+    c.reply(
+      { text: t("no_data", { prefix: c.prefix }, c) },
+      { quoted: c.event },
+    );
     return;
   }
 
@@ -125,7 +128,9 @@ function startGame(c) {
       c.reply(
         { text: t("timeout", { answer: q.jawaban, desc: q.deskripsi }, c) },
         { quoted: c.event },
-      ).then((r) => { if (r) s.resultId = r.key.id; });
+      ).then((r) => {
+        if (r) s.resultId = r.key.id;
+      });
     }, 45000);
 
     sessions.set(c.chat, {

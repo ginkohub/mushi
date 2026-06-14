@@ -33,7 +33,8 @@ const t = translate({
     timeout: "⌛ *Game Timeout!* The game has ended due to inactivity.",
     turn_msg: "👉 *Turn:* {turn}",
     bot_thinking: "🤖 *Bot is thinking...*",
-    stopped: "🛑 *Game stopped*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
+    stopped:
+      "🛑 *Game stopped*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
   },
   id: {
     help_title: "❌ *TIC-TAC-TOE (TTT)* ⭕",
@@ -259,7 +260,10 @@ export default [
       if (STOP_WORDS.has(text)) {
         clearTimeout(session.timeout);
         sessions.delete(c.chat);
-        return await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
+        return await c.reply(
+          { text: t("stopped", {}, c) },
+          { quoted: c.event },
+        );
       }
 
       const move = parseInt(c.text?.trim(), 10) - 1;

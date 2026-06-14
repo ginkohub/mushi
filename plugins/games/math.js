@@ -110,8 +110,11 @@ function startGame(c, levelName) {
       const s = sessions.get(c.chat);
       if (!s || s.done) return;
       s.done = true;
-      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event })
-        .then((r) => { if (r) s.resultId = r.key.id; });
+      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event }).then(
+        (r) => {
+          if (r) s.resultId = r.key.id;
+        },
+      );
     }, 30000);
 
     sessions.set(c.chat, {

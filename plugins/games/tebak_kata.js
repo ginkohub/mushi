@@ -123,7 +123,10 @@ function startGame(c, level) {
   const words = wordList[selectedLevel] || wordList.easy;
 
   if (!words || words.length === 0) {
-    c.reply({ text: t("no_data", { prefix: c.prefix }, c) }, { quoted: c.event });
+    c.reply(
+      { text: t("no_data", { prefix: c.prefix }, c) },
+      { quoted: c.event },
+    );
     return;
   }
 
@@ -131,7 +134,8 @@ function startGame(c, level) {
   const answer = item.jawaban.toUpperCase();
   const clues = item.pertanyaan;
 
-  const xpMultiplier = selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;
+  const xpMultiplier =
+    selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;
   const xpReward = answer.length * xpMultiplier;
 
   const texts = [
@@ -151,8 +155,11 @@ function startGame(c, level) {
       const s = sessions.get(c.chat);
       if (!s || s.done) return;
       s.done = true;
-      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event })
-        .then((r) => { if (r) s.resultId = r.key.id; });
+      c.reply({ text: t("timeout", { answer }, c) }, { quoted: c.event }).then(
+        (r) => {
+          if (r) s.resultId = r.key.id;
+        },
+      );
     }, 45000);
 
     sessions.set(c.chat, {
