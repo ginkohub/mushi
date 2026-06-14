@@ -43,6 +43,9 @@ const t = translate({
     sync_failed: "❌ *Sync Failed:* {error}",
     correct:
       "🎉 *Congratulations* @{user}!\nYour answer is correct: *{answer}*\n\n🌟 *+{xp} XP*\n\nReply _lagi/again/next_ to play again, or _stop/nyerah_ to stop",
+    level_title: "📊 *Your Progress*",
+    level_current: "Current level: *{level}*",
+    level_hint: "Use `{prefix}tg [1-13]` to jump to a specific level.",
     stopped: "🛑 *Game stopped*",
   },
   id: {
@@ -79,6 +82,9 @@ const t = translate({
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
     correct:
       "🎉 *Selamat* @{user}!\nJawaban kamu benar: *{answer}*\n\n🌟 *+{xp} XP*\n\nBalas _lagi/lanjut/again/next_ untuk main lagi, atau _stop/nyerah_ untuk berhenti",
+    level_title: "📊 *Progress Kamu*",
+    level_current: "Level saat ini: *{level}*",
+    level_hint: "Gunakan `{prefix}tg [1-13]` untuk loncat ke level tertentu.",
     stopped: "🛑 *Permainan dihentikan*",
   },
 });
@@ -89,10 +95,21 @@ const JSON_URL =
 const MAX_LEVEL = 13;
 const DEFAULT_TIMEOUT_MS = 45000;
 const TIMEOUT_STORE_KEY = "tebakgambar_timeout";
+const LEVEL_STORE_KEY = "tebakgambar_level";
 
 function getTimeout(settings, chat) {
   const stored = settings?.get(`${TIMEOUT_STORE_KEY}_${chat}`);
   return parseInt(stored, 10) || DEFAULT_TIMEOUT_MS;
+}
+
+function getLevel(settings, chat) {
+  const stored = settings?.get(`${LEVEL_STORE_KEY}_${chat}`);
+  const lv = parseInt(stored, 10);
+  return lv >= 1 && lv <= MAX_LEVEL ? String(lv) : "1";
+}
+
+function saveLevel(settings, chat, lv) {
+  settings?.set(`${LEVEL_STORE_KEY}_${chat}`, lv);
 }
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, level: string, desc: string, done: boolean, resultId: string, clueRevealed: boolean }>} */
@@ -192,6 +209,7 @@ export default [
       "games-tebakgambar-listener",
       "games-tebakgambar-updater",
       "games-tebakgambar-timesetter",
+      "games-tebakgambar-levelcheck",
     ],
     cat: "games",
     tags: ["game"],
@@ -230,6 +248,7 @@ export default [
       }
 
       const levelArg = (c.argv?._?.[0] || "").trim();
+      const settings = c.client()?.settings;
 
       if (levelArg) {
         const lvNum = parseInt(levelArg, 10);
@@ -246,7 +265,7 @@ export default [
         }
       }
 
-      startGame(c, levelArg);
+      startGame(c, levelArg || getLevel(settings, c.chat));
     },
   },
   {
@@ -337,6 +356,27 @@ export default [
     },
   },
   {
+    name: "games-tebakgambar-levelcheck",
+    cmd: ["tg.level", "tebakgambar.level"],
+    cat: "games",
+    tags: ["game"],
+    desc: "Check your current level in Tebak Gambar",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+    exec: async (c) => {
+      const settings = c.client()?.settings;
+      const current = getLevel(settings, c.chat);
+      const text = [
+        t("level_title", {}, c),
+        "",
+        t("level_current", { level: current }, c),
+        "",
+        t("level_hint", { prefix: c.prefix }, c),
+      ].join("\n");
+      return await c.reply({ text }, { quoted: c.event });
+    },
+  },
+  {
     name: "games-tebakgambar-listener",
     events: [MESSAGES_UPSERT],
     roles: [Role.USER],
@@ -366,6 +406,9 @@ export default [
             user.xp += xp;
             c.client().userManager.updateUser(c.senderJid, user);
           }
+
+          const nextLv = Math.min(parseInt(session.level, 10) + 1, MAX_LEVEL);
+          saveLevel(c.client()?.settings, c.chat, String(nextLv));
 
           const result = await c.reply(
             {
