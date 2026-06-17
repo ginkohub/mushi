@@ -559,7 +559,6 @@ export default {
         parts.push(t("error", { msg: err }, c));
       }
       if (parts.length > 0) {
-        console.log(parts);
         return c.reply({ text: parts.join("") });
       }
       return;
@@ -722,7 +721,6 @@ function scanTextContent(content, fileName, methods, c) {
   }
 
   if (parts.length > 0) {
-    console.log(parts);
     return c.reply({ text: parts.join("") });
   }
 }
