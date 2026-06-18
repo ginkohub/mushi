@@ -457,7 +457,7 @@ function extractTargets(text) {
         }
         targets.push({ source: TargetSource.GH, name, options: { branch } });
       }
-    } catch { }
+    } catch {}
   }
 
   /* NPM */

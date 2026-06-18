@@ -338,7 +338,7 @@ export class StoreSQLite {
     );
   }
 
-  save() { }
+  save() {}
 
   /**
    * Set data

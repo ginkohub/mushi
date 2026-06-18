@@ -132,8 +132,8 @@ export class Ctx {
     const rawTimestamp = this.event?.messageTimestamp;
     const convertedTime =
       rawTimestamp &&
-        typeof rawTimestamp === "object" &&
-        typeof rawTimestamp?.toNumber === "function"
+      typeof rawTimestamp === "object" &&
+      typeof rawTimestamp?.toNumber === "function"
         ? rawTimestamp.toNumber()
         : Number(rawTimestamp || 0);
 

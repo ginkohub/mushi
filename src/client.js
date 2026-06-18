@@ -459,7 +459,7 @@ export class Client extends EventEmitter {
       try {
         this.sock.ev.removeAllListeners();
         this.sock.end();
-      } catch { }
+      } catch {}
       this.sock = null;
     }
 
