@@ -8,7 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
-import { BotDetector, Events, formatElapse } from "#mushi";
+import { Events, formatElapse } from "#mushi";
 
 const storeID = [];
 function hasID(c) {
@@ -23,7 +23,6 @@ function hasID(c) {
     return false;
   }
 }
-const detect = new BotDetector({ delay: 2000 });
 
 /** @type {void} */
 const sliceStr = (str, len, mid) => {
@@ -120,7 +119,7 @@ export default {
             data.push("⚠️", "");
           }
         }
-        if ((await detect.isBot(c))?.success) data.push("🤖");
+        if (c.isBot) data.push("🤖");
         if (c.sender?.endsWith("@lid")) data.push("🥷");
 
         /* Data section */
