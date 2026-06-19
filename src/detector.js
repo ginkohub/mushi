@@ -9,7 +9,6 @@
  */
 
 import { S_WHATSAPP_NET } from "baileys";
-import { midwareAnd, midwareOr } from "./midware.js";
 import { Reason } from "./reason.js";
 
 /**
@@ -24,6 +23,8 @@ const onlyOfficial = [
   "botForwardedMessage",
 ];
 
+const AUTHOR = "BotDetector";
+
 /**
  * A class to detect messages that may originate from bots or unofficial clients.
  */
@@ -34,9 +35,6 @@ export class BotDetector {
   /** @type {Function[]} */
   #checks;
 
-  /** @type {Function} */
-  #detect;
-
   /**
    * Creates an instance of BotDetector.
    * @param {object} options - The options for the detector.
@@ -46,21 +44,25 @@ export class BotDetector {
     this.threshold = threshold ?? 3000;
 
     this.#checks = [
-      midwareAnd((ctx) => {
+      (ctx) => {
         /* Check if id contains non hex char */
         return new Reason({
           success: /[^0-9a-fA-F]+/.test(ctx.id),
           code: "NON_HEX_ID",
+          author: AUTHOR,
           message: "Message ID contains non-hex characters",
+          data: ctx.event,
         });
-      }),
+      },
       (ctx) => {
-        if (!ctx.id) return new Reason({ success: false });
+        if (!ctx.id) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
         /* Check if id contains lowercase */
         return new Reason({
           success: ctx.id.toUpperCase() !== ctx.id,
           code: "LOWERCASE_ID",
+          author: AUTHOR,
           message: "Message ID contains lowercase letters",
+          data: ctx.event,
         });
       },
       (ctx) => {
@@ -68,7 +70,9 @@ export class BotDetector {
         return new Reason({
           success: onlyOfficial.includes(ctx.type),
           code: "UNOFFICIAL_TYPE",
+          author: AUTHOR,
           message: `Message type is ${ctx.type}`,
+          data: ctx.event,
         });
       },
       (ctx) => {
@@ -76,24 +80,26 @@ export class BotDetector {
         return new Reason({
           success: ctx.participant === `0${S_WHATSAPP_NET}`,
           code: "NULL_PARTICIPANT",
+          author: AUTHOR,
           message: "Participant is 0@s.whatsapp.net",
+          data: ctx.event,
         });
       },
       (ctx) => {
         /* Check if response to a quoted message is under 3 seconds */
-        if (!ctx.stanzaId) return new Reason({ success: false });
+        if (!ctx.stanzaId) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
         const origTs = this.#msgTimestamps.get(ctx.stanzaId);
-        if (!origTs) return new Reason({ success: false });
+        if (!origTs) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
         const elapsed = ctx.timestamp - origTs;
         return new Reason({
           success: elapsed < this.threshold,
           code: "FAST_RESPONSE",
+          author: AUTHOR,
           message: `Quoted message reply in ${elapsed}ms`,
+          data: ctx.event,
         });
       },
     ];
-
-    this.#rebuild();
 
     /* Cleanup stale entries every 5 minutes */
     setInterval(() => {
@@ -104,18 +110,12 @@ export class BotDetector {
     }, 60_000);
   }
 
-  /** Rebuilds the detect middleware from the checks array. */
-  #rebuild() {
-    this.#detect = midwareOr(...this.#checks);
-  }
-
   /**
    * Adds a custom detection check.
    * @param {(ctx: import('./context.js').Ctx) => Reason} fn
    */
   addDetector(fn) {
     this.#checks.push(fn);
-    this.#rebuild();
   }
 
   /**
@@ -125,7 +125,11 @@ export class BotDetector {
    */
   async isBot(ctx) {
     this.#msgTimestamps.set(ctx.id, ctx.timestamp);
-    return await this.#detect(ctx);
+    for (const check of this.#checks) {
+      const result = new Reason(await check(ctx));
+      if (result.success) return result;
+    }
+    return new Reason({ success: false, author: AUTHOR, data: ctx.event });
   }
 }
 
