@@ -26,6 +26,7 @@ import { useSQLite } from "./auth_sqlite.js";
 import { ChatManager } from "./chat_manager.js";
 import { Events } from "./const.js";
 import { Ctx } from "./context.js";
+import { BotDetector } from "./detector.js";
 import { logger as rootLogger } from "./logger.js";
 import { StoreSQLite } from "./store.js";
 import { delay, genHEX } from "./tools.js";
@@ -190,6 +191,9 @@ export class Client extends EventEmitter {
 
     /** @type {Set<string>} */
     this.blockList = new Set();
+
+    /** @type {BotDetector} */
+    this.detector = new BotDetector({ threshold: 3000 });
   }
 
   /**

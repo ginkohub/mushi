@@ -40,10 +40,10 @@ export class BotDetector {
   /**
    * Creates an instance of BotDetector.
    * @param {object} options - The options for the detector.
-   * @param {number} [options.delay=1000] - A delay parameter, currently not used in the detection logic but available for future use.
+   * @param {number} [options.threshold=3000] - Max response time in ms for FAST_RESPONSE detection.
    */
-  constructor({ delay }) {
-    this.delay = delay ?? 1000;
+  constructor({ threshold }) {
+    this.threshold = threshold ?? 3000;
 
     this.#checks = [
       midwareAnd((ctx) => {
@@ -86,7 +86,7 @@ export class BotDetector {
         if (!origTs) return new Reason({ success: false });
         const elapsed = ctx.timestamp - origTs;
         return new Reason({
-          success: elapsed < this.delay,
+          success: elapsed < this.threshold,
           code: "FAST_RESPONSE",
           message: `Quoted message reply in ${elapsed}ms`,
         });

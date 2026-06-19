@@ -132,8 +132,8 @@ export class Ctx {
     const rawTimestamp = this.event?.messageTimestamp;
     const convertedTime =
       rawTimestamp &&
-      typeof rawTimestamp === "object" &&
-      typeof rawTimestamp?.toNumber === "function"
+        typeof rawTimestamp === "object" &&
+        typeof rawTimestamp?.toNumber === "function"
         ? rawTimestamp.toNumber()
         : Number(rawTimestamp || 0);
 
@@ -341,6 +341,12 @@ export class Ctx {
 
     /** @returns {import('./chat_manager.js').Chat} */
     this.chatData = this.client().getChat(this.chat);
+
+    /** @type {Reason} */
+    this.botReason = await this.client().detector.isBot(this);
+
+    /** @type {boolean} */
+    this.isBot = this.botReason?.success || false;
   }
 
   /**
