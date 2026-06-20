@@ -35,6 +35,9 @@ export class BotDetector {
   /** @type {Function[]} */
   #checks;
 
+  /** @type {Map<string, import('./reason.js').Reason>} */
+  #quarantines = new Map();
+
   /**
    * Creates an instance of BotDetector.
    * @param {object} options - The options for the detector.
@@ -55,7 +58,12 @@ export class BotDetector {
         });
       },
       (ctx) => {
-        if (!ctx.id) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
+        if (!ctx.id)
+          return new Reason({
+            success: false,
+            author: AUTHOR,
+            data: ctx.event,
+          });
         /* Check if id contains lowercase */
         return new Reason({
           success: ctx.id.toUpperCase() !== ctx.id,
@@ -87,9 +95,19 @@ export class BotDetector {
       },
       (ctx) => {
         /* Check if response to a quoted message is under 3 seconds */
-        if (!ctx.stanzaId) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
+        if (!ctx.stanzaId)
+          return new Reason({
+            success: false,
+            author: AUTHOR,
+            data: ctx.event,
+          });
         const origTs = this.#msgTimestamps.get(ctx.stanzaId);
-        if (!origTs) return new Reason({ success: false, author: AUTHOR, data: ctx.event });
+        if (!origTs)
+          return new Reason({
+            success: false,
+            author: AUTHOR,
+            data: ctx.event,
+          });
         const elapsed = ctx.timestamp - origTs;
         return new Reason({
           success: elapsed < this.threshold,
@@ -111,6 +129,43 @@ export class BotDetector {
   }
 
   /**
+   * Returns all quarantined entries.
+   * @returns {Array<[string, import('./reason.js').Reason]>}
+   */
+  allQuarantined() {
+    return [...this.#quarantines.entries()];
+  }
+
+  /**
+   * Checks if a sender is quarantined.
+   * @param {string} jid - The sender JID to check.
+   * @returns {import('./reason.js').Reason | undefined}
+   */
+  isQuarantined(jid) {
+    return this.#quarantines.get(jid);
+  }
+
+  /**
+   * Adds a sender to the quarantine list.
+   * @param {string} jid - The sender JID to quarantine.
+   * @param {import('./reason.js').Reason} reason - The detection reason.
+   */
+  quarantine(jid, reason) {
+    this.#quarantines.set(jid, reason);
+  }
+
+  /**
+   * Removes a sender from the quarantine list.
+   * @param {string} jid - The sender JID to release.
+   * @returns {import('./reason.js').Reason | undefined}
+   */
+  release(jid) {
+    const reason = this.#quarantines.get(jid);
+    this.#quarantines.delete(jid);
+    return reason;
+  }
+
+  /**
    * Adds a custom detection check.
    * @param {(ctx: import('./context.js').Ctx) => Reason} fn
    */
@@ -121,13 +176,25 @@ export class BotDetector {
   /**
    * Runs the detection logic against a given message context.
    * @param {import('./context.js').Ctx} ctx - The message context to check.
+   * @param {boolean} force - If true, force the detection even if the sender is already quarantined.
    * @returns {Promise<Reason>} A promise that resolves with a Reason object indicating whether the message is suspected to be from a bot.
    */
-  async isBot(ctx) {
+  async isBot(ctx, force = false) {
+    if (ctx.senderOriginal && !force) {
+      const result = this.isQuarantined(ctx.senderOriginal);
+      if (result) {
+        return result;
+      }
+    }
     this.#msgTimestamps.set(ctx.id, ctx.timestamp);
     for (const check of this.#checks) {
       const result = new Reason(await check(ctx));
-      if (result.success) return result;
+      if (result.success) {
+        if (ctx.senderOriginal) {
+          this.quarantine(ctx.senderOriginal, result);
+        }
+        return result;
+      }
     }
     return new Reason({ success: false, author: AUTHOR, data: ctx.event });
   }

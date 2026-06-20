@@ -132,8 +132,8 @@ export class Ctx {
     const rawTimestamp = this.event?.messageTimestamp;
     const convertedTime =
       rawTimestamp &&
-        typeof rawTimestamp === "object" &&
-        typeof rawTimestamp?.toNumber === "function"
+      typeof rawTimestamp === "object" &&
+      typeof rawTimestamp?.toNumber === "function"
         ? rawTimestamp.toNumber()
         : Number(rawTimestamp || 0);
 
@@ -152,6 +152,9 @@ export class Ctx {
 
       /** @type {string} */
       this.sender = this.event?.author;
+
+      /** @type {string} */
+      this.senderOriginal = this.event?.author;
     }
 
     if (this.eventName === Events.GROUP_PARTICIPANTS_UPDATE) {
@@ -194,6 +197,8 @@ export class Ctx {
       this.chat = this.key?.remoteJid;
       this.sender =
         this.key?.participant || (this.fromMe ? this.meLID : this.chat);
+
+      this.senderOriginal = this.key?.participantOriginal;
     }
 
     if (this.event?.message) {
