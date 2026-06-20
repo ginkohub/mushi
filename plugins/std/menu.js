@@ -8,6 +8,7 @@
  * This code is part of Ginko project (https://github.com/ginkohub)
  */
 
+import { getUrlInfo } from "baileys";
 import { formatElapse, levelToName, Role, translate } from "#mushi";
 
 const t = translate({
@@ -68,6 +69,8 @@ const emoMap = {
   whatsapp: "💬",
 };
 
+let linkPreview = null;
+
 /** @type {import('#mushi').Plugin} */
 export default {
   name: "std-menu",
@@ -76,6 +79,10 @@ export default {
   desc: "Show the menu of commands",
   roles: [Role.USER],
   exec: async (c) => {
+    if (!linkPreview) {
+      linkPreview = await getUrlInfo("https://github.com/ginkohub/mushi");
+    }
+
     const prefix = c.prefix;
     const isDetail = c.pattern.endsWith("?");
     const texts = ["https://github.com/ginkohub/mushi", ""];
@@ -136,11 +143,11 @@ export default {
         "",
         `${t("uptime", {}, c)} ${formatElapse(since, " ")}`,
         `${t("prefix", {}, c)} ` +
-          c
-            .handler()
-            ?.getPrefixes()
-            ?.map((p) => `\`${p}\``)
-            .join(", "),
+        c
+          .handler()
+          ?.getPrefixes()
+          ?.map((p) => `\`${p}\``)
+          .join(", "),
         `${t("lang", {}, c)} ${globalLang} (global)${c.chatData?.lang ? `, ${c.chatData.lang} (this chat)` : ""}`,
       );
 
@@ -205,6 +212,7 @@ export default {
       await c.reply(
         {
           text: texts.join("\n"),
+          linkPreview: linkPreview,
         },
         { quoted: c.event },
       );
