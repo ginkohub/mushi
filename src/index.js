@@ -30,4 +30,5 @@ export * from "./roles.js";
 export * from "./store.js";
 export * from "./tools.js";
 export * from "./translate.js";
+export * from "./types.js";
 export * from "./user_manager.js";
