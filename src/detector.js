@@ -54,7 +54,7 @@ export class BotDetector {
           code: "NON_HEX_ID",
           author: AUTHOR,
           message: "Message ID contains non-hex characters",
-          data: ctx.event,
+          data: ctx,
         });
       },
       (ctx) => {
@@ -62,7 +62,7 @@ export class BotDetector {
           return new Reason({
             success: false,
             author: AUTHOR,
-            data: ctx.event,
+            data: ctx,
           });
         /* Check if id contains lowercase */
         return new Reason({
@@ -70,7 +70,7 @@ export class BotDetector {
           code: "LOWERCASE_ID",
           author: AUTHOR,
           message: "Message ID contains lowercase letters",
-          data: ctx.event,
+          data: ctx,
         });
       },
       (ctx) => {
@@ -80,7 +80,7 @@ export class BotDetector {
           code: "UNOFFICIAL_TYPE",
           author: AUTHOR,
           message: `Message type is ${ctx.type}`,
-          data: ctx.event,
+          data: ctx,
         });
       },
       (ctx) => {
@@ -90,7 +90,7 @@ export class BotDetector {
           code: "NULL_PARTICIPANT",
           author: AUTHOR,
           message: "Participant is 0@s.whatsapp.net",
-          data: ctx.event,
+          data: ctx,
         });
       },
       (ctx) => {
@@ -99,14 +99,14 @@ export class BotDetector {
           return new Reason({
             success: false,
             author: AUTHOR,
-            data: ctx.event,
+            data: ctx,
           });
         const origTs = this.#msgTimestamps.get(ctx.stanzaId);
         if (!origTs)
           return new Reason({
             success: false,
             author: AUTHOR,
-            data: ctx.event,
+            data: ctx,
           });
         const elapsed = ctx.timestamp - origTs;
         return new Reason({
@@ -114,7 +114,7 @@ export class BotDetector {
           code: "FAST_RESPONSE",
           author: AUTHOR,
           message: `Quoted message reply in ${elapsed}ms`,
-          data: ctx.event,
+          data: ctx,
         });
       },
     ];
@@ -190,13 +190,13 @@ export class BotDetector {
     for (const check of this.#checks) {
       const result = new Reason(await check(ctx));
       if (result.success) {
-        if (ctx.senderOriginal) {
+        if (ctx.senderOriginal?.includes(":")) {
           this.quarantine(ctx.senderOriginal, result);
         }
         return result;
       }
     }
-    return new Reason({ success: false, author: AUTHOR, data: ctx.event });
+    return new Reason({ success: false, author: AUTHOR, data: ctx });
   }
 }
 
