@@ -32,8 +32,19 @@ export default {
         return await c.react("❔");
       }
 
+      const seen = new WeakSet();
       if (typeof res === "object" && !(res instanceof Buffer))
-        res = JSON.stringify(res, null, 2);
+        res = JSON.stringify(
+          res,
+          (_, v) => {
+            if (typeof v === "object" && v !== null) {
+              if (seen.has(v)) return "[Circular]";
+              seen.add(v);
+            }
+            return v;
+          },
+          2,
+        );
 
       await c.reply({ text: `${res}` }, { quoted: c.event });
     } catch (e) {
