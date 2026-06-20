@@ -72,7 +72,11 @@ export default {
 
     switch (c.eventType) {
       case "append": {
-        data.push("📩");
+        if (c.fromMe) {
+          data.push("📩");
+        } else {
+          data.push("📧");
+        }
         break;
       }
       case "notify": {
@@ -176,6 +180,6 @@ export default {
         data.push(c.eventName);
     }
 
-    if (data.length > 0) c.log().info(...data);
+    if (data.length > 0) console.info(...data);
   },
 };
