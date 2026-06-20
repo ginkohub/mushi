@@ -12,47 +12,39 @@ import { Reason } from "./reason.js";
 
 /**
  * A middleware function that checks if at least one of the provided middlewares passes.
+ * Returns the first successful Reason, or the last failed Reason if none pass.
  *
  * @param {...((ctx: import('./context.js').Ctx) => Promise<Reason> | Reason)} midwares - The middlewares to check.
  * @returns {(ctx: import('./context.js').Ctx) => Promise<Reason>} A middleware function.
  */
 export function midwareOr(...midwares) {
   return async (ctx) => {
+    let last = new Reason({ success: false });
     for (const midware of midwares) {
       const result = new Reason(await midware(ctx));
-      if (result?.success) {
-        return result;
-      }
+      if (result.success) return result;
+      last = result;
     }
-    return new Reason({
-      success: false,
-      code: "midware-or",
-      author: import.meta.url,
-      message: "Forbidden",
-    });
+    return last;
   };
 }
 
 /**
  * A middleware function that checks if all of the provided middlewares pass.
+ * Returns the first failed Reason, or the last successful Reason if all pass.
  *
  * @param {...((ctx: import('./context.js').Ctx) => Promise<Reason> | Reason)} midwares - The middlewares to check.
  * @returns {(ctx: import('./context.js').Ctx) => Promise<Reason>} A middleware function.
  */
 export function midwareAnd(...midwares) {
   return async (ctx) => {
+    let last = new Reason({ success: false });
     for (const midware of midwares) {
       const result = new Reason(await midware(ctx));
-      if (!result?.success) {
-        return result;
-      }
+      if (!result.success) return result;
+      last = result;
     }
-    return new Reason({
-      success: true,
-      code: "midware-and",
-      author: import.meta.url,
-      message: "OK",
-    });
+    return last;
   };
 }
 
@@ -64,11 +56,12 @@ export function midwareAnd(...midwares) {
  */
 export function eventNameIs(...names) {
   return async (ctx) => {
+    const match = names?.includes(ctx?.eventName);
     return new Reason({
-      success: names?.includes(ctx?.eventName),
-      code: "midware-event-name-is",
-      author: import.meta.url,
-      message: "Event name is not allowed",
+      success: match,
+      code: match ? "event-name-is" : "event-name-not",
+      author: "eventNameIs",
+      message: match ? "Event name matches" : "Event name does not match",
     });
   };
 }
@@ -82,9 +75,9 @@ export function eventNameIs(...names) {
 export function fromMe(ctx) {
   return new Reason({
     success: !!ctx?.fromMe,
-    code: 403,
-    author: import.meta.url,
-    message: "It is not from me",
+    code: "from-me",
+    author: "fromMe",
+    message: ctx?.fromMe ? "Message is from me" : "Message is not from me",
   });
 }
 
@@ -98,8 +91,10 @@ export function isGroup(ctx) {
   return new Reason({
     success: !!ctx?.isGroup,
     code: "is-group",
-    author: import.meta.url,
-    message: "It is not from a group",
+    author: "isGroup",
+    message: ctx?.isGroup
+      ? "Message is from a group"
+      : "Message is not from a group",
   });
 }
 
@@ -113,8 +108,10 @@ export function isPrivate(ctx) {
   return new Reason({
     success: !ctx?.isGroup,
     code: "is-private",
-    author: import.meta.url,
-    message: "It is not from a private chat",
+    author: "isPrivate",
+    message: ctx?.isGroup
+      ? "Message is from a group"
+      : "Message is from a private chat",
   });
 }
 
@@ -128,7 +125,7 @@ export function isStatus(ctx) {
   return new Reason({
     success: !!ctx?.isStatus,
     code: "is-status",
-    author: import.meta.url,
-    message: "It is not a status message",
+    author: "isStatus",
+    message: ctx?.isStatus ? "Message is a status" : "Message is not a status",
   });
 }
