@@ -259,7 +259,7 @@ export class StoreJson {
 /**
  * Create SQLite connection
  * @param {string} saveName
- * @returns {Promise<*>}
+ * @returns {Promise<import("bun:sqlite").Database | import("node:sqlite").DatabaseSync>}
  */
 export async function createSQLite(saveName) {
   if (isBun) {
@@ -271,8 +271,21 @@ export async function createSQLite(saveName) {
   }
 }
 
-/** @type {Record<string, any>} List of SQLite connections */
-export const connectionList = {};
+/** @type {Record<string, Promise<any>>} */
+const connectionList = {};
+
+/**
+ * Get or create a shared SQLite connection for a given saveName.
+ * Guarantees only one connection is created per saveName.
+ * @param {string} saveName
+ * @returns {Promise<any>}
+ */
+function getConnection(saveName) {
+  if (!connectionList[saveName]) {
+    connectionList[saveName] = createSQLite(saveName);
+  }
+  return connectionList[saveName];
+}
 
 /**
  * @class StoreSQLite
@@ -283,142 +296,147 @@ export class StoreSQLite {
    * @param {StoreOpts} opts
    */
   constructor(opts) {
-    if (!opts?.saveName) throw Error("saveName required");
-
-    this.autoSave = opts?.autoSave ?? false;
-    this.saveName = opts?.saveName;
-    this.expiration = opts?.expiration ?? 0;
-    this.tableName = opts?.tableName
+    if (!opts?.saveName) throw new Error("saveName required");
+    this.saveName = opts.saveName;
+    this.autoSave = opts.autoSave ?? false;
+    this.tableName = opts.tableName
       ? sanitizeTableName(opts.tableName)
       : "data";
+    /** @type {any} */
+    this.db = null;
     this.ready = this._init();
   }
 
-  async waitReady() {
+  /** @returns {Promise<void>} */
+  waitReady() {
     return this.ready;
   }
 
   async _init() {
-    if (!connectionList[this.saveName])
-      connectionList[this.saveName] = createSQLite(this.saveName);
-
-    this.db = await connectionList[this.saveName];
+    this.db = await getConnection(this.saveName);
     this.db.exec("PRAGMA journal_mode=WAL");
     this.db.exec("PRAGMA foreign_keys=ON");
-    this.load();
+    await this._load();
   }
 
-  /**
-   * @param {string} sql
-   * @param  {...any} params
-   */
-  run_(sql, ...params) {
+  /** @param {string} sql @param {...any} params */
+  _run(sql, ...params) {
     return this.db.prepare(sql).run(...params);
   }
 
-  /**
-   * @param {string} sql
-   * @param  {...any} params
-   */
-  get_(sql, ...params) {
+  /** @param {string} sql @param {...any} params */
+  _get(sql, ...params) {
     return this.db.prepare(sql).get(...params);
   }
 
-  /**
-   * @param {string} sql
-   * @param  {...any} params
-   */
-  all_(sql, ...params) {
+  /** @param {string} sql @param {...any} params */
+  _all(sql, ...params) {
     return this.db.prepare(sql).all(...params);
   }
 
-  async load() {
-    return this.run_(
-      `CREATE TABLE IF NOT EXISTS ${this.tableName} (key TEXT PRIMARY KEY, value BLOB)`,
-    );
+  async _load() {
+    this._run(`
+      CREATE TABLE IF NOT EXISTS ${this.tableName} (
+        key   TEXT PRIMARY KEY,
+        value BLOB NOT NULL
+      )
+    `);
   }
 
+  /** No-op — SQLite writes are synchronous. Kept for interface compatibility. */
   save() {}
 
   /**
-   * Set data
    * @param {string} key
    * @param {any} value
    */
   set(key, value) {
     if (!key) return;
-
-    return this.run_(
-      `INSERT OR REPLACE INTO ${this.tableName} (key, value) VALUES (?,?)`,
+    this._run(
+      `INSERT OR REPLACE INTO ${this.tableName} (key, value) VALUES (?, ?)`,
       key,
       JSON.stringify(value),
     );
   }
 
   /**
-   * Get data
    * @param {string} key
    * @returns {any}
    */
   get(key) {
-    if (!key) return;
-    const row = this.get_(
+    if (!key) return undefined;
+    const row = this._get(
       `SELECT value FROM ${this.tableName} WHERE key = ?`,
       key,
     );
-    if (!row) return;
-
+    if (!row) return undefined;
     return JSON.parse(row.value);
   }
 
   /**
-   * Delete data
-   * @param {string} key
-   */
-  delete(key) {
-    if (!key) return;
-    return this.run_(`DELETE FROM ${this.tableName} WHERE key = ?`, key);
-  }
-
-  /**
-   * Clear data
-   */
-  clear() {
-    return this.run_(`DELETE FROM ${this.tableName}`);
-  }
-
-  /**
-   * Get all keys
-   * @returns {IterableIterator<string>}
-   */
-  keys() {
-    return this.all_(`SELECT key FROM ${this.tableName}`).map((row) => row.key);
-  }
-
-  /**
-   * Check if key exists
    * @param {string} key
    * @returns {boolean}
    */
   has(key) {
     if (!key || typeof key !== "string") return false;
     return (
-      this.get_(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !==
+      this._get(`SELECT 1 FROM ${this.tableName} WHERE key = ?`, key) !==
       undefined
     );
   }
 
   /**
-   * Create new StoreSQLite instance with different table name
+   * @param {string} key
+   */
+  delete(key) {
+    if (!key) return;
+    this._run(`DELETE FROM ${this.tableName} WHERE key = ?`, key);
+  }
+
+  clear() {
+    this._run(`DELETE FROM ${this.tableName}`);
+  }
+
+  /**
+   * @returns {string[]}
+   */
+  keys() {
+    return this._all(`SELECT key FROM ${this.tableName}`).map((row) => row.key);
+  }
+
+  /**
+   * Return a new StoreSQLite scoped to a different table,
+   * reusing the already-open connection once it's ready.
+   * Safe to call before `await waitReady()`.
    * @param {string} tableName
    * @returns {StoreSQLite}
    */
   use(tableName) {
-    return new StoreSQLite({
-      saveName: this.saveName,
-      autoSave: this.autoSave,
-      expiration: this.expiration,
-      tableName: sanitizeTableName(tableName),
+    const child = Object.create(StoreSQLite.prototype);
+    child.saveName = this.saveName;
+    child.autoSave = this.autoSave;
+    child.tableName = sanitizeTableName(tableName);
+    child.db = null;
+    child.ready = this.ready.then(() => {
+      child.db = this.db;
+      return child._load();
     });
+    return child;
+  }
+
+  /**
+   * Create a StoreSQLite instance with an existing connection, skipping _init().
+   * @param {any} db
+   * @param {StoreOpts} opts
+   * @returns {StoreSQLite}
+   */
+  static _fromConnection(db, opts) {
+    const instance = Object.create(StoreSQLite.prototype);
+    instance.saveName = opts.saveName;
+    instance.autoSave = opts.autoSave ?? false;
+    instance.tableName = opts.tableName ?? "data";
+    instance.db = db;
+    instance.ready = instance._load();
+    return instance;
   }
 }
