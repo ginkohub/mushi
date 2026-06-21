@@ -34,7 +34,7 @@ const t = translate({
 });
 
 export default {
-  name: "std-tr",
+  name: "tool-tr",
   cmd: ["tr", "tr?", "translate"],
   cat: "tool",
   tags: ["tool", "translate"],
