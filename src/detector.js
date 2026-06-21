@@ -25,7 +25,6 @@ const onlyOfficial = [
 
 const excludeEvents = [
   "message-receipt.update",
-  // "messages.reaction",
 ];
 
 const AUTHOR = "BotDetector";
