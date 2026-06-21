@@ -27,8 +27,7 @@ const t = translate({
     question_hint: "💡 There are *{count}* answers. Find them all!",
     game_board:
       "━━━━━━━━━━━━━━\n{board}\n━━━━━━━━━━━━━━\n❌ *Strikes:* {strikes}/3\n{remaining}",
-    answer_revealed:
-      "✅ *{answer}* — {points} pts (by @{user})",
+    answer_revealed: "✅ *{answer}* — {points} pts (by @{user})",
     strike: "❌ *Wrong!* Strike {strike}/3",
     game_over:
       "🏁 *Game Over!*\n\n*Question:* {soal}\n\n{answers}\n\nTotal points: *{total}* 🎯",
@@ -45,8 +44,7 @@ const t = translate({
     help_important: "⚠️ *Penting:*",
     help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
     help_timeout_hint: "- Permainan berlangsung 90 detik.",
-    help_admin:
-      "⚙️ *Admin:* `{prefix}f100.update` untuk sinkronisasi soal.",
+    help_admin: "⚙️ *Admin:* `{prefix}f100.update` untuk sinkronisasi soal.",
     session_active: "❌ Masih ada permainan yang aktif di grup ini!",
     no_data:
       "❌ Data soal tidak ditemukan! Gunakan `{prefix}f100.update` (Admin).",
@@ -55,13 +53,11 @@ const t = translate({
     question_hint: "💡 Ada *{count}* jawaban. Temukan semuanya!",
     game_board:
       "━━━━━━━━━━━━━━\n{board}\n━━━━━━━━━━━━━━\n❌ *Salah:* {strikes}/3\n{remaining}",
-    answer_revealed:
-      "✅ *{answer}* — {points} pts (oleh @{user})",
+    answer_revealed: "✅ *{answer}* — {points} pts (oleh @{user})",
     strike: "❌ *Salah!* Salah {strike}/3",
     game_over:
       "🏁 *Permainan Selesai!*\n\n*Pertanyaan:* {soal}\n\n{answers}\n\nTotal poin: *{total}* 🎯",
-    timeout:
-      "⌛ *Waktu habis!*\n\n*Pertanyaan:* {soal}\n\n{answers}",
+    timeout: "⌛ *Waktu habis!*\n\n*Pertanyaan:* {soal}\n\n{answers}",
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} soal.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
@@ -75,7 +71,9 @@ const JSON_URL =
 const MAX_STRIKES = 3;
 const GAME_DURATION_MS = 90000;
 
-const POINTS = [30, 25, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const POINTS = [
+  30, 25, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+];
 
 /**
  * @typedef {Object} F100Session
@@ -160,11 +158,18 @@ function startGame(c) {
     "",
     t("question_hint", { count: remaining }, c),
     "",
-    t("game_board", {
-      board: renderBoard({ jawaban: answers, found: answers.map(() => false) }),
-      strikes: "0",
-      remaining: `_Reply with your guess!_`,
-    }, c),
+    t(
+      "game_board",
+      {
+        board: renderBoard({
+          jawaban: answers,
+          found: answers.map(() => false),
+        }),
+        strikes: "0",
+        remaining: `_Reply with your guess!_`,
+      },
+      c,
+    ),
   ].join("\n");
 
   c.reply({ text }, { quoted: c.event }).then((resp) => {
@@ -181,10 +186,14 @@ function startGame(c) {
 
       c.reply(
         {
-          text: t("timeout", {
-            soal: s.soal,
-            answers: revealed,
-          }, c),
+          text: t(
+            "timeout",
+            {
+              soal: s.soal,
+              answers: revealed,
+            },
+            c,
+          ),
         },
         { quoted: c.event },
       ).then((r) => {
@@ -328,13 +337,17 @@ export default [
 
           const remaining = session.found.filter((f) => !f).length;
           const board = renderBoard(session);
-          const boardText = t("game_board", {
-            board,
-            strikes: String(session.strikes),
-            remaining: allFound
-              ? "🎉 *All answers found!*"
-              : `_${remaining} answers remaining_`,
-          }, c);
+          const boardText = t(
+            "game_board",
+            {
+              board,
+              strikes: String(session.strikes),
+              remaining: allFound
+                ? "🎉 *All answers found!*"
+                : `_${remaining} answers remaining_`,
+            },
+            c,
+          );
 
           const resultText = `${t("answer_revealed", { answer: session.jawaban[foundIdx].toUpperCase(), points: pts, user: c.senderJid.split("@")[0] }, c)}\n\n${boardText}`;
 
@@ -354,11 +367,15 @@ export default [
               )
               .join("\n");
 
-            const finalText = t("game_over", {
-              soal: session.soal,
-              answers: revealed,
-              total: session.totalPoints,
-            }, c);
+            const finalText = t(
+              "game_over",
+              {
+                soal: session.soal,
+                answers: revealed,
+                total: session.totalPoints,
+              },
+              c,
+            );
 
             const xp = session.totalPoints;
             const user = c.user;
@@ -367,12 +384,14 @@ export default [
               c.client().userManager.updateUser(c.senderJid, user);
             }
 
-            await c.reply(
-              { text: `${finalText}\n\n🌟 *+${xp} XP*` },
-              { quoted: c.event },
-            ).then((r) => {
-              if (r) session.resultId = r.key.id;
-            });
+            await c
+              .reply(
+                { text: `${finalText}\n\n🌟 *+${xp} XP*` },
+                { quoted: c.event },
+              )
+              .then((r) => {
+                if (r) session.resultId = r.key.id;
+              });
           }
         } else {
           session.strikes += 1;
@@ -388,18 +407,24 @@ export default [
               )
               .join("\n");
 
-            await c.reply(
-              {
-                text: t("game_over", {
-                  soal: session.soal,
-                  answers: revealed,
-                  total: session.totalPoints,
-                }, c),
-              },
-              { quoted: c.event },
-            ).then((r) => {
-              if (r) session.resultId = r.key.id;
-            });
+            await c
+              .reply(
+                {
+                  text: t(
+                    "game_over",
+                    {
+                      soal: session.soal,
+                      answers: revealed,
+                      total: session.totalPoints,
+                    },
+                    c,
+                  ),
+                },
+                { quoted: c.event },
+              )
+              .then((r) => {
+                if (r) session.resultId = r.key.id;
+              });
           } else {
             await c.reply(
               { text: t("strike", { strike: String(session.strikes) }, c) },

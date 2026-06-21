@@ -99,7 +99,10 @@ export const WellKnownJid = {
   StatusBroadcast: new Jid({ user: "status", server: JidServer.Broadcast }),
   LegacyPSA: new Jid({ user: "0", server: JidServer.LegacyUser }),
   PSA: new Jid({ user: "0", server: JidServer.DefaultUser }),
-  OfficialBusiness: new Jid({ user: "16505361212", server: JidServer.LegacyUser }),
+  OfficialBusiness: new Jid({
+    user: "16505361212",
+    server: JidServer.LegacyUser,
+  }),
   MetaAI: new Jid({ user: "13135550002", server: JidServer.DefaultUser }),
   NewMetaAI: new Jid({ user: "867051314767696", server: JidServer.Bot }),
 };

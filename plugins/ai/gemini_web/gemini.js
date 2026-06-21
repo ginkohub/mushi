@@ -126,7 +126,7 @@ class GeminiClient {
         const d = JSON.parse(s);
         const c = this.#get(d, [4, 0, 1, 0], null);
         if (c && typeof c === "string" && !c.includes("rc_")) texts.push(c);
-      } catch { }
+      } catch {}
     }
     return (texts.sort((a, b) => b.length - a.length)[0] || "").trim();
   }

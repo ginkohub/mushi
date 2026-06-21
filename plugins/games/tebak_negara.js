@@ -324,7 +324,7 @@ export default [
 
       if (flags.length === 0) await autoFetch(c);
       startGame(c);
-    }
+    },
   },
   {
     cmd: ["tb.update", "tebakbendera.update"],

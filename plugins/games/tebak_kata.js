@@ -126,7 +126,9 @@ async function autoFetch(c) {
     if (!Array.isArray(data)) return;
     const newWordList = {
       easy: data.filter((w) => w.jawaban.length <= 6),
-      medium: data.filter((w) => w.jawaban.length >= 7 && w.jawaban.length <= 9),
+      medium: data.filter(
+        (w) => w.jawaban.length >= 7 && w.jawaban.length <= 9,
+      ),
       hard: data.filter((w) => w.jawaban.length >= 10),
     };
     const path = getFile("tebak_kata.json");
@@ -242,7 +244,12 @@ export default [
         );
       }
 
-      if (!wordList.easy.length && !wordList.medium.length && !wordList.hard.length) await autoFetch(c);
+      if (
+        !wordList.easy.length &&
+        !wordList.medium.length &&
+        !wordList.hard.length
+      )
+        await autoFetch(c);
       startGame(c, levelArg);
     },
   },

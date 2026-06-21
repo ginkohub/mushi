@@ -23,9 +23,7 @@ const onlyOfficial = [
   "botForwardedMessage",
 ];
 
-const excludeEvents = [
-  "message-receipt.update",
-];
+const excludeEvents = ["message-receipt.update"];
 
 const AUTHOR = "BotDetector";
 
