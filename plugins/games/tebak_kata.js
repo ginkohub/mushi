@@ -118,6 +118,26 @@ function loadWords() {
 
 loadWords();
 
+async function autoFetch(c) {
+  try {
+    const res = await fetch(WORD_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    const newWordList = {
+      easy: data.filter((w) => w.jawaban.length <= 6),
+      medium: data.filter((w) => w.jawaban.length >= 7 && w.jawaban.length <= 9),
+      hard: data.filter((w) => w.jawaban.length >= 10),
+    };
+    const path = getFile("tebak_kata.json");
+    writeFileSync(path, JSON.stringify(newWordList, null, 2));
+    wordList = newWordList;
+    c.log().info(`auto-fetched ${data.length} words`);
+  } catch (e) {
+    c.log().error(`auto-fetch failed: ${e.message}`);
+  }
+}
+
 function startGame(c, level) {
   const selectedLevel = LEVEL_ALIAS[level] || level || "easy";
   const words = wordList[selectedLevel] || wordList.easy;
@@ -222,6 +242,7 @@ export default [
         );
       }
 
+      if (!wordList.easy.length && !wordList.medium.length && !wordList.hard.length) await autoFetch(c);
       startGame(c, levelArg);
     },
   },

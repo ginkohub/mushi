@@ -94,6 +94,21 @@ function loadQuestions() {
 // Initial load
 loadQuestions();
 
+async function autoFetch(c) {
+  try {
+    const res = await fetch(JSON_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    const path = getFile("caklontong.json");
+    writeFileSync(path, JSON.stringify(data, null, 2));
+    questions = data;
+    c.log().info(`auto-fetched ${data.length} questions`);
+  } catch (e) {
+    c.log().error(`auto-fetch failed: ${e.message}`);
+  }
+}
+
 function startGame(c) {
   if (questions.length === 0) {
     c.reply(
@@ -184,6 +199,7 @@ export default [
         );
       }
 
+      if (questions.length === 0) await autoFetch(c);
       startGame(c);
     },
   },

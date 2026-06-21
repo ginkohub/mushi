@@ -196,6 +196,21 @@ function startCapitalGame(c) {
 
 loadFlags();
 
+async function autoFetch(c) {
+  try {
+    const res = await fetch(JSON_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    const path = getFile("tebak_negara.json");
+    writeFileSync(path, JSON.stringify(data, null, 2));
+    flags = data;
+    c.log().info(`auto-fetched ${data.length} countries`);
+  } catch (e) {
+    c.log().error(`auto-fetch failed: ${e.message}`);
+  }
+}
+
 function startGame(c) {
   if (flags.length === 0) {
     c.reply(
@@ -288,11 +303,9 @@ export default [
         );
       }
 
+      if (flags.length === 0) await autoFetch(c);
       startGame(c);
     },
-  },
-  {
-    name: "games-tebakbendera-updater",
     cmd: ["tb.update", "tebakbendera.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -430,6 +443,7 @@ export default [
         );
       }
 
+      if (flags.length === 0) await autoFetch(c);
       startCapitalGame(c);
     },
   },

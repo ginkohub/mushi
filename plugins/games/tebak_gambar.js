@@ -135,6 +135,21 @@ function loadQuestions() {
 
 loadQuestions();
 
+async function autoFetch(c) {
+  try {
+    const res = await fetch(JSON_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (typeof data !== "object" || Array.isArray(data)) return;
+    const path = getFile("tebak_gambar.json");
+    writeFileSync(path, JSON.stringify(data, null, 2));
+    questions = data;
+    c.log().info(`auto-fetched ${Object.keys(data).length} levels`);
+  } catch (e) {
+    c.log().error(`auto-fetch failed: ${e.message}`);
+  }
+}
+
 function getTimeoutMs(c) {
   const settings = c.client()?.settings;
   return getTimeout(settings, c.chat);
@@ -265,6 +280,7 @@ export default [
         }
       }
 
+      if (!Object.keys(questions).length) await autoFetch(c);
       startGame(c, levelArg || getLevel(settings, c.chat));
     },
   },

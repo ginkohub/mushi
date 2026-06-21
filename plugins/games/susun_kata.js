@@ -94,6 +94,21 @@ function loadWords() {
 
 loadWords();
 
+async function autoFetch(c) {
+  try {
+    const res = await fetch(JSON_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    const path = getFile("susun_kata.json");
+    writeFileSync(path, JSON.stringify(data, null, 2));
+    wordList = data;
+    c.log().info(`auto-fetched ${data.length} words`);
+  } catch (e) {
+    c.log().error(`auto-fetch failed: ${e.message}`);
+  }
+}
+
 function startGame(c) {
   if (wordList.length === 0) {
     c.reply(
@@ -181,6 +196,7 @@ export default [
         );
       }
 
+      if (wordList.length === 0) await autoFetch(c);
       startGame(c);
     },
   },
