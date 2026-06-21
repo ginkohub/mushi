@@ -66,7 +66,7 @@ const t = translate({
 });
 
 const JSON_URL =
-  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/caklontong.json";
+  "https://raw.githubusercontent.com/ginkohub/game-assets/main/cak-lontong/data.json";
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, desc: string, done: boolean, resultId: string }>} */
 const sessions = new Map();

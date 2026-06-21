@@ -93,7 +93,7 @@ const JSON_URL =
   "https://raw.githubusercontent.com/ginkohub/game-assets/main/tebak-gambar/data.json";
 
 const MAX_LEVEL = 13;
-const DEFAULT_TIMEOUT_MS = 45000;
+const DEFAULT_TIMEOUT_MS = 60000;
 const TIMEOUT_STORE_KEY = "tebakgambar_timeout";
 const LEVEL_STORE_KEY = "tebakgambar_level";
 

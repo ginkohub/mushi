@@ -66,7 +66,7 @@ const t = translate({
 });
 
 const JSON_URL =
-  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/asahotak.json";
+  "https://raw.githubusercontent.com/ginkohub/game-assets/main/asah-otak/data.json";
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, done: boolean, resultId: string }>} */
 const sessions = new Map();
@@ -74,7 +74,7 @@ const sessions = new Map();
 const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
 const STOP_WORDS = new Set(["stop", "nyerah"]);
 
-/** @type {{pertanyaan: string, jawaban: string}[]} */
+/** @type {{soal: string, jawaban: string}[]} */
 let questions = [];
 
 /**
@@ -109,7 +109,7 @@ function startGame(c) {
   const texts = [
     t("question_header", {}, c),
     "",
-    `"${q.pertanyaan}"`,
+    `"${q.soal}"`,
     "",
     t("question_time", {}, c),
     t("question_reward", { xp: xpReward }, c),

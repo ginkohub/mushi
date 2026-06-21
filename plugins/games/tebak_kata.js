@@ -86,7 +86,7 @@ const sessions = new Map();
 const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
 const STOP_WORDS = new Set(["stop", "nyerah"]);
 
-/** @type {Record<string, {pertanyaan: string, jawaban: string}[]>} */
+/** @type {Record<string, {soal: string, jawaban: string}[]>} */
 let wordList = {
   easy: [],
   medium: [],
@@ -100,7 +100,7 @@ const LEVEL_ALIAS = {
 };
 
 const WORD_URL =
-  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/tebakkata.json";
+  "https://raw.githubusercontent.com/ginkohub/game-assets/main/tebak-kata/data.json";
 
 /**
  * Load word list from JSON file
@@ -132,7 +132,7 @@ function startGame(c, level) {
 
   const item = words[Math.floor(Math.random() * words.length)];
   const answer = item.jawaban.toUpperCase();
-  const clues = item.pertanyaan;
+  const clues = item.soal;
 
   const xpMultiplier =
     selectedLevel === "hard" ? 30 : selectedLevel === "medium" ? 20 : 10;

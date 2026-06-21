@@ -28,7 +28,7 @@ const t = translate({
     no_data: "❌ Word data not found! Use `{prefix}sk.update` (Admin).",
     question_header: "🧩 *SUSUN KATA*",
     question_time: "⏱️ *Time:* 45 seconds",
-    question_reward: "🎁 *Reward:* {xp} XP",
+    question_reward: "🎁 *Reward:* {xp}XP/char",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
     timeout: "⌛ *Time's up!*\nThe answer was: *{answer}*",
@@ -52,7 +52,7 @@ const t = translate({
       "❌ Data soal tidak ditemukan! Gunakan `{prefix}sk.update` (Admin).",
     question_header: "🧩 *SUSUN KATA*",
     question_time: "⏱️ *Waktu:* 45 detik",
-    question_reward: "🎁 *Hadiah:* {xp} XP",
+    question_reward: "🎁 *Hadiah:* {xp}XP/huruf",
     question_note: "📝 *Note:*",
     question_reply: "_Reply chat ini untuk menjawab!_",
     timeout: "⌛ *Waktu habis!*\nJawabannya adalah: *{answer}*",
@@ -66,15 +66,16 @@ const t = translate({
 });
 
 const JSON_URL =
-  "https://raw.githubusercontent.com/MichaelAgam23/metadata/main/susunkata.json";
+  "https://raw.githubusercontent.com/ginkohub/game-assets/main/susun-kata/data.json";
 
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, done: boolean, resultId: string }>} */
 const sessions = new Map();
 
 const REPLAY_WORDS = new Set(["lagi", "lanjut", "again", "next"]);
 const STOP_WORDS = new Set(["stop", "nyerah"]);
+const REWARD = 10;
 
-/** @type {{pertanyaan: string, jawaban: string}[]} */
+/** @type {{soal: string, tipe: string, jawaban: string}[]} */
 let wordList = [];
 
 /**
@@ -104,15 +105,14 @@ function startGame(c) {
 
   const q = wordList[Math.floor(Math.random() * wordList.length)];
   const answer = q.jawaban.toUpperCase().trim();
-  const xpReward = answer.length * 10;
 
   const texts = [
     t("question_header", {}, c),
     "",
-    `*${q.pertanyaan}*`,
+    q.tipe ? `📌 ${q.tipe}: *${q.soal}*` : `*${q.soal}*`,
     "",
     t("question_time", {}, c),
-    t("question_reward", { xp: xpReward }, c),
+    t("question_reward", { xp: REWARD }, c),
     "",
     t("question_note", {}, c),
     t("question_reply", {}, c),
@@ -134,7 +134,7 @@ function startGame(c) {
     sessions.set(c.chat, {
       answer: answer.toLowerCase(),
       timeout,
-      xp: xpReward,
+      xp: REWARD * q.jawaban.length,
       questionId: resp.key.id,
       done: false,
       resultId: "",
