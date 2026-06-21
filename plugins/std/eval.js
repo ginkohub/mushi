@@ -10,6 +10,23 @@
 
 import { Role } from "#mushi";
 
+function jsonify(obj) {
+  const seen = new WeakSet();
+  if (typeof obj === "object" && !(obj instanceof Buffer))
+    obj = JSON.stringify(
+      obj,
+      (_, v) => {
+        if (typeof v === "object" && v !== null) {
+          if (seen.has(v)) return "[Circular]";
+          seen.add(v);
+        }
+        return v;
+      },
+      2,
+    );
+  return obj;
+}
+
 /** @type {import('#mushi').Plugin} */
 export default {
   name: "std-eval",
@@ -32,19 +49,7 @@ export default {
         return await c.react("❔");
       }
 
-      const seen = new WeakSet();
-      if (typeof res === "object" && !(res instanceof Buffer))
-        res = JSON.stringify(
-          res,
-          (_, v) => {
-            if (typeof v === "object" && v !== null) {
-              if (seen.has(v)) return "[Circular]";
-              seen.add(v);
-            }
-            return v;
-          },
-          2,
-        );
+      res = jsonify(res);
 
       await c.reply({ text: `${res}` }, { quoted: c.event });
     } catch (e) {
