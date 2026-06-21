@@ -261,7 +261,7 @@ const ghPlugin = {
 };
 
 const ghSetPlugin = {
-  name: "std-ghset",
+  name: "net-github-set",
   cmd: ["ghset"],
   cat: "tool",
   tags: ["config", "github"],
