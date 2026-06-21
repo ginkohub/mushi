@@ -34,7 +34,7 @@ const t = translate({
 });
 
 export default {
-  name: "std-wiki",
+  name: "net-wiki",
   cmd: ["wiki", "wikipedia"],
   cat: "tool",
   tags: ["info", "search"],
