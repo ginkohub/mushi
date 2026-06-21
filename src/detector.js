@@ -23,6 +23,11 @@ const onlyOfficial = [
   "botForwardedMessage",
 ];
 
+const excludeEvents = [
+  "message-receipt.update",
+  // "messages.reaction",
+];
+
 const AUTHOR = "BotDetector";
 
 /**
@@ -180,6 +185,12 @@ export class BotDetector {
    * @returns {Promise<Reason>} A promise that resolves with a Reason object indicating whether the message is suspected to be from a bot.
    */
   async isBot(ctx, force = false) {
+    if (excludeEvents.includes(ctx.eventName)) {
+      return new Reason({ success: false, author: AUTHOR, data: ctx });
+    }
+    if (ctx.fromMe && (ctx.sender === ctx.me || ctx.sender === ctx.meLID)) {
+      return new Reason({ success: false, author: AUTHOR, data: ctx });
+    }
     if (ctx.senderOriginal && !force) {
       const result = this.isQuarantined(ctx.senderOriginal);
       if (result) {
