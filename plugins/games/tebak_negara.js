@@ -27,7 +27,8 @@ const t = translate({
     question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
-    timeout: "⌛ *Time's up!*\nThe answer was: *{answer}*\n📍 *Region:* {region}\n🏙️ *Capital:* {capital}\n\nReply _lagi/again/next_ to play again",
+    timeout:
+      "⌛ *Time's up!*\nThe answer was: *{answer}*\n📍 *Region:* {region}\n🏙️ *Capital:* {capital}\n\nReply _lagi/again/next_ to play again",
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} flags.",
     sync_failed: "❌ *Sync Failed:* {error}",
@@ -44,13 +45,15 @@ const t = translate({
     help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
     help_admin: "⚙️ *Admin:* `{prefix}tb.update` untuk sinkronisasi bendera.",
     session_active: "❌ Masih ada permainan yang aktif di grup ini!",
-    no_data: "❌ Data bendera tidak ditemukan! Gunakan `{prefix}tb.update` (Admin).",
+    no_data:
+      "❌ Data bendera tidak ditemukan! Gunakan `{prefix}tb.update` (Admin).",
     question_header: "🏴 *TEBAK BENDERA*",
     question_time: "⏱️ *Waktu:* 45 detik",
     question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Balas pesan ini untuk menjawab!_",
-    timeout: "⌛ *Waktu habis!*\nJawabannya adalah: *{answer}*\n📍 *Wilayah:* {region}\n🏙️ *Ibukota:* {capital}\n\nBalas _lagi/lanjut/again/next_ untuk main lagi",
+    timeout:
+      "⌛ *Waktu habis!*\nJawabannya adalah: *{answer}*\n📍 *Wilayah:* {region}\n🏙️ *Ibukota:* {capital}\n\nBalas _lagi/lanjut/again/next_ untuk main lagi",
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} bendera.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
@@ -105,7 +108,8 @@ const tCapital = translate({
     question_reward: "🎁 *Reward:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Reply to this message to answer!_",
-    timeout: "⌛ *Time's up!*\nThe capital of *{country}* is *{answer}*\n📍 *Region:* {region}\n\nReply _lagi/again/next_ to play again",
+    timeout:
+      "⌛ *Time's up!*\nThe capital of *{country}* is *{answer}*\n📍 *Region:* {region}\n\nReply _lagi/again/next_ to play again",
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} countries.",
     sync_failed: "❌ *Sync Failed:* {error}",
@@ -120,16 +124,19 @@ const tCapital = translate({
     help_important: "⚠️ *Penting:*",
     help_reply: "- Harus *Reply/Quote* pesan soal untuk menjawab.",
     help_timeout_hint: "- Waktu menjawab adalah 45 detik.",
-    help_admin: "⚙️ *Admin:* `{prefix}tbi.update` untuk sinkronisasi data negara.",
+    help_admin:
+      "⚙️ *Admin:* `{prefix}tbi.update` untuk sinkronisasi data negara.",
     session_active: "❌ Masih ada permainan yang aktif di grup ini!",
-    no_data: "❌ Data negara tidak ditemukan! Gunakan `{prefix}tbi.update` (Admin).",
+    no_data:
+      "❌ Data negara tidak ditemukan! Gunakan `{prefix}tbi.update` (Admin).",
     question_header: "🏙️ *TEBAK IBUKOTA*",
     question_country: "🌍 *Negara:* {country}",
     question_time: "⏱️ *Waktu:* 45 detik",
     question_reward: "🎁 *Hadiah:* {xp} XP",
     question_note: "📝 *Note:*",
     question_reply: "_Balas pesan ini untuk menjawab!_",
-    timeout: "⌛ *Waktu habis!*\nIbu kota *{country}* adalah *{answer}*\n📍 *Wilayah:* {region}\n\nBalas _lagi/lanjut/again/next_ untuk main lagi",
+    timeout:
+      "⌛ *Waktu habis!*\nIbu kota *{country}* adalah *{answer}*\n📍 *Wilayah:* {region}\n\nBalas _lagi/lanjut/again/next_ untuk main lagi",
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} negara.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
@@ -173,7 +180,13 @@ function startCapitalGame(c) {
         if (!s || s.done) return;
         s.done = true;
         c.reply(
-          { text: tCapital("timeout", { country: q.negara, answer: q.ibukota, region: q.wilayah }, c) },
+          {
+            text: tCapital(
+              "timeout",
+              { country: q.negara, answer: q.ibukota, region: q.wilayah },
+              c,
+            ),
+          },
           { quoted: c.event },
         ).then((r) => {
           if (r) s.resultId = r.key.id;
@@ -243,7 +256,13 @@ function startGame(c) {
         if (!s || s.done) return;
         s.done = true;
         c.reply(
-          { text: t("timeout", { answer: q.negara, region: q.wilayah, capital: q.ibukota }, c) },
+          {
+            text: t(
+              "timeout",
+              { answer: q.negara, region: q.wilayah, capital: q.ibukota },
+              c,
+            ),
+          },
           { quoted: c.event },
         ).then((r) => {
           if (r) s.resultId = r.key.id;
@@ -305,7 +324,9 @@ export default [
 
       if (flags.length === 0) await autoFetch(c);
       startGame(c);
-    },
+    }
+  },
+  {
     cmd: ["tb.update", "tebakbendera.update"],
     cat: "games",
     tags: ["game", "admin"],
@@ -530,7 +551,10 @@ export default [
         } else if (STOP_WORDS.has(userAnswer)) {
           clearTimeout(session.timeout);
           capitalSessions.delete(c.chat);
-          await c.reply({ text: tCapital("stopped", {}, c) }, { quoted: c.event });
+          await c.reply(
+            { text: tCapital("stopped", {}, c) },
+            { quoted: c.event },
+          );
         } else {
           return await c.react("❌");
         }
@@ -544,7 +568,10 @@ export default [
           startCapitalGame(c);
         } else if (STOP_WORDS.has(text)) {
           capitalSessions.delete(c.chat);
-          await c.reply({ text: tCapital("stopped", {}, c) }, { quoted: c.event });
+          await c.reply(
+            { text: tCapital("stopped", {}, c) },
+            { quoted: c.event },
+          );
         }
       }
     },
