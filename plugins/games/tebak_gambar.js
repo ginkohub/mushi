@@ -222,7 +222,7 @@ function startGame(c, level, excludeAnswers) {
 
   const q = pool[Math.floor(Math.random() * pool.length)];
   const answer = q.jawaban.toLowerCase().trim();
-  const xpReward = answer.length * 10;
+  const xpReward = answer.length * (parseInt(lv, 10) || 1) * 10;
   const timeoutMs = getTimeoutMs(c);
   const timeoutSec = Math.round(timeoutMs / 1000);
 
