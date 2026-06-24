@@ -27,7 +27,7 @@ const t = translate({
       "🔗 *SAMBUNG KATA*\n\n📝 *First word:* *{word}*\n\n⚡ Reply with a word starting with *{letter}*!\n📖 Type *stop* to end.",
     turn: "🔗 *{word}*\n\n⚡ Reply with a word starting with *{letter}*!\n👤 *Turn:* anyone\n⏱️ 60 seconds",
     correct:
-      "✅ *{word}* ({points} pts) — by @{user}\n\n🔗 *{nextWord}*\n\n⚡ Reply with a word starting with *{letter}*!",
+      "✅ *{word}* ({points} pts) — by @{user}\n🌟 *+{xp} XP*\n\n🔗 *{nextWord}*\n\n⚡ Reply with a word starting with *{letter}*!",
     invalid_word: "❌ *{word}* is not a valid word!",
     invalid_letter: "❌ *{word}* must start with *{letter}*!",
     duplicate_word: "❌ *{word}* has already been used!",
@@ -55,7 +55,7 @@ const t = translate({
       "🔗 *SAMBUNG KATA*\n\n📝 *Kata pertama:* *{word}*\n\n⚡ Balas dengan kata berawalan *{letter}*!\n📖 Ketik *stop* untuk berhenti.",
     turn: "🔗 *{word}*\n\n⚡ Balas dengan kata berawalan *{letter}*!\n👤 *Giliran:* siapa saja\n⏱️ 60 detik",
     correct:
-      "✅ *{word}* ({points} pts) — oleh @{user}\n\n🔗 *{nextWord}*\n\n⚡ Balas dengan kata berawalan *{letter}*!",
+      "✅ *{word}* ({points} pts) — oleh @{user}\n🌟 *+{xp} XP*\n\n🔗 *{nextWord}*\n\n⚡ Balas dengan kata berawalan *{letter}*!",
     invalid_word: "❌ *{word}* bukan kata yang valid!",
     invalid_letter: "❌ *{word}* harus berawalan *{letter}*!",
     duplicate_word: "❌ *{word}* sudah pernah digunakan!",
@@ -413,6 +413,7 @@ export default [
           {
             word: userAnswer.toUpperCase(),
             points: userAnswer.length,
+            xp: xpReward,
             user: c.senderJid.split("@")[0],
             nextWord: session.word.toUpperCase(),
             letter: nextSuku.toUpperCase(),
