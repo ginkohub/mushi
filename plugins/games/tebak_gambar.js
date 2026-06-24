@@ -112,6 +112,47 @@ function saveLevel(settings, chat, lv) {
   settings?.set(`${LEVEL_STORE_KEY}_${chat}`, lv);
 }
 
+/** @type {Map<string, import('#mushi').Store>} */
+const gamesStores = new Map();
+
+function getGamesStore(c) {
+  const clientName = c.client()?.name;
+  if (!clientName) return null;
+  if (!gamesStores.has(clientName)) {
+    const store = c.client().store.use("games_tebak_gambar");
+    gamesStores.set(clientName, store);
+  }
+  return gamesStores.get(clientName);
+}
+
+const PROGRESS_STORE_KEY = "tebakgambar_progress";
+
+async function getUserProgress(c, chat, user) {
+  const store = getGamesStore(c);
+  if (!store) return null;
+  await store.waitReady();
+  const stored = store.get(`${PROGRESS_STORE_KEY}_${chat}_${user}`);
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+}
+
+async function saveUserProgress(c, chat, user, progress) {
+  const store = getGamesStore(c);
+  if (!store) return;
+  await store.waitReady();
+  store.set(`${PROGRESS_STORE_KEY}_${chat}_${user}`, JSON.stringify(progress));
+}
+
+function isLevelComplete(level, answered) {
+  const items = questions[level];
+  if (!items || items.length === 0) return false;
+  return items.every((q) => answered.includes(q.jawaban.toLowerCase().trim()));
+}
+
 /** @type {Map<string, { answer: string, timeout: NodeJS.Timeout, xp: number, questionId: string, level: string, desc: string, done: boolean, resultId: string, clueRevealed: boolean }>} */
 const sessions = new Map();
 
@@ -155,7 +196,7 @@ function getTimeoutMs(c) {
   return getTimeout(settings, c.chat);
 }
 
-function startGame(c, level) {
+function startGame(c, level, excludeAnswers) {
   const lv = level || "1";
   const items = questions[lv];
 
@@ -167,7 +208,15 @@ function startGame(c, level) {
     return;
   }
 
-  const q = items[Math.floor(Math.random() * items.length)];
+  let pool = items;
+  if (excludeAnswers?.length) {
+    const filtered = items.filter(
+      (q) => !excludeAnswers.includes(q.jawaban.toLowerCase().trim()),
+    );
+    if (filtered.length > 0) pool = filtered;
+  }
+
+  const q = pool[Math.floor(Math.random() * pool.length)];
   const answer = q.jawaban.toLowerCase().trim();
   const xpReward = answer.length * 10;
   const timeoutMs = getTimeoutMs(c);
@@ -281,7 +330,35 @@ export default [
       }
 
       if (!Object.keys(questions).length) await autoFetch(c);
-      startGame(c, levelArg || getLevel(settings, c.chat));
+      const targetLevel = levelArg || getLevel(settings, c.chat);
+      const progress = await getUserProgress(c, c.chat, c.senderJid);
+
+      if (levelArg) {
+        const targetNum = parseInt(targetLevel, 10);
+        const savedNum = parseInt(getLevel(settings, c.chat), 10);
+        if (targetNum > savedNum) {
+          const completed = progress?.completed || [];
+          const missing = [];
+          for (let i = 1; i < targetNum; i++) {
+            const lv = String(i);
+            if (!completed.includes(lv) && questions[lv]?.length) {
+              missing.push(lv);
+            }
+          }
+          if (missing.length > 0) {
+            return await c.reply(
+              {
+                text: `❌ Complete level *${missing[0]}* first before jumping to level ${targetNum}.`,
+              },
+              { quoted: c.event },
+            );
+          }
+        }
+      }
+
+      const excludeAnswers =
+        progress?.level === targetLevel ? progress.answered : [];
+      startGame(c, targetLevel, excludeAnswers);
     },
   },
   {
@@ -423,8 +500,33 @@ export default [
             c.client().userManager.updateUser(c.senderJid, user);
           }
 
-          const nextLv = Math.min(parseInt(session.level, 10) + 1, MAX_LEVEL);
-          saveLevel(c.client()?.settings, c.chat, String(nextLv));
+          const settings = c.client()?.settings;
+          const progress =
+            (await getUserProgress(c, c.chat, c.senderJid)) || {
+              level: session.level,
+              answered: [],
+              completed: [],
+            };
+          progress.level = session.level;
+          if (!progress.answered.includes(session.answer)) {
+            progress.answered.push(session.answer);
+          }
+          await saveUserProgress(c, c.chat, c.senderJid, progress);
+
+          const allDone = isLevelComplete(session.level, progress.answered);
+          if (allDone) {
+            const completed = progress.completed || [];
+            if (!completed.includes(session.level)) {
+              completed.push(session.level);
+            }
+            const nextLv = Math.min(parseInt(session.level, 10) + 1, MAX_LEVEL);
+            saveLevel(settings, c.chat, String(nextLv));
+            await saveUserProgress(c, c.chat, c.senderJid, {
+              level: String(nextLv),
+              answered: [],
+              completed,
+            });
+          }
 
           const result = await c.reply(
             {
@@ -456,7 +558,14 @@ export default [
         if (REPLAY_WORDS.has(text)) {
           await c.react("🔄");
           sessions.delete(c.chat);
-          startGame(c, session.level);
+          const progress = await getUserProgress(
+            c,
+            c.chat,
+            c.senderJid,
+          );
+          const excludeAnswers =
+            progress?.level === session.level ? progress.answered : [];
+          startGame(c, session.level, excludeAnswers);
         } else if (STOP_WORDS.has(text)) {
           sessions.delete(c.chat);
           await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
