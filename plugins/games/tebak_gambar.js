@@ -47,6 +47,8 @@ const t = translate({
     level_current: "Current level: *{level}*",
     level_hint: "Use `{prefix}tg [1-13]` to jump to a specific level.",
     stopped: "🛑 *Game stopped*",
+    reset_title: "🔄 *Progress Reset*",
+    reset_done: "Your Tebak Gambar progress has been reset to level 1.",
   },
   id: {
     help_title: "🖼️ *TEBAK GAMBAR*",
@@ -86,6 +88,8 @@ const t = translate({
     level_current: "Level saat ini: *{level}*",
     level_hint: "Gunakan `{prefix}tg [1-13]` untuk loncat ke level tertentu.",
     stopped: "🛑 *Permainan dihentikan*",
+    reset_title: "🔄 *Reset Progress*",
+    reset_done: "Progress Tebak Gambar kamu telah direset ke level 1.",
   },
 });
 
@@ -274,6 +278,7 @@ export default [
       "games-tebakgambar-updater",
       "games-tebakgambar-timesetter",
       "games-tebakgambar-levelcheck",
+      "games-tebakgambar-reset",
     ],
     cat: "games",
     tags: ["game"],
@@ -571,6 +576,31 @@ export default [
           await c.reply({ text: t("stopped", {}, c) }, { quoted: c.event });
         }
       }
+    },
+  },
+  {
+    name: "games-tebakgambar-reset",
+    cmd: ["tg.reset", "tebakgambar.reset"],
+    cat: "games",
+    tags: ["game"],
+    desc: "Reset your Tebak Gambar progress to level 1",
+    events: [MESSAGES_UPSERT],
+    roles: [Role.USER],
+    exec: async (c) => {
+      const store = getGamesStore(c);
+      if (store) {
+        await store.waitReady();
+        store.delete(`${PROGRESS_STORE_KEY}_${c.chat}_${c.senderJid}`);
+      }
+      saveLevel(c.client()?.settings, c.chat, "1");
+      await c.reply(
+        {
+          text: [t("reset_title", {}, c), "", t("reset_done", {}, c)].join(
+            "\n",
+          ),
+        },
+        { quoted: c.event },
+      );
     },
   },
 ];
