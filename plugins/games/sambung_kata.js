@@ -169,10 +169,8 @@ function sukuKata(text) {
   }
 
   /* ng/ny + vokal + kons: "sinyal" → "nyal", "langit" → "ngit" */
-  if (/n[gy]([aiueo]([qwrtypsdfghjklzxcvbnm])?)$/.test(text)) {
-    const ny = /n[gy]/i.exec(text)[0];
-    return ny + text.split(ny).pop();
-  }
+  const m = /n[gy]([aiueo]([qwrtypsdfghjklzxcvbnm])?)$/.exec(text);
+  if (m) return m[0];
 
   /* konsonan akhir: "kuku" → "ku", "batu" → "tu" */
   const kons = [...text].filter((c) => _KONSONAN.has(c));
