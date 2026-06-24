@@ -401,7 +401,7 @@ export default [
         }, TURN_TIMEOUT_MS);
         session.timeout = timeout;
 
-        const xpReward = userAnswer.length;
+        const xpReward = userAnswer.length * 10;
         const user = c.user;
         if (user) {
           user.xp += xpReward;
