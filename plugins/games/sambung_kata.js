@@ -32,9 +32,9 @@ const t = translate({
     invalid_letter: "❌ *{word}* must start with *{letter}*!",
     duplicate_word: "❌ *{word}* has already been used!",
     timeout:
-      "⌛ *Time's up!*\n\n🏁 *Game Over!*\nTotal words: *{count}*\nTotal points: *{total}*",
+      "⌛ *Time's up!*\n\n🏁 *Game Over!*\nTotal words: *{count}*\nTotal points: *{total}*\n🌟 Total XP: *{totalXp}*",
     stopped:
-      "🛑 *Game stopped*\n\n🏁 *Game Over!*\nTotal words: *{count}*\nTotal points: *{total}*",
+      "🛑 *Game stopped*\n\n🏁 *Game Over!*\nTotal words: *{count}*\nTotal points: *{total}*\n🌟 Total XP: *{totalXp}*",
     sync_success: "✅ *Sync Success!*",
     sync_stats: "Successfully loaded {count} words.",
     sync_failed: "❌ *Sync Failed:* {error}",
@@ -60,9 +60,9 @@ const t = translate({
     invalid_letter: "❌ *{word}* harus berawalan *{letter}*!",
     duplicate_word: "❌ *{word}* sudah pernah digunakan!",
     timeout:
-      "⌛ *Waktu habis!*\n\n🏁 *Permainan Selesai!*\nTotal kata: *{count}*\nTotal poin: *{total}*",
+      "⌛ *Waktu habis!*\n\n🏁 *Permainan Selesai!*\nTotal kata: *{count}*\nTotal poin: *{total}*\n🌟 Total XP: *{totalXp}*",
     stopped:
-      "🛑 *Permainan dihentikan*\n\n🏁 *Permainan Selesai!*\nTotal kata: *{count}*\nTotal poin: *{total}*",
+      "🛑 *Permainan dihentikan*\n\n🏁 *Permainan Selesai!*\nTotal kata: *{count}*\nTotal poin: *{total}*\n🌟 Total XP: *{totalXp}*",
     sync_success: "✅ *Sinkronisasi Berhasil!*",
     sync_stats: "Berhasil memuat {count} kata.",
     sync_failed: "❌ *Sinkronisasi Gagal:* {error}",
@@ -231,7 +231,7 @@ function endGame(c) {
 
   c.reply(
     {
-      text: t("timeout", { count: s.used.size, total: s.totalPoints }, c),
+      text: t("timeout", { count: s.used.size, total: s.totalPoints, totalXp: s.totalPoints * 10 }, c),
     },
     { quoted: c.event },
   ).then((r) => {
@@ -345,7 +345,7 @@ export default [
               {
                 text: t(
                   "stopped",
-                  { count: session.used.size, total: session.totalPoints },
+                  { count: session.used.size, total: session.totalPoints, totalXp: session.totalPoints * 10 },
                   c,
                 ),
               },
